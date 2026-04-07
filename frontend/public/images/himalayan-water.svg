@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#1a3a5c"/>
+      <stop offset="40%" style="stop-color:#2c5f8a"/>
+      <stop offset="100%" style="stop-color:#4a90c4"/>
+    </linearGradient>
+    <linearGradient id="snow" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:rgba(255,255,255,0.5)"/>
+      <stop offset="100%" style="stop-color:rgba(255,255,255,0.1)"/>
+    </linearGradient>
+  </defs>
+  <rect width="400" height="400" fill="url(#bg)" rx="20"/>
+  <!-- Mountain range background -->
+  <path d="M0 200 L50 130 L80 160 L130 80 L170 140 L200 60 L230 140 L270 80 L320 160 L350 130 L400 200Z" fill="rgba(255,255,255,0.08)"/>
+  <!-- Snow caps -->
+  <path d="M115 95 L130 80 L145 95 Q137 90 130 95 Q122 90 115 95Z" fill="url(#snow)"/>
+  <path d="M185 75 L200 60 L215 75 Q207 70 200 75 Q192 70 185 75Z" fill="url(#snow)"/>
+  <path d="M255 95 L270 80 L285 95 Q277 90 270 95 Q262 90 255 95Z" fill="url(#snow)"/>
+  <!-- Water bottle -->
+  <path d="M178 320 L178 248 Q166 232 166 215 L166 158 Q166 140 176 130 L176 100 Q176 90 186 90 L214 90 Q224 90 224 100 L224 130 Q234 140 234 158 L234 215 Q234 232 222 248 L222 320 Q222 328 214 328 L186 328 Q178 328 178 320Z" fill="rgba(255,255,255,0.15)" stroke="rgba(255,255,255,0.35)" stroke-width="1.5"/>
+  <!-- Cap -->
+  <rect x="184" y="82" width="32" height="12" rx="3" fill="rgba(255,255,255,0.3)"/>
+  <!-- Mountain label on bottle -->
+  <path d="M185 180 L195 165 L200 170 L210 155 L215 180Z" fill="rgba(255,255,255,0.15)" stroke="rgba(255,255,255,0.25)" stroke-width="0.8"/>
+  <!-- Water texture in bottle -->
+  <path d="M180 230 Q190 225 200 230 Q210 235 220 230 L222 248 L222 320 Q222 328 214 328 L186 328 Q178 328 178 320 L178 248Z" fill="rgba(173,216,230,0.15)"/>
+  <!-- Snowflakes -->
+  <circle cx="90" cy="60" r="2" fill="rgba(255,255,255,0.25)"/>
+  <circle cx="310" cy="45" r="1.5" fill="rgba(255,255,255,0.2)"/>
+  <circle cx="60" cy="110" r="1.8" fill="rgba(255,255,255,0.18)"/>
+  <circle cx="340" cy="120" r="2.2" fill="rgba(255,255,255,0.22)"/>
+  <circle cx="150" cy="40" r="1.5" fill="rgba(255,255,255,0.15)"/>
+  <!-- Brand text -->
+  <text x="200" y="365" text-anchor="middle" font-family="Georgia, serif" font-size="34" font-weight="bold" fill="white">Himalayan</text>
+  <text x="200" y="392" text-anchor="middle" font-family="Arial, sans-serif" font-size="14" fill="rgba(173,216,230,0.8)">Natural Mineral Water</text>
+</svg>

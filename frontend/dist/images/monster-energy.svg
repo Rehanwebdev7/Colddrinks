@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#1a1a1a"/>
+      <stop offset="100%" style="stop-color:#000000"/>
+    </linearGradient>
+  </defs>
+  <rect width="400" height="400" fill="url(#bg)" rx="20"/>
+  <!-- Tall can -->
+  <rect x="160" y="50" width="80" height="260" rx="10" fill="rgba(255,255,255,0.06)" stroke="rgba(0,200,0,0.3)" stroke-width="1.5"/>
+  <!-- Can top -->
+  <ellipse cx="200" cy="52" rx="40" ry="8" fill="rgba(100,100,100,0.2)" stroke="rgba(0,200,0,0.25)" stroke-width="1"/>
+  <!-- Monster M claw marks -->
+  <path d="M175 120 L180 200 L190 140 L200 220 L210 140 L220 200 L225 120" fill="none" stroke="#00e600" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" opacity="0.7"/>
+  <!-- Green glow behind can -->
+  <ellipse cx="200" cy="200" rx="80" ry="120" fill="rgba(0,200,0,0.04)"/>
+  <!-- Scratch marks on background -->
+  <line x1="80" y1="100" x2="100" y2="150" stroke="rgba(0,200,0,0.15)" stroke-width="2" stroke-linecap="round"/>
+  <line x1="90" y1="95" x2="110" y2="145" stroke="rgba(0,200,0,0.12)" stroke-width="2" stroke-linecap="round"/>
+  <line x1="100" y1="90" x2="120" y2="140" stroke="rgba(0,200,0,0.1)" stroke-width="2" stroke-linecap="round"/>
+  <line x1="300" y1="220" x2="320" y2="270" stroke="rgba(0,200,0,0.12)" stroke-width="2" stroke-linecap="round"/>
+  <line x1="310" y1="215" x2="330" y2="265" stroke="rgba(0,200,0,0.1)" stroke-width="2" stroke-linecap="round"/>
+  <!-- Brand text -->
+  <text x="200" y="355" text-anchor="middle" font-family="Arial Black, sans-serif" font-size="38" font-weight="900" fill="#00e600">MONSTER</text>
+  <text x="200" y="385" text-anchor="middle" font-family="Arial, sans-serif" font-size="14" fill="rgba(0,230,0,0.5)">ENERGY</text>
+</svg>

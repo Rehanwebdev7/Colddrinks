@@ -1,0 +1,2121 @@
+{
+	"info": {
+		"_postman_id": "cold-drinks-shop-api-collection",
+		"name": "Cold Drinks Shop API",
+		"description": "Complete API collection for Cold Drinks Shop - Full Stack E-Commerce Application.\n\nBase URL: http://localhost:8000\n\nDefault Admin Login:\n- Email: admin@cooldrinks.com\n- Password: admin123\n\nDefault Customer Login:\n- Email: amit.sharma@gmail.com\n- Password: password123",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"variable": [
+		{
+			"key": "baseUrl",
+			"value": "http://localhost:8000",
+			"type": "string"
+		},
+		{
+			"key": "adminToken",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "customerToken",
+			"value": "",
+			"type": "string"
+		}
+	],
+	"item": [
+		{
+			"name": "Auth",
+			"description": "Authentication & User management endpoints",
+			"item": [
+				{
+					"name": "Register New User",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"Test User\",\n  \"email\": \"testuser@example.com\",\n  \"phone\": \"+919999999999\",\n  \"password\": \"test1234\",\n  \"address\": {\n    \"type\": \"home\",\n    \"label\": \"Home\",\n    \"street\": \"123 Test Street\",\n    \"city\": \"Mumbai\",\n    \"state\": \"Maharashtra\",\n    \"pincode\": \"400001\",\n    \"isDefault\": true\n  }\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/auth/register",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "auth", "register"]
+						},
+						"description": "Register a new customer account. Returns JWT token and user data."
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"if (jsonData.success && jsonData.data && jsonData.data.token) {",
+									"    pm.collectionVariables.set('customerToken', jsonData.data.token);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					]
+				},
+				{
+					"name": "Login (Admin)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"admin@cooldrinks.com\",\n  \"password\": \"admin123\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/auth/login",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "auth", "login"]
+						},
+						"description": "Login as admin. Token is auto-saved to collection variable."
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"if (jsonData.success && jsonData.data && jsonData.data.token) {",
+									"    pm.collectionVariables.set('adminToken', jsonData.data.token);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					]
+				},
+				{
+					"name": "Login (Customer)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"amit.sharma@gmail.com\",\n  \"password\": \"password123\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/auth/login",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "auth", "login"]
+						},
+						"description": "Login as customer. Token is auto-saved to collection variable."
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"if (jsonData.success && jsonData.data && jsonData.data.token) {",
+									"    pm.collectionVariables.set('customerToken', jsonData.data.token);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					]
+				},
+				{
+					"name": "Login (by Phone)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"phone\": \"+919823456789\",\n  \"password\": \"password123\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/auth/login",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "auth", "login"]
+						},
+						"description": "Login using phone number instead of email."
+					},
+					"response": []
+				},
+				{
+					"name": "Verify Token",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{customerToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/auth/verify",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "auth", "verify"]
+						},
+						"description": "Verify if the current JWT token is valid. Returns user data."
+					},
+					"response": []
+				},
+				{
+					"name": "Update Profile",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{customerToken}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"Amit Sharma Updated\",\n  \"addresses\": [\n    {\n      \"type\": \"home\",\n      \"label\": \"Home\",\n      \"street\": \"456 New Street\",\n      \"city\": \"Mumbai\",\n      \"state\": \"Maharashtra\",\n      \"pincode\": \"400002\",\n      \"isDefault\": true\n    }\n  ]\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/auth/profile",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "auth", "profile"]
+						},
+						"description": "Update logged-in user's profile (name, email, phone, addresses)."
+					},
+					"response": []
+				},
+				{
+					"name": "Change Password",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{customerToken}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"currentPassword\": \"password123\",\n  \"newPassword\": \"newpassword456\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/auth/change-password",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "auth", "change-password"]
+						},
+						"description": "Change password for logged-in user. Requires current password."
+					},
+					"response": []
+				},
+				{
+					"name": "Forgot Password",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"amit.sharma@gmail.com\",\n  \"phone\": \"+919823456789\",\n  \"newPassword\": \"resetpass123\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/auth/forgot-password",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "auth", "forgot-password"]
+						},
+						"description": "Reset password using email + phone verification. Last 4 digits of phone must match."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Users (Admin)",
+			"description": "Admin-only user management endpoints",
+			"item": [
+				{
+					"name": "Get All Users",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{adminToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/users",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "users"]
+						},
+						"description": "Get all users with order count and total spent. Admin only."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Users by Role",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{adminToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/users?role=customer",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "users"],
+							"query": [
+								{
+									"key": "role",
+									"value": "customer"
+								}
+							]
+						},
+						"description": "Filter users by role (customer/admin)."
+					},
+					"response": []
+				},
+				{
+					"name": "Block User",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{adminToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/users/USR-002/block",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "users", "USR-002", "block"]
+						},
+						"description": "Block a user account. Replace USR-002 with actual user ID."
+					},
+					"response": []
+				},
+				{
+					"name": "Unblock User",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{adminToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/users/USR-002/unblock",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "users", "USR-002", "unblock"]
+						},
+						"description": "Unblock a blocked user account. Replace USR-002 with actual user ID."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Products",
+			"description": "Product CRUD and management",
+			"item": [
+				{
+					"name": "Get All Products",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/products",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "products"]
+						},
+						"description": "Get all products. No auth required."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Product by ID (query)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/products?id=PRD-002",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "products"],
+							"query": [
+								{
+									"key": "id",
+									"value": "PRD-002"
+								}
+							]
+						},
+						"description": "Get a single product by ID via query parameter."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Product by ID (path)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/products/PRD-002",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "products", "PRD-002"]
+						},
+						"description": "Get a single product by ID via URL path."
+					},
+					"response": []
+				},
+				{
+					"name": "Filter Products by Category",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/products?category=Soft Drinks",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "products"],
+							"query": [
+								{
+									"key": "category",
+									"value": "Soft Drinks"
+								}
+							]
+						},
+						"description": "Filter products by category name."
+					},
+					"response": []
+				},
+				{
+					"name": "Search Products",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/products?search=pepsi",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "products"],
+							"query": [
+								{
+									"key": "search",
+									"value": "pepsi"
+								}
+							]
+						},
+						"description": "Search products by name or description."
+					},
+					"response": []
+				},
+				{
+					"name": "Filter Products by Status",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/products?status=active",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "products"],
+							"query": [
+								{
+									"key": "status",
+									"value": "active"
+								}
+							]
+						},
+						"description": "Filter products by status (active, out_of_stock)."
+					},
+					"response": []
+				},
+				{
+					"name": "Add Product",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{adminToken}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"Sprite\",\n  \"category\": \"Soft Drinks\",\n  \"description\": \"Sprite 300ml lemon-lime refreshment.\",\n  \"boxQuantity\": 24,\n  \"pricePerBox\": 440,\n  \"mrp\": 528,\n  \"stockQuantity\": 100,\n  \"lowStockAlert\": 10,\n  \"image\": \"\",\n  \"status\": \"active\",\n  \"gstPercent\": 18,\n  \"deliveryCharge\": 20,\n  \"volume\": 300\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/products",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "products"]
+						},
+						"description": "Add a new product. Admin only."
+					},
+					"response": []
+				},
+				{
+					"name": "Add Product (alt route)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{adminToken}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"Mountain Dew\",\n  \"category\": \"Soft Drinks\",\n  \"description\": \"Mountain Dew 300ml energy boost.\",\n  \"boxQuantity\": 24,\n  \"pricePerBox\": 450,\n  \"mrp\": 540,\n  \"stockQuantity\": 80,\n  \"lowStockAlert\": 10,\n  \"image\": \"\",\n  \"status\": \"active\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/products/add",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "products", "add"]
+						},
+						"description": "Add a new product via /add route. Admin only."
+					},
+					"response": []
+				},
+				{
+					"name": "Update Product (by body ID)",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{adminToken}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"id\": \"PRD-002\",\n  \"pricePerBox\": 475,\n  \"stockQuantity\": 120\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/products/update",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "products", "update"]
+						},
+						"description": "Update product using ID in body. Admin only."
+					},
+					"response": []
+				},
+				{
+					"name": "Update Product (by path ID)",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{adminToken}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"pricePerBox\": 475,\n  \"stockQuantity\": 120\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/products/PRD-002",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "products", "PRD-002"]
+						},
+						"description": "Update product by ID in URL path. Admin only."
+					},
+					"response": []
+				},
+				{
+					"name": "Restock Product",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{adminToken}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"quantity\": 50\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/products/PRD-002/restock",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "products", "PRD-002", "restock"]
+						},
+						"description": "Restock a product. Adds quantity to existing stock. Admin only."
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Product (by path ID)",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{adminToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/products/PRD-002",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "products", "PRD-002"]
+						},
+						"description": "Delete product by ID in URL. Admin only."
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Product (by query/body)",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{adminToken}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"id\": \"PRD-002\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/products/delete?id=PRD-002",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "products", "delete"],
+							"query": [
+								{
+									"key": "id",
+									"value": "PRD-002"
+								}
+							]
+						},
+						"description": "Delete product via /delete route. Admin only."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Categories",
+			"description": "Product category management",
+			"item": [
+				{
+					"name": "Get All Categories",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/categories",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "categories"]
+						},
+						"description": "Get all product categories. No auth required."
+					},
+					"response": []
+				},
+				{
+					"name": "Create Category",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{adminToken}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"Energy Drinks\",\n  \"status\": \"active\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/categories",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "categories"]
+						},
+						"description": "Create a new category. Admin only."
+					},
+					"response": []
+				},
+				{
+					"name": "Update Category",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{adminToken}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"Energy & Sports Drinks\",\n  \"status\": \"active\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/categories/CAT-001",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "categories", "CAT-001"]
+						},
+						"description": "Update a category. Replace CAT-001 with actual ID. Admin only."
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Category",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{adminToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/categories/CAT-001",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "categories", "CAT-001"]
+						},
+						"description": "Delete a category. Replace CAT-001 with actual ID. Admin only."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Orders",
+			"description": "Order placement and management",
+			"item": [
+				{
+					"name": "Get My Orders (Customer)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{customerToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/orders",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "orders"]
+						},
+						"description": "Get orders for logged-in customer."
+					},
+					"response": []
+				},
+				{
+					"name": "Get All Orders (Admin)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{adminToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/orders",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "orders"]
+						},
+						"description": "Get all orders. Admin sees all orders."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Orders by Customer ID (Admin)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{adminToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/orders?customerId=USR-002",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "orders"],
+							"query": [
+								{
+									"key": "customerId",
+									"value": "USR-002"
+								}
+							]
+						},
+						"description": "Filter orders by customer ID. Admin only."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Orders by Status",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{adminToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/orders?status=Placed",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "orders"],
+							"query": [
+								{
+									"key": "status",
+									"value": "Placed"
+								}
+							]
+						},
+						"description": "Filter orders by status (Placed, Confirmed, Processing, Shipped, Delivered, Cancelled)."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Orders by Payment Status",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{adminToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/orders?payment_status=Pending",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "orders"],
+							"query": [
+								{
+									"key": "payment_status",
+									"value": "Pending"
+								}
+							]
+						},
+						"description": "Filter orders by payment status (Pending, Paid, Verification Pending, Rejected)."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Order by ID",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{customerToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/orders/ORD-001",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "orders", "ORD-001"]
+						},
+						"description": "Get single order details by ID. Customer can only view own orders."
+					},
+					"response": []
+				},
+				{
+					"name": "Create Order (COD)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{customerToken}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"items\": [\n    {\n      \"productId\": \"PRD-002\",\n      \"quantity\": 2\n    }\n  ],\n  \"deliveryAddress\": {\n    \"street\": \"123 Test Street\",\n    \"city\": \"Mumbai\",\n    \"state\": \"Maharashtra\",\n    \"pincode\": \"400001\"\n  },\n  \"paymentMethod\": \"COD\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/orders/create",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "orders", "create"]
+						},
+						"description": "Place a new order with Cash on Delivery payment."
+					},
+					"response": []
+				},
+				{
+					"name": "Create Order (Online)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{customerToken}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"items\": [\n    {\n      \"productId\": \"PRD-002\",\n      \"quantity\": 1\n    }\n  ],\n  \"deliveryAddress\": {\n    \"street\": \"123 Test Street\",\n    \"city\": \"Mumbai\",\n    \"state\": \"Maharashtra\",\n    \"pincode\": \"400001\"\n  },\n  \"paymentMethod\": \"Online\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/orders/create",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "orders", "create"]
+						},
+						"description": "Place a new order with Online payment (sets paymentStatus to Verification Pending)."
+					},
+					"response": []
+				},
+				{
+					"name": "Update Order Status (Admin - by body)",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{adminToken}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"orderId\": \"ORD-001\",\n  \"status\": \"Confirmed\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/orders/status",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "orders", "status"]
+						},
+						"description": "Update order status. Statuses: Placed, Confirmed, Processing, Shipped, Delivered, Cancelled. Admin only."
+					},
+					"response": []
+				},
+				{
+					"name": "Update Order Status (Admin - by path)",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{adminToken}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"status\": \"Shipped\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/orders/ORD-001/status",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "orders", "ORD-001", "status"]
+						},
+						"description": "Update order status by order ID in path. Admin only."
+					},
+					"response": []
+				},
+				{
+					"name": "Approve Online Payment (Admin)",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{adminToken}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"paymentStatus\": \"Paid\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/orders/ORD-001/status",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "orders", "ORD-001", "status"]
+						},
+						"description": "Approve online payment (change from Verification Pending to Paid). Admin only."
+					},
+					"response": []
+				},
+				{
+					"name": "Reject Online Payment (Admin)",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{adminToken}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"paymentStatus\": \"Rejected\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/orders/ORD-001/status",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "orders", "ORD-001", "status"]
+						},
+						"description": "Reject online payment. Admin only."
+					},
+					"response": []
+				},
+				{
+					"name": "Cancel Order (Customer)",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{customerToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/orders/ORD-001/cancel",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "orders", "ORD-001", "cancel"]
+						},
+						"description": "Cancel an order. Only works if status is Placed or Confirmed. Restores product stock."
+					},
+					"response": []
+				},
+				{
+					"name": "Rate Order",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{customerToken}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"rating\": 5,\n  \"comment\": \"Excellent delivery! Products were fresh.\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/orders/ORD-001/rate",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "orders", "ORD-001", "rate"]
+						},
+						"description": "Rate a delivered order (1-5 stars). Only works on Delivered orders."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Cart",
+			"description": "Shopping cart management",
+			"item": [
+				{
+					"name": "Get Cart",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{customerToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/cart",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "cart"]
+						},
+						"description": "Get the current user's cart."
+					},
+					"response": []
+				},
+				{
+					"name": "Add to Cart",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{customerToken}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"productId\": \"PRD-002\",\n  \"quantity\": 3\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/cart/add",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "cart", "add"]
+						},
+						"description": "Add a product to cart or update quantity if already exists."
+					},
+					"response": []
+				},
+				{
+					"name": "Sync Cart",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{customerToken}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"items\": [\n    {\n      \"productId\": \"PRD-002\",\n      \"name\": \"Pepsi\",\n      \"quantity\": 2,\n      \"pricePerBox\": 460,\n      \"image\": \"\"\n    }\n  ]\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/cart/sync",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "cart", "sync"]
+						},
+						"description": "Replace entire cart with provided items (sync from frontend)."
+					},
+					"response": []
+				},
+				{
+					"name": "Remove from Cart",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{customerToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/cart/remove?productId=PRD-002",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "cart", "remove"],
+							"query": [
+								{
+									"key": "productId",
+									"value": "PRD-002"
+								}
+							]
+						},
+						"description": "Remove a specific product from cart."
+					},
+					"response": []
+				},
+				{
+					"name": "Clear Cart",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{customerToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/cart",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "cart"]
+						},
+						"description": "Clear all items from cart."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Bills",
+			"description": "Invoice/Bill generation and download",
+			"item": [
+				{
+					"name": "Get All Bills",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{adminToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/bills",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "bills"]
+						},
+						"description": "Get all generated bills. Admin only."
+					},
+					"response": []
+				},
+				{
+					"name": "Generate Bill (by body)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{adminToken}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"orderId\": \"ORD-001\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/bills/generate",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "bills", "generate"]
+						},
+						"description": "Generate a bill/invoice for an order. Admin only."
+					},
+					"response": []
+				},
+				{
+					"name": "Generate Bill (by path)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{adminToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/bills/generate/ORD-001",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "bills", "generate", "ORD-001"]
+						},
+						"description": "Generate a bill for order by ID in path. Admin only."
+					},
+					"response": []
+				},
+				{
+					"name": "Download Bill (HTML Invoice)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/bills/download?id=BILL-001",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "bills", "download"],
+							"query": [
+								{
+									"key": "id",
+									"value": "BILL-001"
+								}
+							]
+						},
+						"description": "Download bill as HTML invoice. Can use id or billNumber as query param."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Dashboard",
+			"description": "Admin dashboard statistics and charts",
+			"item": [
+				{
+					"name": "Get Dashboard Stats",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/dashboard/stats",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "dashboard", "stats"]
+						},
+						"description": "Get dashboard KPIs: total orders, revenue, pending payments, low stock, today's stats."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Dashboard Charts",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/dashboard/charts",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "dashboard", "charts"]
+						},
+						"description": "Get chart data: weekly orders, revenue by category, order status distribution."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Notifications",
+			"description": "Notification management",
+			"item": [
+				{
+					"name": "Get Notifications",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{customerToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/notifications",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "notifications"]
+						},
+						"description": "Get notifications for the logged-in user. Admin sees all, customer sees their own + broadcast."
+					},
+					"response": []
+				},
+				{
+					"name": "Send Notification (Admin)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{adminToken}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"type\": \"general\",\n  \"title\": \"Special Offer!\",\n  \"message\": \"Get 20% off on all soft drinks this weekend!\",\n  \"targetUserId\": null,\n  \"image\": \"\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/notifications/send",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "notifications", "send"]
+						},
+						"description": "Send a notification. Set targetUserId=null for broadcast to all. Admin only."
+					},
+					"response": []
+				},
+				{
+					"name": "Send Notification to Specific User",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{adminToken}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"type\": \"payment\",\n  \"title\": \"Payment Reminder\",\n  \"message\": \"You have an outstanding balance. Please clear it soon.\",\n  \"targetUserId\": \"USR-002\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/notifications/send",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "notifications", "send"]
+						},
+						"description": "Send notification to a specific user by ID. Admin only."
+					},
+					"response": []
+				},
+				{
+					"name": "Mark Notification as Read (by body)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{customerToken}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"notificationId\": \"NOTIF-001\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/notifications/markread",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "notifications", "markread"]
+						},
+						"description": "Mark a single notification as read by ID in body."
+					},
+					"response": []
+				},
+				{
+					"name": "Mark All Notifications as Read (POST)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{customerToken}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"markAll\": true\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/notifications/markread",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "notifications", "markread"]
+						},
+						"description": "Mark all notifications as read."
+					},
+					"response": []
+				},
+				{
+					"name": "Mark Notification as Read (by path)",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{customerToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/notifications/NOTIF-001/read",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "notifications", "NOTIF-001", "read"]
+						},
+						"description": "Mark a single notification as read via URL path."
+					},
+					"response": []
+				},
+				{
+					"name": "Mark All Notifications Read (PUT)",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{customerToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/notifications/read-all",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "notifications", "read-all"]
+						},
+						"description": "Mark all notifications as read via PUT."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Payments",
+			"description": "Payment management, outstanding tracking, and clearance requests",
+			"item": [
+				{
+					"name": "Get Payment Stats (Admin)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{adminToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/payments/stats",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "payments", "stats"]
+						},
+						"description": "Get payment statistics: total paid, pending, today's collection, monthly, outstanding balances. Admin only."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Online Payment History (Admin)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{adminToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/payments/online-history",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "payments", "online-history"]
+						},
+						"description": "Get all online payment orders with verification status. Admin only."
+					},
+					"response": []
+				},
+				{
+					"name": "Record Payment for Order (Admin)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{adminToken}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"orderId\": \"ORD-001\",\n  \"method\": \"Cash\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/payments/record",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "payments", "record"]
+						},
+						"description": "Record payment for a specific order. Marks order as Paid and reduces outstanding. Admin only."
+					},
+					"response": []
+				},
+				{
+					"name": "Record Payment for Customer (Admin)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{adminToken}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"customerId\": \"USR-002\",\n  \"amount\": 500,\n  \"method\": \"UPI\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/payments/record",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "payments", "record"]
+						},
+						"description": "Record a generic payment for a customer to reduce their outstanding balance. Admin only."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Customer Payment History (Admin)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{adminToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/payments/history/USR-002",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "payments", "history", "USR-002"]
+						},
+						"description": "Get payment history for a specific customer. Admin only."
+					},
+					"response": []
+				},
+				{
+					"name": "Get My Payment Summary (Customer)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{customerToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/payments/my-summary",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "payments", "my-summary"]
+						},
+						"description": "Get payment summary for logged-in customer: total spent, paid, outstanding, history."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Outstanding Balances (Admin)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{adminToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/payments/outstanding",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "payments", "outstanding"]
+						},
+						"description": "Get all users with outstanding balances. Admin only."
+					},
+					"response": []
+				},
+				{
+					"name": "Submit Payment Clearance Request (Customer)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{customerToken}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"amount\": 1000\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/payments/clear-request",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "payments", "clear-request"]
+						},
+						"description": "Customer submits a request to clear their outstanding balance."
+					},
+					"response": []
+				},
+				{
+					"name": "Get All Clearance Requests (Admin)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{adminToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/payments/clear-requests",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "payments", "clear-requests"]
+						},
+						"description": "Get all payment clearance requests. Admin only."
+					},
+					"response": []
+				},
+				{
+					"name": "Approve/Reject Clearance Request (Admin)",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{adminToken}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"action\": \"approve\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/payments/clear-request/PREQ-001",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "payments", "clear-request", "PREQ-001"]
+						},
+						"description": "Approve or reject a clearance request. action: 'approve' or 'reject'. Admin only."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Sliders",
+			"description": "Homepage slider/banner management",
+			"item": [
+				{
+					"name": "Get All Sliders",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/sliders",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "sliders"]
+						},
+						"description": "Get homepage sliders. Non-admin sees only active sliders."
+					},
+					"response": []
+				},
+				{
+					"name": "Add Slider",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{adminToken}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"image\": \"https://example.com/slider-banner.jpg\",\n  \"title\": \"Summer Sale!\",\n  \"subtitle\": \"Get 30% off on all beverages\",\n  \"link\": \"/products?category=Soft Drinks\",\n  \"active\": true,\n  \"order\": 1\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/sliders",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "sliders"]
+						},
+						"description": "Add a new homepage slider. Admin only."
+					},
+					"response": []
+				},
+				{
+					"name": "Update Slider",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{adminToken}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"title\": \"Updated Summer Sale!\",\n  \"active\": false\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/sliders/SLD-001",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "sliders", "SLD-001"]
+						},
+						"description": "Update a slider. Replace SLD-001 with actual ID. Admin only."
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Slider",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{adminToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/sliders/SLD-001",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "sliders", "SLD-001"]
+						},
+						"description": "Delete a slider. Replace SLD-001 with actual ID. Admin only."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Settings",
+			"description": "App settings management",
+			"item": [
+				{
+					"name": "Get Settings",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/settings",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "settings"]
+						},
+						"description": "Get app settings (theme, colors, etc). No auth required."
+					},
+					"response": []
+				},
+				{
+					"name": "Update Settings",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{adminToken}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"theme\": {\n    \"primaryColor\": \"#E23744\",\n    \"darkMode\": false\n  },\n  \"shopName\": \"Cool Drinks Shop\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/settings",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "settings"]
+						},
+						"description": "Update app settings (deep merge). Admin only."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Wishlist",
+			"description": "Customer wishlist management",
+			"item": [
+				{
+					"name": "Get My Wishlist",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{customerToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/wishlist",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "wishlist"]
+						},
+						"description": "Get logged-in user's wishlist items."
+					},
+					"response": []
+				},
+				{
+					"name": "Toggle Wishlist",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{customerToken}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"productId\": \"PRD-002\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/wishlist/toggle",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "wishlist", "toggle"]
+						},
+						"description": "Toggle product in wishlist (add if not present, remove if already added)."
+					},
+					"response": []
+				},
+				{
+					"name": "Check Wishlist Status",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{customerToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/wishlist/check/PRD-002",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "wishlist", "check", "PRD-002"]
+						},
+						"description": "Check if a product is in user's wishlist."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Coupons",
+			"description": "Coupon/discount code management",
+			"item": [
+				{
+					"name": "Get All Coupons",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{customerToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/coupons",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "coupons"]
+						},
+						"description": "Get coupons. Customers see only active & non-expired. Admin sees all."
+					},
+					"response": []
+				},
+				{
+					"name": "Create Coupon (Admin)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{adminToken}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"code\": \"SUMMER20\",\n  \"discountType\": \"percentage\",\n  \"discountValue\": 20,\n  \"minOrderAmount\": 500,\n  \"maxDiscount\": 200,\n  \"expiryDate\": \"2026-12-31T23:59:59.000Z\",\n  \"usageLimit\": 100\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/coupons",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "coupons"]
+						},
+						"description": "Create a new coupon. discountType: 'percentage' or 'flat'. Admin only."
+					},
+					"response": []
+				},
+				{
+					"name": "Create Flat Coupon (Admin)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{adminToken}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"code\": \"FLAT100\",\n  \"discountType\": \"flat\",\n  \"discountValue\": 100,\n  \"minOrderAmount\": 300,\n  \"usageLimit\": 50\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/coupons",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "coupons"]
+						},
+						"description": "Create a flat discount coupon. Admin only."
+					},
+					"response": []
+				},
+				{
+					"name": "Update Coupon (Admin)",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{adminToken}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"discountValue\": 25,\n  \"active\": true\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/coupons/CPN-001",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "coupons", "CPN-001"]
+						},
+						"description": "Update a coupon. Replace CPN-001 with actual ID. Admin only."
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Coupon (Admin)",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{adminToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/coupons/CPN-001",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "coupons", "CPN-001"]
+						},
+						"description": "Delete a coupon. Replace CPN-001 with actual ID. Admin only."
+					},
+					"response": []
+				},
+				{
+					"name": "Apply Coupon (Customer)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{customerToken}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"code\": \"SUMMER20\",\n  \"orderAmount\": 1000\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/coupons/apply",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "coupons", "apply"]
+						},
+						"description": "Apply a coupon code to calculate discount. Returns discount amount and final price."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Health Check",
+			"description": "API health and status",
+			"item": [
+				{
+					"name": "API Root",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api",
+							"host": ["{{baseUrl}}"],
+							"path": ["api"]
+						},
+						"description": "Check if the API is running."
+					},
+					"response": []
+				}
+			]
+		}
+	]
+}

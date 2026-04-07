@@ -1,0 +1,201 @@
+[
+  {
+    "id": "USR-001",
+    "password": "e86f78a8a3caf0b60d8e74e5942aa6d86dc150cd3c03338aef25b7d2d7e3acc7",
+    "createdAt": "2025-01-10T09:00:00.000Z",
+    "status": "active",
+    "totalOrders": 0,
+    "email": "admin@cooldrinks.com",
+    "outstanding": 0,
+    "role": "admin",
+    "totalSpent": 0,
+    "walletBalance": 0,
+    "name": "Rajesh Kumar",
+    "phone": "+919876543210"
+  },
+  {
+    "fcmToken": null,
+    "addresses": [
+      "100 feet Road\nbehind sumaiyya marriage halll"
+    ],
+    "id": "USR-002",
+    "status": "active",
+    "createdAt": "2026-03-30T04:59:02.987Z",
+    "password": "8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92",
+    "name": "REHAN",
+    "phone": "9172632945",
+    "email": "rehanwebdev7@gmail.com",
+    "outstanding": 5580,
+    "role": "customer",
+    "wallet": 0
+  },
+  {
+    "wallet": 0,
+    "email": "parvez@gmail.com",
+    "outstanding": 46320.6,
+    "role": "customer",
+    "name": "Parvez ",
+    "phone": "9876543215",
+    "id": "USR-003",
+    "addresses": [
+      "Aazad nagar.  Dhule "
+    ],
+    "createdAt": "2026-03-23T07:15:38.809Z",
+    "password": "ef1f29c2850d8717d3902c26f780112a728cb410199953757d6cc68227483306",
+    "status": "active",
+    "fcmToken": null
+  },
+  {
+    "fcmToken": null,
+    "status": "active",
+    "password": "8776f108e247ab1e2b323042c049c266407c81fbad41bde1e8dfc1bb66fd267e",
+    "createdAt": "2026-03-23T08:01:19.242Z",
+    "addresses": [],
+    "id": "USR-004",
+    "phone": "+918877665544",
+    "name": "Riya Patel",
+    "role": "customer",
+    "wallet": 0,
+    "outstanding": 1600.1999999999998,
+    "email": "riya@test.com"
+  },
+  {
+    "fcmToken": "eXpdNTcS93qzJJhAobyZEt:APA91bHkMX-B5ipAppokBt-CR3pZR3awtH11hzolPONrXS4kxNyKCcBS6_xIcxLSp1v2bVLZbe5envP9hOLViXk4EWPkOEsCNZk3xJdvnn0SvoEypeqXAtM",
+    "password": "bcb15f821479b4d5772bd0ca866c00ad5f926e3580720659cc80d39c9d09802a",
+    "createdAt": "2026-03-24T04:10:56.887Z",
+    "status": "active",
+    "id": "USR-005",
+    "addresses": [
+      "!00 feet road summaiya mariage hall "
+    ],
+    "phone": "1111111111",
+    "name": "Gulam ",
+    "wallet": 0,
+    "role": "customer",
+    "email": "gulam@gmail.com"
+  },
+  {
+    "name": "WEB DEKHO",
+    "phone": "1111111112",
+    "role": "customer",
+    "email": "webdekho22@gmail.com",
+    "wallet": 0,
+    "fcmToken": "fqjFYcKRM5RBOwQ7DnFVkb:APA91bE_lwBrFlP7P3ZM3ldrddsWsyZLqltMwQ9fwn2cjF8utrM4nX_5oOaNX0l02V69sEghuXgPcJ-QRcyIugOBAnOojfJTw-aT5v__GD0r5HoMsvVb4zM",
+    "id": "USR-006",
+    "addresses": [
+      "wewewdsds"
+    ],
+    "createdAt": "2026-03-24T07:24:52.209Z",
+    "password": "bcb15f821479b4d5772bd0ca866c00ad5f926e3580720659cc80d39c9d09802a",
+    "status": "active"
+  },
+  {
+    "fcmToken": null,
+    "createdAt": "2026-03-24T07:33:55.067Z",
+    "password": "bcb15f821479b4d5772bd0ca866c00ad5f926e3580720659cc80d39c9d09802a",
+    "status": "active",
+    "id": "USR-007",
+    "addresses": [
+      "hdsgudhsdhdsjhbhj"
+    ],
+    "phone": "1111111122",
+    "name": "WEB DEKHO vgagaga",
+    "email": "webdekho1122@gmail.com",
+    "wallet": 0,
+    "role": "customer"
+  },
+  {
+    "role": "customer",
+    "wallet": 0,
+    "outstanding": 2000,
+    "email": "kerry@gmail.com",
+    "phone": "8698608166",
+    "name": "Masala",
+    "status": "active",
+    "password": "3fe1f7584833183e2da842b2f18123186919d4aa9828dbebdb3956429d9607bb",
+    "createdAt": "2026-03-26T05:31:35.881Z",
+    "addresses": [
+      "fasdf"
+    ],
+    "id": "USR-008",
+    "fcmToken": "effBVpsjMWYgHjSuWGZRiG:APA91bHcSgz0A6aM-r8hlyJrfxJZVW6VZfv-qgFUbthFeOU8KRg2U-jW1KqMJz4Cl1WhYydQ37acmrchSIqCUlFM3MazmtRlrte4W_d3MX6wB388RqlkSy8"
+  },
+  {
+    "outstanding": 7039.2,
+    "wallet": 0,
+    "email": "test@test.com",
+    "role": "customer",
+    "phone": "9999888877",
+    "name": "Test User",
+    "password": "8776f108e247ab1e2b323042c049c266407c81fbad41bde1e8dfc1bb66fd267e",
+    "createdAt": "2026-03-27T10:55:51.480Z",
+    "status": "active",
+    "id": "USR-009",
+    "addresses": [],
+    "fcmToken": null
+  },
+  {
+    "phone": "9834827675",
+    "id": "USR-010",
+    "status": "active",
+    "password": "3ea87a56da3844b420ec2925ae922bc731ec16a4fc44dcbeafdad49b0e61d39c",
+    "createdAt": "2026-03-29T07:13:20.002Z",
+    "name": "GULAM",
+    "avatar": "",
+    "wallet": 0,
+    "outstanding": 792.5,
+    "email": "gulamnabi86007@gmail.com",
+    "role": "customer",
+    "fcmToken": null,
+    "addresses": [
+      "Faizan barkat masjid"
+    ]
+  },
+  {
+    "email": "khanbhai361306@gmail.com",
+    "role": "customer",
+    "wallet": 0,
+    "phone": "9423190308",
+    "name": "Khan",
+    "createdAt": "2026-04-03T14:30:40.222Z",
+    "password": "07914370fb4a034a23feddbf1305c1ca253fcc575307c0d99694f0a9cc1efa67",
+    "status": "active",
+    "id": "USR-011",
+    "addresses": [
+      "Jam ka mala Akhtar Nisha masjid "
+    ],
+    "fcmToken": null
+  },
+  {
+    "status": "active",
+    "createdAt": "2026-04-04T14:46:58.859Z",
+    "password": "e5cb49d4e6ee787106e42109d845c4751cb6c17653b96c249542fa3fe54845db",
+    "addresses": [
+      "Jam Ka Malha Green Kalni Dhule"
+    ],
+    "id": "USR-012",
+    "fcmToken": null,
+    "email": "mudassirkhan5489@gmail.com",
+    "role": "customer",
+    "outstanding": 4,
+    "wallet": 0,
+    "phone": "9763615754",
+    "name": "Mudassir Khan"
+  },
+  {
+    "email": "alimj78698@gmail.com",
+    "role": "customer",
+    "outstanding": 450,
+    "wallet": 0,
+    "name": "Ali amjad",
+    "phone": "9158425821",
+    "addresses": [
+      "Jamka malla near faizane barkat masjid"
+    ],
+    "id": "USR-013",
+    "status": "active",
+    "password": "05b7d9ad96c1759a232d2389fa85730f5f120c278bef6dcf285c882201f14635",
+    "createdAt": "2026-04-04T15:02:11.767Z",
+    "fcmToken": null
+  }
+]

@@ -1,0 +1,17 @@
+{
+  "email": "admin@cooldrinks.com",
+  "phone": "+919876543210",
+  "updatedAt": "2026-03-19T17:28:50.000Z",
+  "createdAt": "2025-01-10T09:00:00.000Z",
+  "totalOrders": 0,
+  "fcmToken": "fmc_admin_token_abc123xyz",
+  "uid": "USR-001",
+  "outstanding": 0,
+  "walletBalance": 0,
+  "name": "Rajesh Kumar",
+  "totalSpent": 0,
+  "role": "admin",
+  "status": "active",
+  "id": "USR-001",
+  "password": "e86f78a8a3caf0b60d8e74e5942aa6d86dc150cd3c03338aef25b7d2d7e3acc7"
+}

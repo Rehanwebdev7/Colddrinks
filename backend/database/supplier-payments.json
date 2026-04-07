@@ -1,0 +1,52 @@
+[
+  {
+    "amount": 10000,
+    "date": "2026-04-03",
+    "notes": "",
+    "createdAt": "2026-04-03T13:15:07.586Z",
+    "supplierId": "SUP-001",
+    "id": "SPAY-0001"
+  },
+  {
+    "createdAt": "2026-04-03T14:18:09.007Z",
+    "supplierId": "SUP-002",
+    "id": "SPAY-0002",
+    "amount": 20000,
+    "date": "2026-04-03",
+    "notes": "cash"
+  },
+  {
+    "date": "2026-04-04",
+    "amount": 1000000,
+    "notes": "",
+    "createdAt": "2026-04-04T04:33:40.134Z",
+    "supplierId": "SUP-001",
+    "id": "SPAY-0003"
+  },
+  {
+    "notes": "",
+    "date": "2026-04-04",
+    "amount": 100000000,
+    "supplierId": "SUP-001",
+    "id": "SPAY-0004",
+    "createdAt": "2026-04-04T04:33:56.795Z"
+  },
+  {
+    "createdAt": "2026-04-04T05:22:40.847Z",
+    "id": "SPAY-0005",
+    "supplierId": "SUP-001",
+    "method": "cash",
+    "amount": 479999899820000,
+    "date": "2026-04-04",
+    "notes": ""
+  },
+  {
+    "notes": "iuhghghg",
+    "date": "2026-04-04",
+    "amount": 100000,
+    "method": "cash",
+    "supplierId": "SUP-003",
+    "id": "SPAY-0006",
+    "createdAt": "2026-04-04T14:16:35.854Z"
+  }
+]

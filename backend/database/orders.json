@@ -1,0 +1,3423 @@
+[
+  {
+    "customerName": "Aman Sheikh",
+    "tax": 530.4,
+    "statusHistory": [
+      {
+        "timestamp": "2026-03-23T06:32:58.295Z",
+        "status": "Placed"
+      },
+      {
+        "status": "Confirmed",
+        "timestamp": "2026-03-23T06:34:09.899Z"
+      },
+      {
+        "status": "Processing",
+        "timestamp": "2026-03-23T06:34:09.994Z"
+      },
+      {
+        "timestamp": "2026-03-23T06:34:10.094Z",
+        "status": "Shipped"
+      },
+      {
+        "timestamp": "2026-03-23T06:34:10.170Z",
+        "status": "Delivered"
+      }
+    ],
+    "paymentMethod": "cash",
+    "subtotal": 3120,
+    "couponCode": null,
+    "userId": "USR-002",
+    "deliveryCharge": 65,
+    "deliveryAddress": {
+      "name": "Aman Sheikh",
+      "pincode": "400001",
+      "phone": "+919988776655",
+      "city": "Mumbai",
+      "address": "123 Test Street, Mumbai"
+    },
+    "orderStatus": "Delivered",
+    "total": 3715.4,
+    "orderDate": "2026-03-23T06:32:58.295Z",
+    "items": [
+      {
+        "productId": "PRD-001",
+        "gstPercent": 18,
+        "name": "Coca Cola 300ml",
+        "deliveryCharge": 10,
+        "image": "",
+        "price": 480,
+        "quantity": 3
+      },
+      {
+        "productId": "PRD-002",
+        "gstPercent": 18,
+        "name": "Pepsi 500ml",
+        "deliveryCharge": 15,
+        "quantity": 2,
+        "price": 720,
+        "image": ""
+      },
+      {
+        "image": "",
+        "price": 240,
+        "quantity": 1,
+        "deliveryCharge": 5,
+        "gstPercent": 5,
+        "name": "Bisleri Water 1L",
+        "productId": "PRD-004"
+      }
+    ],
+    "orderNumber": "ORD-1001",
+    "updatedAt": "2026-03-23T06:36:06.748Z",
+    "id": "ORD-001",
+    "customerPhone": "+919988776655",
+    "discount": 0,
+    "paymentStatus": "Paid"
+  },
+  {
+    "paymentMethod": "COD",
+    "statusHistory": [
+      {
+        "status": "Placed",
+        "timestamp": "2026-03-23T06:36:56.574Z"
+      },
+      {
+        "status": "Cancelled",
+        "timestamp": "2026-03-23T06:37:09.767Z",
+        "note": "Cancelled by customer"
+      }
+    ],
+    "tax": 486,
+    "customerName": "Aman Sheikh",
+    "userId": "USR-002",
+    "couponCode": null,
+    "subtotal": 3450,
+    "items": [
+      {
+        "price": 450,
+        "quantity": 5,
+        "image": "",
+        "deliveryCharge": 10,
+        "gstPercent": 12,
+        "name": "Maaza Mango 200ml",
+        "productId": "PRD-003"
+      },
+      {
+        "name": "Sprite 750ml",
+        "gstPercent": 18,
+        "productId": "PRD-005",
+        "image": "",
+        "quantity": 2,
+        "price": 600,
+        "deliveryCharge": 20
+      }
+    ],
+    "total": 4026,
+    "orderDate": "2026-03-23T06:36:56.574Z",
+    "orderStatus": "Cancelled",
+    "deliveryAddress": {
+      "city": "Mumbai",
+      "address": "123 Test Street, Mumbai",
+      "phone": "+919988776655",
+      "name": "Aman Sheikh",
+      "pincode": "400001"
+    },
+    "deliveryCharge": 90,
+    "paymentStatus": "Pending",
+    "discount": 0,
+    "customerPhone": "+919988776655",
+    "id": "ORD-002",
+    "updatedAt": "2026-03-23T06:37:09.767Z",
+    "orderNumber": "ORD-1002"
+  },
+  {
+    "userId": "USR-002",
+    "couponCode": null,
+    "subtotal": 600,
+    "paymentMethod": "COD",
+    "statusHistory": [
+      {
+        "timestamp": "2026-03-23T08:01:20.323Z",
+        "status": "Placed"
+      },
+      {
+        "status": "confirmed",
+        "timestamp": "2026-03-26T07:51:32.134Z"
+      }
+    ],
+    "tax": 108,
+    "customerName": "Aman Sheikh",
+    "paymentStatus": "Pending",
+    "discount": 0,
+    "customerPhone": "+919988776655",
+    "id": "ORD-003",
+    "updatedAt": "2026-03-26T07:51:32.134Z",
+    "orderNumber": "ORD-1003",
+    "items": [
+      {
+        "name": "Sprite 750ml",
+        "gstPercent": 18,
+        "productId": "PRD-005",
+        "quantity": 1,
+        "price": 600,
+        "image": "",
+        "deliveryCharge": 20
+      }
+    ],
+    "orderDate": "2026-03-23T08:01:20.323Z",
+    "total": 728,
+    "orderStatus": "confirmed",
+    "deliveryAddress": "A Addr Mumbai",
+    "deliveryCharge": 20
+  },
+  {
+    "userId": "USR-004",
+    "couponCode": null,
+    "subtotal": 600,
+    "paymentMethod": "COD",
+    "statusHistory": [
+      {
+        "status": "Placed",
+        "timestamp": "2026-03-23T08:01:20.491Z"
+      },
+      {
+        "timestamp": "2026-03-26T08:16:09.660Z",
+        "status": "confirmed"
+      },
+      {
+        "status": "processing",
+        "timestamp": "2026-03-26T08:43:36.945Z"
+      },
+      {
+        "timestamp": "2026-03-26T08:43:37.660Z",
+        "status": "shipped"
+      },
+      {
+        "timestamp": "2026-03-26T08:43:37.711Z",
+        "status": "Delivered"
+      }
+    ],
+    "tax": 108,
+    "customerName": "Riya Patel",
+    "paymentStatus": "Pending",
+    "discount": 0,
+    "customerPhone": "+918877665544",
+    "id": "ORD-004",
+    "updatedAt": "2026-03-26T08:43:37.711Z",
+    "orderNumber": "ORD-1004",
+    "items": [
+      {
+        "gstPercent": 18,
+        "name": "Sprite 750ml",
+        "productId": "PRD-005",
+        "image": "",
+        "price": 600,
+        "quantity": 1,
+        "deliveryCharge": 20
+      }
+    ],
+    "orderDate": "2026-03-23T08:01:20.491Z",
+    "total": 728,
+    "orderStatus": "Delivered",
+    "deliveryAddress": "B Addr Delhi",
+    "deliveryCharge": 20
+  },
+  {
+    "orderDate": "2026-03-23T08:04:46.685Z",
+    "total": 2243.2,
+    "items": [
+      {
+        "image": "",
+        "price": 480,
+        "quantity": 3,
+        "deliveryCharge": 10,
+        "name": "Coca Cola 300ml",
+        "gstPercent": 18,
+        "productId": "PRD-001"
+      },
+      {
+        "deliveryCharge": 10,
+        "quantity": 1,
+        "price": 450,
+        "image": "",
+        "productId": "PRD-003",
+        "name": "Maaza Mango 200ml",
+        "gstPercent": 12
+      }
+    ],
+    "deliveryCharge": 40,
+    "deliveryAddress": "42 Marine Drive Mumbai",
+    "orderStatus": "Placed",
+    "discount": 0,
+    "paymentStatus": "Pending",
+    "orderNumber": "ORD-1005",
+    "updatedAt": "2026-03-23T08:04:46.685Z",
+    "id": "ORD-005",
+    "customerPhone": "+919988776655",
+    "paymentMethod": "COD",
+    "customerName": "Aman Sheikh",
+    "tax": 313.2,
+    "statusHistory": [
+      {
+        "timestamp": "2026-03-23T08:04:46.685Z",
+        "status": "Placed"
+      }
+    ],
+    "userId": "USR-002",
+    "subtotal": 1890,
+    "couponCode": null
+  },
+  {
+    "orderNumber": "ORD-1006",
+    "updatedAt": "2026-03-23T08:08:49.729Z",
+    "customerPhone": "+919988776655",
+    "id": "ORD-006",
+    "paymentStatus": "Pending",
+    "discount": 0,
+    "deliveryCharge": 20,
+    "orderStatus": "Placed",
+    "deliveryAddress": "A Addr Mumbai",
+    "items": [
+      {
+        "productId": "PRD-005",
+        "name": "Sprite 750ml",
+        "gstPercent": 18,
+        "deliveryCharge": 20,
+        "quantity": 1,
+        "price": 600,
+        "image": ""
+      }
+    ],
+    "orderDate": "2026-03-23T08:08:49.729Z",
+    "total": 728,
+    "couponCode": null,
+    "subtotal": 600,
+    "userId": "USR-002",
+    "customerName": "Aman Sheikh",
+    "statusHistory": [
+      {
+        "status": "Placed",
+        "timestamp": "2026-03-23T08:08:49.729Z"
+      }
+    ],
+    "tax": 108,
+    "paymentMethod": "COD"
+  },
+  {
+    "paymentMethod": "COD",
+    "statusHistory": [
+      {
+        "timestamp": "2026-03-23T08:08:49.743Z",
+        "status": "Placed"
+      }
+    ],
+    "tax": 108,
+    "customerName": "Riya Patel",
+    "userId": "USR-004",
+    "couponCode": null,
+    "subtotal": 600,
+    "items": [
+      {
+        "productId": "PRD-005",
+        "gstPercent": 18,
+        "name": "Sprite 750ml",
+        "deliveryCharge": 20,
+        "price": 600,
+        "quantity": 1,
+        "image": ""
+      }
+    ],
+    "orderDate": "2026-03-23T08:08:49.743Z",
+    "total": 728,
+    "orderStatus": "Placed",
+    "deliveryAddress": "B Addr Delhi",
+    "deliveryCharge": 20,
+    "paymentStatus": "Pending",
+    "discount": 0,
+    "customerPhone": "+918877665544",
+    "id": "ORD-007",
+    "orderNumber": "ORD-1007",
+    "updatedAt": "2026-03-23T08:08:49.743Z"
+  },
+  {
+    "discount": 0,
+    "paymentStatus": "Paid",
+    "updatedAt": "2026-03-23T08:08:51.396Z",
+    "orderNumber": "ORD-1008",
+    "id": "ORD-008",
+    "customerPhone": "+919988776655",
+    "orderDate": "2026-03-23T08:08:49.782Z",
+    "total": 2243.2,
+    "items": [
+      {
+        "productId": "PRD-001",
+        "name": "Coca Cola 300ml",
+        "gstPercent": 18,
+        "deliveryCharge": 10,
+        "image": "",
+        "quantity": 3,
+        "price": 480
+      },
+      {
+        "quantity": 1,
+        "price": 450,
+        "image": "",
+        "deliveryCharge": 10,
+        "gstPercent": 12,
+        "name": "Maaza Mango 200ml",
+        "productId": "PRD-003"
+      }
+    ],
+    "deliveryCharge": 40,
+    "deliveryAddress": "42 Marine Drive, Mumbai 400001",
+    "orderStatus": "Delivered",
+    "userId": "USR-002",
+    "subtotal": 1890,
+    "couponCode": null,
+    "paymentMethod": "Cash",
+    "customerName": "Aman Sheikh",
+    "tax": 313.2,
+    "statusHistory": [
+      {
+        "status": "Placed",
+        "timestamp": "2026-03-23T08:08:49.782Z"
+      },
+      {
+        "timestamp": "2026-03-23T08:08:49.804Z",
+        "status": "Confirmed"
+      },
+      {
+        "status": "Processing",
+        "timestamp": "2026-03-23T08:08:49.820Z"
+      },
+      {
+        "timestamp": "2026-03-23T08:08:49.831Z",
+        "status": "Shipped"
+      },
+      {
+        "timestamp": "2026-03-23T08:08:49.854Z",
+        "status": "Delivered"
+      }
+    ]
+  },
+  {
+    "userId": "USR-004",
+    "subtotal": 1920,
+    "couponCode": null,
+    "paymentMethod": "COD",
+    "customerName": "Riya Patel",
+    "tax": 283.2,
+    "statusHistory": [
+      {
+        "status": "Placed",
+        "timestamp": "2026-03-23T08:08:51.416Z"
+      },
+      {
+        "timestamp": "2026-03-23T08:08:51.434Z",
+        "status": "Delivered"
+      }
+    ],
+    "discount": 0,
+    "paymentStatus": "Pending",
+    "orderNumber": "ORD-1009",
+    "updatedAt": "2026-03-23T08:08:51.434Z",
+    "id": "ORD-009",
+    "customerPhone": "+918877665544",
+    "total": 2243.2,
+    "orderDate": "2026-03-23T08:08:51.416Z",
+    "items": [
+      {
+        "price": 720,
+        "quantity": 2,
+        "image": "",
+        "deliveryCharge": 15,
+        "name": "Pepsi 500ml",
+        "gstPercent": 18,
+        "productId": "PRD-002"
+      },
+      {
+        "productId": "PRD-004",
+        "name": "Bisleri Water 1L",
+        "gstPercent": 5,
+        "deliveryCharge": 5,
+        "image": "",
+        "quantity": 2,
+        "price": 240
+      }
+    ],
+    "deliveryCharge": 40,
+    "deliveryAddress": "15 Connaught Place, Delhi 110001",
+    "orderStatus": "Delivered"
+  },
+  {
+    "userId": "USR-002",
+    "couponCode": null,
+    "subtotal": 0,
+    "paymentMethod": "COD",
+    "statusHistory": [
+      {
+        "status": "Placed",
+        "timestamp": "2026-03-23T08:08:52.490Z"
+      }
+    ],
+    "tax": 0,
+    "customerName": "Aman Sheikh",
+    "paymentStatus": "Pending",
+    "discount": 0,
+    "customerPhone": "+919988776655",
+    "id": "ORD-010",
+    "updatedAt": "2026-03-23T08:08:52.490Z",
+    "orderNumber": "ORD-1010",
+    "items": [
+      {
+        "name": "Coca Cola 300ml",
+        "gstPercent": 18,
+        "productId": "PRD-001",
+        "image": "",
+        "quantity": 0,
+        "price": 480,
+        "deliveryCharge": 10
+      }
+    ],
+    "orderDate": "2026-03-23T08:08:52.490Z",
+    "total": 0,
+    "orderStatus": "Placed",
+    "deliveryAddress": "Test",
+    "deliveryCharge": 0
+  },
+  {
+    "tax": 86.4,
+    "statusHistory": [
+      {
+        "timestamp": "2026-03-23T08:37:02.758Z",
+        "status": "Placed"
+      },
+      {
+        "status": "confirmed",
+        "timestamp": "2026-03-23T08:38:21.414Z"
+      },
+      {
+        "status": "processing",
+        "timestamp": "2026-03-23T08:40:36.516Z"
+      },
+      {
+        "timestamp": "2026-03-23T08:40:50.923Z",
+        "status": "shipped"
+      }
+    ],
+    "customerName": "Parvez ",
+    "paymentMethod": "COD",
+    "subtotal": 480,
+    "couponCode": null,
+    "userId": "USR-003",
+    "deliveryAddress": "Aazad nagar.  Dhule",
+    "orderStatus": "shipped",
+    "deliveryCharge": 10,
+    "total": 576.4,
+    "orderDate": "2026-03-23T08:37:02.758Z",
+    "items": [
+      {
+        "image": "",
+        "quantity": 1,
+        "price": 480,
+        "deliveryCharge": 10,
+        "name": "Coca Cola 300ml",
+        "gstPercent": 18,
+        "productId": "PRD-001"
+      }
+    ],
+    "id": "ORD-011",
+    "customerPhone": "9876543215",
+    "updatedAt": "2026-03-23T08:40:50.923Z",
+    "orderNumber": "ORD-1011",
+    "discount": 0,
+    "paymentStatus": "Pending"
+  },
+  {
+    "orderStatus": "delivered",
+    "deliveryAddress": "Aazad nagar.  Dhule",
+    "deliveryCharge": 15,
+    "items": [
+      {
+        "deliveryCharge": 15,
+        "image": "",
+        "quantity": 1,
+        "price": 720,
+        "productId": "PRD-002",
+        "gstPercent": 18,
+        "name": "Pepsi 500ml"
+      }
+    ],
+    "orderDate": "2026-03-23T08:41:13.751Z",
+    "total": 864.6,
+    "customerPhone": "9876543215",
+    "id": "ORD-012",
+    "orderNumber": "ORD-1012",
+    "updatedAt": "2026-03-23T08:44:05.047Z",
+    "paymentStatus": "Pending",
+    "discount": 0,
+    "statusHistory": [
+      {
+        "status": "Placed",
+        "timestamp": "2026-03-23T08:41:13.751Z"
+      },
+      {
+        "status": "confirmed",
+        "timestamp": "2026-03-23T08:41:43.433Z"
+      },
+      {
+        "timestamp": "2026-03-23T08:43:56.681Z",
+        "status": "processing"
+      },
+      {
+        "timestamp": "2026-03-23T08:44:01.701Z",
+        "status": "shipped"
+      },
+      {
+        "status": "delivered",
+        "timestamp": "2026-03-23T08:44:05.047Z"
+      }
+    ],
+    "tax": 129.6,
+    "customerName": "Parvez ",
+    "paymentMethod": "COD",
+    "couponCode": null,
+    "subtotal": 720,
+    "userId": "USR-003"
+  },
+  {
+    "paymentMethod": "Online",
+    "customerName": "Parvez ",
+    "paymentVerifiedAt": "2026-03-23T08:50:42.454Z",
+    "tax": 108,
+    "statusHistory": [
+      {
+        "status": "Placed",
+        "timestamp": "2026-03-23T08:48:29.378Z"
+      },
+      {
+        "status": "cancelled",
+        "timestamp": "2026-03-23T08:49:00.841Z"
+      }
+    ],
+    "userId": "USR-003",
+    "subtotal": 600,
+    "paymentActionBy": "admin",
+    "couponCode": null,
+    "total": 728,
+    "orderDate": "2026-03-23T08:48:29.378Z",
+    "items": [
+      {
+        "productId": "PRD-005",
+        "gstPercent": 18,
+        "name": "Sprite 750ml",
+        "deliveryCharge": 20,
+        "image": "",
+        "quantity": 1,
+        "price": 600
+      }
+    ],
+    "deliveryCharge": 20,
+    "deliveryAddress": "Aazad nagar.  Dhule",
+    "orderStatus": "cancelled",
+    "discount": 0,
+    "paymentStatus": "Paid",
+    "updatedAt": "2026-03-23T08:50:42.454Z",
+    "orderNumber": "ORD-1013",
+    "id": "ORD-013",
+    "customerPhone": "9876543215"
+  },
+  {
+    "tax": 108,
+    "statusHistory": [
+      {
+        "timestamp": "2026-03-23T08:50:28.092Z",
+        "status": "Placed"
+      },
+      {
+        "status": "confirmed",
+        "timestamp": "2026-03-23T08:50:55.962Z"
+      },
+      {
+        "status": "processing",
+        "timestamp": "2026-03-23T08:50:58.470Z"
+      },
+      {
+        "timestamp": "2026-03-23T08:51:01.030Z",
+        "status": "shipped"
+      },
+      {
+        "timestamp": "2026-03-23T08:51:27.207Z",
+        "status": "delivered"
+      }
+    ],
+    "customerName": "Parvez ",
+    "paymentMethod": "Online",
+    "subtotal": 600,
+    "paymentActionBy": "admin",
+    "couponCode": null,
+    "userId": "USR-003",
+    "deliveryAddress": "Aazad nagar.  Dhule",
+    "orderStatus": "delivered",
+    "deliveryCharge": 20,
+    "orderDate": "2026-03-23T08:50:28.092Z",
+    "total": 728,
+    "items": [
+      {
+        "gstPercent": 18,
+        "name": "Sprite 750ml",
+        "productId": "PRD-005",
+        "image": "",
+        "quantity": 1,
+        "price": 600,
+        "deliveryCharge": 20
+      }
+    ],
+    "id": "ORD-014",
+    "customerPhone": "9876543215",
+    "updatedAt": "2026-03-23T08:51:27.207Z",
+    "orderNumber": "ORD-1014",
+    "discount": 0,
+    "paymentRejectedAt": "2026-03-23T08:50:44.144Z",
+    "paymentStatus": "Rejected"
+  },
+  {
+    "items": [
+      {
+        "quantity": 4,
+        "price": 480,
+        "image": "",
+        "deliveryCharge": 10,
+        "name": "Coca Cola 300ml",
+        "gstPercent": 18,
+        "productId": "PRD-001"
+      },
+      {
+        "gstPercent": 18,
+        "name": "Pepsi 500ml",
+        "productId": "PRD-002",
+        "image": "",
+        "price": 720,
+        "quantity": 1,
+        "deliveryCharge": 15
+      }
+    ],
+    "orderDate": "2026-03-23T10:25:56.985Z",
+    "total": 3170.2,
+    "orderStatus": "confirmed",
+    "deliveryAddress": "Aazad nagar.  Dhule",
+    "deliveryCharge": 55,
+    "paymentStatus": "Pending",
+    "discount": 0,
+    "customerPhone": "9876543215",
+    "id": "ORD-015",
+    "updatedAt": "2026-03-24T05:19:10.257Z",
+    "orderNumber": "ORD-1015",
+    "paymentMethod": "COD",
+    "statusHistory": [
+      {
+        "status": "Placed",
+        "timestamp": "2026-03-23T10:25:56.985Z"
+      },
+      {
+        "timestamp": "2026-03-24T05:13:37.429Z",
+        "status": "confirmed"
+      },
+      {
+        "status": "cancelled",
+        "timestamp": "2026-03-24T05:13:38.454Z"
+      },
+      {
+        "status": "confirmed",
+        "timestamp": "2026-03-24T05:19:05.109Z"
+      },
+      {
+        "status": "confirmed",
+        "timestamp": "2026-03-24T05:19:10.257Z"
+      }
+    ],
+    "tax": 475.2,
+    "customerName": "Parvez ",
+    "userId": "USR-003",
+    "couponCode": null,
+    "subtotal": 2640
+  },
+  {
+    "customerPhone": "1111111111",
+    "id": "ORD-016",
+    "updatedAt": "2026-03-24T05:22:14.909Z",
+    "orderNumber": "ORD-1016",
+    "paymentStatus": "Pending",
+    "discount": 0,
+    "orderStatus": "Cancelled",
+    "deliveryAddress": "!00 feet road summaiya mariage hall",
+    "deliveryCharge": 0,
+    "items": [
+      {
+        "deliveryCharge": 0,
+        "image": "https://lh3.googleusercontent.com/d/1qLL0VL8waH7d-ViLOFrViB1ilhReefZO",
+        "price": 120,
+        "quantity": 5,
+        "productId": "PRD-006",
+        "gstPercent": 0,
+        "name": "Cooc"
+      }
+    ],
+    "orderDate": "2026-03-24T05:12:12.290Z",
+    "total": 600,
+    "couponCode": null,
+    "subtotal": 600,
+    "userId": "USR-005",
+    "statusHistory": [
+      {
+        "timestamp": "2026-03-24T05:12:12.290Z",
+        "status": "Placed"
+      },
+      {
+        "status": "confirmed",
+        "timestamp": "2026-03-24T05:13:25.780Z"
+      },
+      {
+        "status": "confirmed",
+        "timestamp": "2026-03-24T05:13:32.159Z"
+      },
+      {
+        "timestamp": "2026-03-24T05:13:35.196Z",
+        "status": "cancelled"
+      },
+      {
+        "status": "confirmed",
+        "timestamp": "2026-03-24T05:13:36.448Z"
+      },
+      {
+        "timestamp": "2026-03-24T05:13:58.709Z",
+        "status": "confirmed"
+      },
+      {
+        "timestamp": "2026-03-24T05:19:01.777Z",
+        "status": "confirmed"
+      },
+      {
+        "status": "cancelled",
+        "timestamp": "2026-03-24T05:19:03.501Z"
+      },
+      {
+        "status": "confirmed",
+        "timestamp": "2026-03-24T05:19:10.973Z"
+      },
+      {
+        "timestamp": "2026-03-24T05:19:27.561Z",
+        "status": "confirmed"
+      },
+      {
+        "status": "Cancelled",
+        "note": "Cancelled by customer",
+        "timestamp": "2026-03-24T05:22:14.909Z"
+      }
+    ],
+    "tax": 0,
+    "customerName": "Gulam ",
+    "paymentMethod": "COD"
+  },
+  {
+    "statusHistory": [
+      {
+        "timestamp": "2026-03-24T05:18:01.386Z",
+        "status": "Placed"
+      },
+      {
+        "status": "confirmed",
+        "timestamp": "2026-03-24T05:22:51.598Z"
+      },
+      {
+        "timestamp": "2026-03-24T05:23:29.269Z",
+        "status": "confirmed"
+      },
+      {
+        "timestamp": "2026-03-24T05:23:37.369Z",
+        "status": "confirmed"
+      },
+      {
+        "status": "confirmed",
+        "timestamp": "2026-03-24T05:23:37.843Z"
+      },
+      {
+        "status": "confirmed",
+        "timestamp": "2026-03-24T05:23:38.033Z"
+      },
+      {
+        "timestamp": "2026-03-24T05:23:38.148Z",
+        "status": "confirmed"
+      }
+    ],
+    "tax": 43.2,
+    "customerName": "Gulam ",
+    "paymentMethod": "COD",
+    "couponCode": null,
+    "subtotal": 240,
+    "userId": "USR-005",
+    "orderStatus": "confirmed",
+    "deliveryAddress": "!00 feet road summaiya mariage hall",
+    "deliveryCharge": 5,
+    "items": [
+      {
+        "deliveryCharge": 5,
+        "price": 240,
+        "quantity": 1,
+        "image": "",
+        "productId": "PRD-004",
+        "gstPercent": null,
+        "name": "Bisleri Water 1L"
+      }
+    ],
+    "total": 288.2,
+    "orderDate": "2026-03-24T05:18:01.386Z",
+    "customerPhone": "1111111111",
+    "id": "ORD-017",
+    "orderNumber": "ORD-1017",
+    "updatedAt": "2026-03-24T05:23:38.148Z",
+    "paymentStatus": "Pending",
+    "discount": 0
+  },
+  {
+    "paymentStatus": "Pending",
+    "discount": 0,
+    "customerPhone": "1111111111",
+    "id": "ORD-018",
+    "updatedAt": "2026-03-24T05:30:35.351Z",
+    "orderNumber": "ORD-1018",
+    "items": [
+      {
+        "productId": "PRD-006",
+        "name": "Cooc",
+        "gstPercent": 0,
+        "deliveryCharge": 0,
+        "image": "https://lh3.googleusercontent.com/d/1qLL0VL8waH7d-ViLOFrViB1ilhReefZO",
+        "quantity": 5,
+        "price": 120
+      }
+    ],
+    "total": 600,
+    "orderDate": "2026-03-24T05:30:25.243Z",
+    "orderStatus": "Cancelled",
+    "deliveryAddress": "!00 feet road summaiya mariage hall",
+    "deliveryCharge": 0,
+    "userId": "USR-005",
+    "couponCode": null,
+    "subtotal": 600,
+    "paymentMethod": "COD",
+    "statusHistory": [
+      {
+        "status": "Placed",
+        "timestamp": "2026-03-24T05:30:25.243Z"
+      },
+      {
+        "timestamp": "2026-03-24T05:30:35.351Z",
+        "note": "Cancelled by customer",
+        "status": "Cancelled"
+      }
+    ],
+    "tax": 0,
+    "customerName": "Gulam "
+  },
+  {
+    "discount": 0,
+    "paymentStatus": "Pending",
+    "id": "ORD-019",
+    "customerPhone": "1111111111",
+    "orderNumber": "ORD-1019",
+    "updatedAt": "2026-03-24T05:31:51.765Z",
+    "total": 600,
+    "orderDate": "2026-03-24T05:31:30.381Z",
+    "items": [
+      {
+        "productId": "PRD-006",
+        "gstPercent": 0,
+        "name": "Cooc",
+        "deliveryCharge": 0,
+        "price": 120,
+        "quantity": 5,
+        "image": "https://lh3.googleusercontent.com/d/1qLL0VL8waH7d-ViLOFrViB1ilhReefZO"
+      }
+    ],
+    "deliveryAddress": "!00 feet road summaiya mariage hall",
+    "orderStatus": "cancelled",
+    "deliveryCharge": 0,
+    "userId": "USR-005",
+    "subtotal": 600,
+    "couponCode": null,
+    "paymentMethod": "COD",
+    "tax": 0,
+    "statusHistory": [
+      {
+        "timestamp": "2026-03-24T05:31:30.381Z",
+        "status": "Placed"
+      },
+      {
+        "timestamp": "2026-03-24T05:31:46.884Z",
+        "status": "cancelled"
+      },
+      {
+        "timestamp": "2026-03-24T05:31:51.765Z",
+        "status": "cancelled"
+      }
+    ],
+    "customerName": "Gulam "
+  },
+  {
+    "customerName": "Gulam ",
+    "statusHistory": [
+      {
+        "status": "Placed",
+        "timestamp": "2026-03-24T05:33:06.093Z"
+      },
+      {
+        "timestamp": "2026-03-24T05:34:15.257Z",
+        "status": "confirmed"
+      },
+      {
+        "status": "processing",
+        "timestamp": "2026-03-24T05:34:35.219Z"
+      },
+      {
+        "status": "shipped",
+        "timestamp": "2026-03-24T05:34:42.748Z"
+      },
+      {
+        "status": "delivered",
+        "timestamp": "2026-03-24T05:36:39.785Z"
+      },
+      {
+        "status": "delivered",
+        "timestamp": "2026-03-24T05:36:39.925Z"
+      }
+    ],
+    "tax": 0,
+    "paymentMethod": "COD",
+    "couponCode": null,
+    "subtotal": 600,
+    "userId": "USR-005",
+    "deliveryCharge": 0,
+    "orderStatus": "delivered",
+    "deliveryAddress": "!00 feet road summaiya mariage hall",
+    "items": [
+      {
+        "productId": "PRD-006",
+        "name": "Cooc",
+        "gstPercent": 0,
+        "deliveryCharge": 0,
+        "quantity": 5,
+        "price": 120,
+        "image": "https://lh3.googleusercontent.com/d/1qLL0VL8waH7d-ViLOFrViB1ilhReefZO"
+      }
+    ],
+    "total": 600,
+    "orderDate": "2026-03-24T05:33:06.093Z",
+    "orderNumber": "ORD-1020",
+    "updatedAt": "2026-03-24T05:36:39.925Z",
+    "customerPhone": "1111111111",
+    "id": "ORD-020",
+    "paymentStatus": "Pending",
+    "discount": 0
+  },
+  {
+    "paymentStatus": "Pending",
+    "discount": 0,
+    "customerPhone": "1111111122",
+    "id": "ORD-021",
+    "updatedAt": "2026-03-24T07:34:25.007Z",
+    "orderNumber": "ORD-1021",
+    "items": [
+      {
+        "deliveryCharge": 0,
+        "quantity": 1,
+        "price": 300,
+        "image": "https://lh3.googleusercontent.com/d/1tR05TQ5I0nt1hQbsvYJB1m_QCIaZjb66",
+        "productId": "PRD-007",
+        "gstPercent": 0,
+        "name": "PArr"
+      }
+    ],
+    "orderDate": "2026-03-24T07:34:25.007Z",
+    "total": 300,
+    "orderStatus": "Placed",
+    "deliveryAddress": "hdsgudhsdhdsjhbhj",
+    "deliveryCharge": 0,
+    "userId": "USR-007",
+    "couponCode": null,
+    "subtotal": 300,
+    "paymentMethod": "COD",
+    "statusHistory": [
+      {
+        "status": "Placed",
+        "timestamp": "2026-03-24T07:34:25.007Z"
+      }
+    ],
+    "tax": 0,
+    "customerName": "WEB DEKHO vgagaga"
+  },
+  {
+    "updatedAt": "2026-03-27T11:16:00.689Z",
+    "orderNumber": "ORD-1022",
+    "id": "ORD-022",
+    "customerPhone": "9999888877",
+    "discount": 0,
+    "paymentStatus": "Pending",
+    "deliveryCharge": 30,
+    "deliveryAddress": {
+      "street": "Test St",
+      "city": "Test City",
+      "pincode": "400001",
+      "state": "MH"
+    },
+    "orderStatus": "Delivered",
+    "orderDate": "2026-03-27T11:15:58.572Z",
+    "total": 1729.2,
+    "items": [
+      {
+        "productId": "PRD-001",
+        "gstPercent": null,
+        "name": "Coca Cola 300ml",
+        "deliveryCharge": 10,
+        "quantity": 3,
+        "price": 480,
+        "image": ""
+      }
+    ],
+    "subtotal": 1440,
+    "couponCode": null,
+    "userId": "USR-009",
+    "customerName": "Test User",
+    "tax": 259.2,
+    "statusHistory": [
+      {
+        "timestamp": "2026-03-27T11:15:58.572Z",
+        "status": "Placed"
+      },
+      {
+        "status": "confirmed",
+        "timestamp": "2026-03-27T11:16:00.086Z"
+      },
+      {
+        "status": "processing",
+        "timestamp": "2026-03-27T11:16:00.444Z"
+      },
+      {
+        "timestamp": "2026-03-27T11:16:00.584Z",
+        "status": "shipped"
+      },
+      {
+        "status": "Delivered",
+        "timestamp": "2026-03-27T11:16:00.689Z"
+      }
+    ],
+    "paymentMethod": "COD"
+  },
+  {
+    "customerName": "Test User",
+    "tax": 259.2,
+    "statusHistory": [
+      {
+        "status": "Placed",
+        "timestamp": "2026-03-27T12:34:30.231Z"
+      },
+      {
+        "status": "confirmed",
+        "timestamp": "2026-03-27T12:34:31.169Z"
+      },
+      {
+        "status": "Cancelled",
+        "timestamp": "2026-03-27T12:34:31.439Z",
+        "note": "Cancelled by customer"
+      }
+    ],
+    "paymentMethod": "COD",
+    "subtotal": 1440,
+    "couponCode": null,
+    "userId": "USR-009",
+    "deliveryCharge": 30,
+    "deliveryAddress": {
+      "pincode": "400001",
+      "state": "MH",
+      "city": "Test City",
+      "street": "Test St"
+    },
+    "orderStatus": "Cancelled",
+    "total": 1729.2,
+    "orderDate": "2026-03-27T12:34:30.231Z",
+    "items": [
+      {
+        "deliveryCharge": 15,
+        "image": "",
+        "price": 720,
+        "quantity": 2,
+        "productId": "PRD-002",
+        "name": "Pepsi 500ml",
+        "gstPercent": null
+      }
+    ],
+    "updatedAt": "2026-03-27T12:34:31.439Z",
+    "orderNumber": "ORD-1023",
+    "id": "ORD-023",
+    "customerPhone": "9999888877",
+    "discount": 0,
+    "paymentStatus": "Pending"
+  },
+  {
+    "tax": 810,
+    "statusHistory": [
+      {
+        "status": "Placed",
+        "timestamp": "2026-03-27T12:34:32.402Z"
+      },
+      {
+        "status": "confirmed",
+        "timestamp": "2026-03-27T12:34:32.963Z"
+      },
+      {
+        "timestamp": "2026-03-28T11:16:45.393Z",
+        "status": "processing"
+      },
+      {
+        "status": "shipped",
+        "timestamp": "2026-03-28T11:16:48.718Z"
+      },
+      {
+        "status": "delivered",
+        "timestamp": "2026-03-28T11:16:50.754Z"
+      }
+    ],
+    "customerName": "Test User",
+    "paymentMethod": "COD",
+    "subtotal": 4500,
+    "couponCode": null,
+    "userId": "USR-009",
+    "deliveryAddress": {
+      "street": "Test",
+      "city": "Test",
+      "state": "MH",
+      "pincode": "400001"
+    },
+    "orderStatus": "delivered",
+    "deliveryCharge": 0,
+    "total": 5310,
+    "orderDate": "2026-03-27T12:34:32.402Z",
+    "items": [
+      {
+        "productId": "PRD-007",
+        "gstPercent": 0,
+        "name": "PArr",
+        "deliveryCharge": 0,
+        "price": 300,
+        "quantity": 15,
+        "image": "https://lh3.googleusercontent.com/d/1tR05TQ5I0nt1hQbsvYJB1m_QCIaZjb66"
+      }
+    ],
+    "id": "ORD-024",
+    "customerPhone": "9999888877",
+    "orderNumber": "ORD-1024",
+    "updatedAt": "2026-03-28T11:16:50.754Z",
+    "discount": 0,
+    "paymentStatus": "Pending"
+  },
+  {
+    "discount": 0,
+    "paymentStatus": "Pending",
+    "id": "ORD-025",
+    "customerPhone": "8698608166",
+    "updatedAt": "2026-03-28T06:49:29.906Z",
+    "orderNumber": "ORD-1025",
+    "orderDate": "2026-03-28T06:49:29.906Z",
+    "total": 728,
+    "items": [
+      {
+        "deliveryCharge": 20,
+        "quantity": 1,
+        "price": 600,
+        "image": "/images/sprite.svg",
+        "productId": "PRD-005",
+        "name": "Sprite 750ml",
+        "gstPercent": null
+      }
+    ],
+    "deliveryAddress": "fasdf",
+    "orderStatus": "Placed",
+    "deliveryCharge": 20,
+    "userId": "USR-008",
+    "subtotal": 600,
+    "couponCode": null,
+    "paymentMethod": "COD",
+    "tax": 108,
+    "statusHistory": [
+      {
+        "timestamp": "2026-03-28T06:49:29.906Z",
+        "status": "Placed"
+      }
+    ],
+    "customerName": "Masala"
+  },
+  {
+    "deliveryCharge": 20,
+    "deliveryAddress": "fasdf",
+    "orderStatus": "Placed",
+    "orderDate": "2026-03-28T09:27:38.856Z",
+    "total": 1152.8,
+    "items": [
+      {
+        "name": "Coca Cola 300ml",
+        "gstPercent": null,
+        "productId": "PRD-001",
+        "quantity": 2,
+        "price": 480,
+        "image": "/images/coca-cola.svg",
+        "deliveryCharge": 10
+      }
+    ],
+    "orderNumber": "ORD-1026",
+    "updatedAt": "2026-03-28T09:27:38.856Z",
+    "id": "ORD-026",
+    "customerPhone": "8698608166",
+    "discount": 0,
+    "paymentStatus": "Pending",
+    "customerName": "Masala",
+    "tax": 172.8,
+    "statusHistory": [
+      {
+        "timestamp": "2026-03-28T09:27:38.856Z",
+        "status": "Placed"
+      }
+    ],
+    "paymentMethod": "COD",
+    "subtotal": 960,
+    "couponCode": null,
+    "userId": "USR-008"
+  },
+  {
+    "userId": "USR-008",
+    "subtotal": 960,
+    "couponCode": null,
+    "paymentMethod": "COD",
+    "customerName": "Masala",
+    "tax": 172.8,
+    "statusHistory": [
+      {
+        "status": "Placed",
+        "timestamp": "2026-03-28T09:28:07.377Z"
+      }
+    ],
+    "discount": 0,
+    "paymentStatus": "Pending",
+    "updatedAt": "2026-03-28T09:28:07.377Z",
+    "orderNumber": "ORD-1027",
+    "id": "ORD-027",
+    "customerPhone": "8698608166",
+    "total": 1152.8,
+    "orderDate": "2026-03-28T09:28:07.377Z",
+    "items": [
+      {
+        "price": 480,
+        "quantity": 2,
+        "image": "/images/coca-cola.svg",
+        "deliveryCharge": 10,
+        "gstPercent": null,
+        "name": "Coca Cola 300ml",
+        "productId": "PRD-001"
+      }
+    ],
+    "deliveryCharge": 20,
+    "deliveryAddress": "fasdf",
+    "orderStatus": "Placed"
+  },
+  {
+    "statusHistory": [
+      {
+        "timestamp": "2026-03-28T09:28:24.313Z",
+        "status": "Placed"
+      }
+    ],
+    "tax": 172.8,
+    "customerName": "Masala",
+    "paymentMethod": "COD",
+    "couponCode": null,
+    "subtotal": 960,
+    "userId": "USR-008",
+    "orderStatus": "Placed",
+    "deliveryAddress": "fasdf",
+    "deliveryCharge": 20,
+    "items": [
+      {
+        "image": "/images/coca-cola.svg",
+        "price": 480,
+        "quantity": 2,
+        "deliveryCharge": 10,
+        "gstPercent": null,
+        "name": "Coca Cola 300ml",
+        "productId": "PRD-001"
+      }
+    ],
+    "orderDate": "2026-03-28T09:28:24.313Z",
+    "total": 1152.8,
+    "customerPhone": "8698608166",
+    "id": "ORD-028",
+    "updatedAt": "2026-03-28T09:28:24.313Z",
+    "orderNumber": "ORD-1028",
+    "paymentStatus": "Pending",
+    "discount": 0
+  },
+  {
+    "total": 1152.8,
+    "orderDate": "2026-03-28T09:28:49.663Z",
+    "items": [
+      {
+        "name": "Coca Cola 300ml",
+        "gstPercent": null,
+        "productId": "PRD-001",
+        "image": "/images/coca-cola.svg",
+        "price": 480,
+        "quantity": 2,
+        "deliveryCharge": 10
+      }
+    ],
+    "deliveryCharge": 20,
+    "deliveryAddress": "fasdf",
+    "orderStatus": "Placed",
+    "discount": 0,
+    "paymentStatus": "Pending",
+    "updatedAt": "2026-03-28T09:28:49.663Z",
+    "orderNumber": "ORD-1029",
+    "id": "ORD-029",
+    "customerPhone": "8698608166",
+    "paymentMethod": "COD",
+    "customerName": "Masala",
+    "tax": 172.8,
+    "statusHistory": [
+      {
+        "timestamp": "2026-03-28T09:28:49.663Z",
+        "status": "Placed"
+      }
+    ],
+    "userId": "USR-008",
+    "subtotal": 960,
+    "couponCode": null
+  },
+  {
+    "total": 1152.8,
+    "orderDate": "2026-03-28T09:28:56.503Z",
+    "items": [
+      {
+        "productId": "PRD-001",
+        "gstPercent": null,
+        "name": "Coca Cola 300ml",
+        "deliveryCharge": 10,
+        "price": 480,
+        "quantity": 2,
+        "image": "/images/coca-cola.svg"
+      }
+    ],
+    "deliveryAddress": "fasdf",
+    "orderStatus": "confirmed",
+    "deliveryCharge": 20,
+    "discount": 0,
+    "paymentStatus": "Pending",
+    "id": "ORD-030",
+    "customerPhone": "8698608166",
+    "updatedAt": "2026-03-28T11:38:47.949Z",
+    "orderNumber": "ORD-1030",
+    "paymentMethod": "COD",
+    "tax": 172.8,
+    "statusHistory": [
+      {
+        "status": "Placed",
+        "timestamp": "2026-03-28T09:28:56.503Z"
+      },
+      {
+        "status": "confirmed",
+        "timestamp": "2026-03-28T11:38:47.949Z"
+      }
+    ],
+    "customerName": "Masala",
+    "userId": "USR-008",
+    "subtotal": 960,
+    "couponCode": null
+  },
+  {
+    "orderDate": "2026-03-28T09:29:11.990Z",
+    "total": 1152.8,
+    "items": [
+      {
+        "quantity": 2,
+        "price": 480,
+        "image": "/images/coca-cola.svg",
+        "deliveryCharge": 10,
+        "name": "Coca Cola 300ml",
+        "gstPercent": null,
+        "productId": "PRD-001"
+      }
+    ],
+    "deliveryCharge": 20,
+    "deliveryAddress": "fasdf",
+    "orderStatus": "Cancelled",
+    "discount": 0,
+    "paymentStatus": "Pending",
+    "updatedAt": "2026-03-28T09:29:46.193Z",
+    "orderNumber": "ORD-1031",
+    "id": "ORD-031",
+    "customerPhone": "8698608166",
+    "paymentMethod": "COD",
+    "customerName": "Masala",
+    "tax": 172.8,
+    "statusHistory": [
+      {
+        "timestamp": "2026-03-28T09:29:11.990Z",
+        "status": "Placed"
+      },
+      {
+        "status": "Cancelled",
+        "note": "Cancelled by customer",
+        "timestamp": "2026-03-28T09:29:46.193Z"
+      }
+    ],
+    "userId": "USR-008",
+    "subtotal": 960,
+    "couponCode": null
+  },
+  {
+    "customerPhone": "8698608166",
+    "id": "ORD-032",
+    "orderNumber": "ORD-1032",
+    "updatedAt": "2026-03-28T11:13:33.071Z",
+    "paymentStatus": "Pending",
+    "discount": 0,
+    "orderStatus": "delivered",
+    "deliveryAddress": "fasdf",
+    "deliveryCharge": 0,
+    "items": [
+      {
+        "image": "",
+        "quantity": 10,
+        "price": 200,
+        "deliveryCharge": 0,
+        "gstPercent": 0,
+        "name": "FRUITY",
+        "productId": "PRD-012"
+      }
+    ],
+    "total": 2000,
+    "orderDate": "2026-03-28T11:12:13.563Z",
+    "couponCode": null,
+    "rating": {
+      "score": 5,
+      "ratedAt": "2026-03-28T13:13:29.879Z",
+      "ratedBy": "USR-008",
+      "comment": ""
+    },
+    "subtotal": 2000,
+    "userId": "USR-008",
+    "statusHistory": [
+      {
+        "timestamp": "2026-03-28T11:12:13.563Z",
+        "status": "Placed"
+      },
+      {
+        "status": "confirmed",
+        "timestamp": "2026-03-28T11:12:40.921Z"
+      },
+      {
+        "timestamp": "2026-03-28T11:13:08.536Z",
+        "status": "processing"
+      },
+      {
+        "timestamp": "2026-03-28T11:13:25.401Z",
+        "status": "shipped"
+      },
+      {
+        "timestamp": "2026-03-28T11:13:33.071Z",
+        "status": "delivered"
+      }
+    ],
+    "tax": 0,
+    "customerName": "Masala",
+    "paymentMethod": "COD"
+  },
+  {
+    "orderNumber": "ORD-1033",
+    "updatedAt": "2026-03-28T12:33:38.226Z",
+    "id": "ORD-033",
+    "customerPhone": "8698608166",
+    "discount": 0,
+    "paymentStatus": "Pending",
+    "deliveryCharge": 0,
+    "deliveryAddress": "fasdf",
+    "orderStatus": "Placed",
+    "total": 1800,
+    "orderDate": "2026-03-28T12:33:38.226Z",
+    "items": [
+      {
+        "image": "",
+        "quantity": 9,
+        "price": 200,
+        "deliveryCharge": 0,
+        "name": "FRUITY",
+        "gstPercent": 0,
+        "productId": "PRD-012"
+      }
+    ],
+    "subtotal": 1800,
+    "couponCode": null,
+    "userId": "USR-008",
+    "customerName": "Masala",
+    "tax": 0,
+    "statusHistory": [
+      {
+        "timestamp": "2026-03-28T12:33:38.226Z",
+        "status": "Placed"
+      }
+    ],
+    "paymentMethod": "COD"
+  },
+  {
+    "total": 18000,
+    "orderDate": "2026-03-28T12:44:21.075Z",
+    "items": [
+      {
+        "deliveryCharge": 0,
+        "image": "",
+        "quantity": 90,
+        "price": 200,
+        "productId": "PRD-012",
+        "name": "FRUITY",
+        "gstPercent": 0
+      }
+    ],
+    "deliveryAddress": "fasdf",
+    "orderStatus": "confirmed",
+    "deliveryCharge": 0,
+    "discount": 0,
+    "paymentStatus": "Pending",
+    "id": "ORD-034",
+    "customerPhone": "8698608166",
+    "orderNumber": "ORD-1034",
+    "updatedAt": "2026-03-28T12:44:37.455Z",
+    "paymentMethod": "COD",
+    "tax": 0,
+    "statusHistory": [
+      {
+        "timestamp": "2026-03-28T12:44:21.075Z",
+        "status": "Placed"
+      },
+      {
+        "status": "confirmed",
+        "timestamp": "2026-03-28T12:44:37.455Z"
+      }
+    ],
+    "customerName": "Masala",
+    "userId": "USR-008",
+    "subtotal": 18000,
+    "couponCode": null
+  },
+  {
+    "updatedAt": "2026-03-29T08:11:16.085Z",
+    "orderNumber": "ORD-1035",
+    "id": "ORD-035",
+    "customerPhone": "8698608166",
+    "discount": 0,
+    "paymentStatus": "Pending",
+    "deliveryCharge": 0,
+    "deliveryAddress": "fasdf",
+    "orderStatus": "confirmed",
+    "orderDate": "2026-03-28T13:15:54.392Z",
+    "total": 200,
+    "items": [
+      {
+        "deliveryCharge": 0,
+        "quantity": 1,
+        "price": 200,
+        "image": "https://lh3.googleusercontent.com/d/1X0snaRimWmC8gZw16YbnHVTt5UswBUut",
+        "productId": "PRD-011",
+        "gstPercent": 0,
+        "name": "FIZZZ"
+      }
+    ],
+    "subtotal": 200,
+    "couponCode": null,
+    "userId": "USR-008",
+    "customerName": "Masala",
+    "tax": 0,
+    "statusHistory": [
+      {
+        "status": "Placed",
+        "timestamp": "2026-03-28T13:15:54.392Z"
+      },
+      {
+        "timestamp": "2026-03-29T08:11:16.085Z",
+        "status": "confirmed"
+      }
+    ],
+    "paymentMethod": "COD"
+  },
+  {
+    "userId": "USR-010",
+    "couponCode": null,
+    "subtotal": 4000,
+    "paymentMethod": "COD",
+    "customerName": "GULAM",
+    "statusHistory": [
+      {
+        "timestamp": "2026-03-29T07:14:17.024Z",
+        "status": "Placed"
+      },
+      {
+        "timestamp": "2026-03-29T07:15:26.845Z",
+        "status": "confirmed"
+      },
+      {
+        "timestamp": "2026-03-29T07:16:02.749Z",
+        "status": "processing"
+      },
+      {
+        "timestamp": "2026-03-29T07:16:24.131Z",
+        "status": "shipped"
+      },
+      {
+        "status": "delivered",
+        "timestamp": "2026-03-29T07:16:40.718Z"
+      }
+    ],
+    "tax": 0,
+    "paymentStatus": "Pending",
+    "discount": 0,
+    "orderNumber": "ORD-1036",
+    "updatedAt": "2026-03-29T07:16:40.718Z",
+    "customerPhone": "9834827675",
+    "id": "ORD-036",
+    "items": [
+      {
+        "deliveryCharge": 0,
+        "price": 400,
+        "quantity": 10,
+        "image": "https://lh3.googleusercontent.com/d/1lBmB8pkV_1OJyElRSCqAIm1Ywh01uw8m",
+        "productId": "PRD-013",
+        "gstPercent": 0,
+        "name": "FRUITY"
+      }
+    ],
+    "total": 4000,
+    "orderDate": "2026-03-29T07:14:17.024Z",
+    "deliveryCharge": 0,
+    "orderStatus": "delivered",
+    "deliveryAddress": "Faizan barkat masjid"
+  },
+  {
+    "customerDeliveryConfirmed": true,
+    "deliveryConfirmationRequestedBy": "USR-001",
+    "deliveredAt": "2026-03-29T08:28:41.997Z",
+    "outstandingAddedAt": "2026-03-29T08:28:42.000Z",
+    "userId": "USR-010",
+    "orderDate": "2026-03-29T08:12:39.221Z",
+    "deliveryConfirmationRequestedAt": "2026-03-29T08:18:14.099Z",
+    "items": [
+      {
+        "productId": "PRD-013",
+        "gstPercent": 0,
+        "name": "FRUITY",
+        "deliveryCharge": 0,
+        "quantity": 10,
+        "price": 400,
+        "image": "https://lh3.googleusercontent.com/d/1lBmB8pkV_1OJyElRSCqAIm1Ywh01uw8m"
+      }
+    ],
+    "deliveryCharge": 0,
+    "deliveryAddress": "Faizan barkat masjid",
+    "orderStatus": "delivered",
+    "discount": 0,
+    "paymentStatus": "Pending",
+    "updatedAt": "2026-03-29T08:28:41.997Z",
+    "id": "ORD-037",
+    "paymentMethod": "COD",
+    "customerName": "GULAM",
+    "outstandingAdded": true,
+    "tax": 0,
+    "statusHistory": [
+      {
+        "status": "Placed",
+        "timestamp": "2026-03-29T08:12:39.221Z"
+      },
+      {
+        "status": "confirmed",
+        "timestamp": "2026-03-29T08:12:51.434Z"
+      },
+      {
+        "timestamp": "2026-03-29T08:13:07.728Z",
+        "status": "processing"
+      },
+      {
+        "status": "shipped",
+        "timestamp": "2026-03-29T08:13:08.639Z"
+      },
+      {
+        "timestamp": "2026-03-29T08:18:14.099Z",
+        "note": "Customer delivery confirmation requested by admin",
+        "status": "Awaiting Confirmation"
+      },
+      {
+        "note": "Confirmed by customer",
+        "timestamp": "2026-03-29T08:28:41.997Z",
+        "status": "Delivered"
+      }
+    ],
+    "subtotal": 4000,
+    "couponCode": null,
+    "total": 4000,
+    "outstandingAddedBy": "customer",
+    "customerDeliveryConfirmedAt": "2026-03-29T08:28:41.997Z",
+    "orderNumber": "ORD-1037",
+    "deliveryConfirmedBy": "customer",
+    "customerPhone": "9834827675"
+  },
+  {
+    "customerName": "GULAM",
+    "statusHistory": [
+      {
+        "timestamp": "2026-03-29T08:28:31.600Z",
+        "status": "Placed"
+      },
+      {
+        "status": "Cancelled",
+        "timestamp": "2026-03-31T14:46:57.905Z",
+        "note": "Cancelled by customer"
+      }
+    ],
+    "tax": 0,
+    "paymentMethod": "COD",
+    "couponCode": null,
+    "subtotal": 4000,
+    "userId": "USR-010",
+    "deliveryCharge": 0,
+    "orderStatus": "Cancelled",
+    "deliveryAddress": "Faizan barkat masjid",
+    "items": [
+      {
+        "image": "https://lh3.googleusercontent.com/d/1lBmB8pkV_1OJyElRSCqAIm1Ywh01uw8m",
+        "quantity": 10,
+        "price": 400,
+        "deliveryCharge": 0,
+        "gstPercent": 0,
+        "name": "FRUITY",
+        "productId": "PRD-013"
+      }
+    ],
+    "total": 4000,
+    "orderDate": "2026-03-29T08:28:31.600Z",
+    "orderNumber": "ORD-1038",
+    "updatedAt": "2026-03-31T14:46:57.905Z",
+    "customerPhone": "9834827675",
+    "id": "ORD-038",
+    "paymentStatus": "Pending",
+    "discount": 0
+  },
+  {
+    "id": "ORD-039",
+    "customerPhone": "9834827675",
+    "updatedAt": "2026-03-31T15:04:48.926Z",
+    "orderNumber": "ORD-1039",
+    "discount": 0,
+    "paymentStatus": "Pending",
+    "deliveryAddress": "Faizan barkat masjid",
+    "orderStatus": "Cancelled",
+    "deliveryCharge": 0,
+    "total": 30000,
+    "orderDate": "2026-03-29T08:32:29.953Z",
+    "items": [
+      {
+        "deliveryCharge": 0,
+        "quantity": 75,
+        "price": 400,
+        "image": "https://lh3.googleusercontent.com/d/1lBmB8pkV_1OJyElRSCqAIm1Ywh01uw8m",
+        "productId": "PRD-013",
+        "gstPercent": 0,
+        "name": "FRUITY"
+      }
+    ],
+    "subtotal": 30000,
+    "couponCode": null,
+    "userId": "USR-010",
+    "tax": 0,
+    "statusHistory": [
+      {
+        "status": "Placed",
+        "timestamp": "2026-03-29T08:32:29.953Z"
+      },
+      {
+        "status": "confirmed",
+        "timestamp": "2026-03-29T08:33:14.988Z"
+      },
+      {
+        "status": "Cancelled",
+        "timestamp": "2026-03-31T15:04:48.926Z",
+        "note": "Cancelled by customer"
+      }
+    ],
+    "customerName": "GULAM",
+    "paymentMethod": "COD"
+  },
+  {
+    "items": [
+      {
+        "quantity": 10,
+        "price": 200,
+        "image": "https://lh3.googleusercontent.com/d/1rBAiyppb-NglGdmdmtLOyYjPK3x1teQC",
+        "deliveryCharge": 0,
+        "name": "APPE",
+        "gstPercent": 0,
+        "productId": "PRD-010"
+      }
+    ],
+    "orderDate": "2026-03-29T08:52:40.302Z",
+    "total": 2000,
+    "orderStatus": "Cancelled",
+    "deliveryAddress": "Faizan barkat masjid",
+    "deliveryCharge": 0,
+    "paymentStatus": "Paid",
+    "discount": 0,
+    "customerPhone": "9834827675",
+    "id": "ORD-040",
+    "orderNumber": "ORD-1040",
+    "updatedAt": "2026-03-29T09:03:45.631Z",
+    "paymentMethod": "Online",
+    "statusHistory": [
+      {
+        "timestamp": "2026-03-29T08:52:40.302Z",
+        "status": "Placed"
+      },
+      {
+        "timestamp": "2026-03-29T09:01:35.826Z",
+        "status": "confirmed"
+      },
+      {
+        "status": "Cancelled",
+        "note": "Cancelled by customer",
+        "timestamp": "2026-03-29T09:03:45.631Z"
+      }
+    ],
+    "tax": 0,
+    "customerName": "GULAM",
+    "paymentVerifiedAt": "2026-03-29T08:53:27.569Z",
+    "userId": "USR-010",
+    "couponCode": null,
+    "subtotal": 2000,
+    "paymentActionBy": "admin"
+  },
+  {
+    "items": [
+      {
+        "image": "https://lh3.googleusercontent.com/d/1lBmB8pkV_1OJyElRSCqAIm1Ywh01uw8m",
+        "price": 400,
+        "quantity": 5,
+        "deliveryCharge": 0,
+        "name": "FRUITY",
+        "gstPercent": 0,
+        "productId": "PRD-013"
+      }
+    ],
+    "deliveryConfirmationRequestedAt": "2026-03-29T09:11:25.166Z",
+    "orderDate": "2026-03-29T09:05:43.691Z",
+    "orderStatus": "delivered",
+    "deliveryAddress": "Faizan barkat masjid",
+    "deliveryCharge": 0,
+    "paymentStatus": "Rejected",
+    "discount": 0,
+    "paymentRejectedAt": "2026-03-29T09:08:16.999Z",
+    "id": "ORD-041",
+    "updatedAt": "2026-03-29T09:11:45.477Z",
+    "customerDeliveryConfirmed": true,
+    "deliveredAt": "2026-03-29T09:11:45.477Z",
+    "deliveryConfirmationRequestedBy": "USR-001",
+    "userId": "USR-010",
+    "total": 2000,
+    "customerDeliveryConfirmedAt": "2026-03-29T09:11:45.477Z",
+    "deliveryConfirmedBy": "customer",
+    "customerPhone": "9834827675",
+    "orderNumber": "ORD-1041",
+    "paymentMethod": "Online",
+    "statusHistory": [
+      {
+        "timestamp": "2026-03-29T09:05:43.691Z",
+        "status": "Placed"
+      },
+      {
+        "timestamp": "2026-03-29T09:11:14.899Z",
+        "status": "confirmed"
+      },
+      {
+        "status": "processing",
+        "timestamp": "2026-03-29T09:11:20.266Z"
+      },
+      {
+        "timestamp": "2026-03-29T09:11:21.766Z",
+        "status": "shipped"
+      },
+      {
+        "timestamp": "2026-03-29T09:11:25.166Z",
+        "note": "Customer delivery confirmation requested by admin",
+        "status": "Awaiting Confirmation"
+      },
+      {
+        "note": "Confirmed by customer",
+        "timestamp": "2026-03-29T09:11:45.477Z",
+        "status": "Delivered"
+      }
+    ],
+    "tax": 0,
+    "customerName": "GULAM",
+    "couponCode": null,
+    "paymentActionBy": "admin",
+    "subtotal": 2000
+  },
+  {
+    "total": 200,
+    "orderDate": "2026-03-30T08:02:24.846Z",
+    "items": [
+      {
+        "purchaseMode": "full_box",
+        "gstPercent": 0,
+        "name": "FRUITY",
+        "deliveryCharge": 0,
+        "boxEquivalent": 1,
+        "image": "",
+        "productId": "PRD-012",
+        "pricePerBox": 200,
+        "boxQuantity": 20,
+        "unitLabel": "box",
+        "quantity": 1,
+        "price": 200
+      }
+    ],
+    "deliveryAddress": "100 feet Road\nbehind sumaiyya marriage halll",
+    "orderStatus": "Placed",
+    "deliveryCharge": 0,
+    "discount": 0,
+    "paymentStatus": "Pending",
+    "id": "ORD-042",
+    "customerPhone": "9172632945",
+    "orderNumber": "ORD-1042",
+    "updatedAt": "2026-03-30T08:02:24.846Z",
+    "paymentMethod": "COD",
+    "tax": 0,
+    "statusHistory": [
+      {
+        "status": "Placed",
+        "timestamp": "2026-03-30T08:02:24.846Z"
+      }
+    ],
+    "customerName": "REHAN",
+    "userId": "USR-002",
+    "subtotal": 200,
+    "couponCode": null
+  },
+  {
+    "paymentMethod": "COD",
+    "statusHistory": [
+      {
+        "timestamp": "2026-03-30T09:00:13.683Z",
+        "status": "Placed"
+      }
+    ],
+    "tax": 0,
+    "customerName": "REHAN",
+    "userId": "USR-002",
+    "couponCode": null,
+    "subtotal": 480,
+    "items": [
+      {
+        "boxQuantity": 24,
+        "quantity": 1,
+        "price": 480,
+        "unitLabel": "box",
+        "pricePerBox": 480,
+        "productId": "PRD-001",
+        "image": "/images/coca-cola.svg",
+        "boxEquivalent": 1,
+        "deliveryCharge": 10,
+        "name": "Coca Cola 300ml",
+        "purchaseMode": "full_box",
+        "gstPercent": null
+      }
+    ],
+    "total": 490,
+    "orderDate": "2026-03-30T09:00:13.683Z",
+    "orderStatus": "Placed",
+    "deliveryAddress": "100 feet Road\nbehind sumaiyya marriage halll",
+    "deliveryCharge": 10,
+    "paymentStatus": "Pending",
+    "discount": 0,
+    "customerPhone": "9172632945",
+    "id": "ORD-043",
+    "updatedAt": "2026-03-30T09:00:13.683Z",
+    "orderNumber": "ORD-1043"
+  },
+  {
+    "deliveryCharge": 0,
+    "deliveryAddress": "100 feet Road\nbehind sumaiyya marriage halll",
+    "orderStatus": "delivered",
+    "orderDate": "2026-03-30T09:02:24.240Z",
+    "deliveryConfirmationRequestedAt": "2026-03-30T09:02:58.104Z",
+    "items": [
+      {
+        "productId": "PRD-012",
+        "pricePerBox": 200,
+        "quantity": 10,
+        "unitLabel": "boxes",
+        "boxQuantity": 20,
+        "price": 200,
+        "name": "FRUITY",
+        "purchaseMode": "full_box",
+        "gstPercent": 0,
+        "deliveryCharge": 0,
+        "boxEquivalent": 10,
+        "image": ""
+      }
+    ],
+    "updatedAt": "2026-03-30T09:03:59.987Z",
+    "id": "ORD-044",
+    "discount": 0,
+    "paymentStatus": "Pending",
+    "deliveredAt": "2026-03-30T09:03:59.987Z",
+    "deliveryConfirmationRequestedBy": "USR-001",
+    "outstandingAddedAt": "2026-03-30T09:03:59.990Z",
+    "customerDeliveryConfirmed": true,
+    "userId": "USR-002",
+    "outstandingAddedBy": "customer",
+    "customerDeliveryConfirmedAt": "2026-03-30T09:03:59.987Z",
+    "total": 2000,
+    "orderNumber": "ORD-1044",
+    "deliveryConfirmedBy": "customer",
+    "customerPhone": "9172632945",
+    "customerName": "REHAN",
+    "outstandingAdded": true,
+    "tax": 0,
+    "statusHistory": [
+      {
+        "timestamp": "2026-03-30T09:02:24.240Z",
+        "status": "Placed"
+      },
+      {
+        "status": "confirmed",
+        "timestamp": "2026-03-30T09:02:38.620Z"
+      },
+      {
+        "status": "processing",
+        "timestamp": "2026-03-30T09:02:40.636Z"
+      },
+      {
+        "status": "shipped",
+        "timestamp": "2026-03-30T09:02:47.667Z"
+      },
+      {
+        "status": "Awaiting Confirmation",
+        "timestamp": "2026-03-30T09:02:58.104Z",
+        "note": "Customer delivery confirmation requested by admin"
+      },
+      {
+        "status": "Delivered",
+        "note": "Confirmed by customer",
+        "timestamp": "2026-03-30T09:03:59.987Z"
+      }
+    ],
+    "paymentMethod": "COD",
+    "subtotal": 2000,
+    "couponCode": null
+  },
+  {
+    "customerName": "REHAN",
+    "statusHistory": [
+      {
+        "status": "Placed",
+        "timestamp": "2026-03-30T09:10:30.794Z"
+      }
+    ],
+    "tax": 0,
+    "paymentMethod": "COD",
+    "couponCode": null,
+    "subtotal": 240,
+    "userId": "USR-002",
+    "deliveryCharge": 5,
+    "orderStatus": "Placed",
+    "deliveryAddress": "100 feet Road\nbehind sumaiyya marriage halll",
+    "items": [
+      {
+        "image": "/images/coca-cola.svg",
+        "deliveryCharge": 10,
+        "boxEquivalent": 0.5,
+        "purchaseMode": "half_box",
+        "gstPercent": null,
+        "name": "Coca Cola 300ml",
+        "boxQuantity": 24,
+        "price": 240,
+        "unitLabel": "half box",
+        "quantity": 1,
+        "pricePerBox": 480,
+        "productId": "PRD-001"
+      }
+    ],
+    "orderDate": "2026-03-30T09:10:30.794Z",
+    "total": 245,
+    "updatedAt": "2026-03-30T09:10:30.794Z",
+    "orderNumber": "ORD-1045",
+    "customerPhone": "9172632945",
+    "id": "ORD-045",
+    "paymentStatus": "Pending",
+    "discount": 0
+  },
+  {
+    "updatedAt": "2026-03-30T09:20:04.731Z",
+    "id": "ORD-046",
+    "discount": 0,
+    "paymentStatus": "Pending",
+    "deliveryCharge": 5,
+    "deliveryAddress": "100 feet Road\nbehind sumaiyya marriage halll",
+    "orderStatus": "delivered",
+    "orderDate": "2026-03-30T09:19:06.938Z",
+    "deliveryConfirmationRequestedAt": "2026-03-30T09:20:04.099Z",
+    "items": [
+      {
+        "name": "FRUITY",
+        "gstPercent": 0,
+        "purchaseMode": "full_box",
+        "image": "",
+        "deliveryCharge": 0,
+        "boxEquivalent": 1,
+        "productId": "PRD-012",
+        "price": 200,
+        "boxQuantity": 20,
+        "unitLabel": "box",
+        "quantity": 1,
+        "pricePerBox": 200
+      },
+      {
+        "image": "https://lh3.googleusercontent.com/d/1rBAiyppb-NglGdmdmtLOyYjPK3x1teQC",
+        "deliveryCharge": 0,
+        "boxEquivalent": 1,
+        "gstPercent": 0,
+        "purchaseMode": "full_box",
+        "name": "APPE",
+        "price": 200,
+        "boxQuantity": 12,
+        "unitLabel": "box",
+        "quantity": 1,
+        "pricePerBox": 200,
+        "productId": "PRD-010"
+      },
+      {
+        "productId": "PRD-001",
+        "pricePerBox": 480,
+        "quantity": 1,
+        "unitLabel": "half box",
+        "price": 240,
+        "boxQuantity": 24,
+        "name": "Coca Cola 300ml",
+        "purchaseMode": "half_box",
+        "gstPercent": null,
+        "deliveryCharge": 10,
+        "boxEquivalent": 0.5,
+        "image": "/images/coca-cola.svg"
+      }
+    ],
+    "userId": "USR-002",
+    "deliveredAt": "2026-03-30T09:20:04.731Z",
+    "deliveryConfirmationRequestedBy": "USR-001",
+    "outstandingAddedAt": "2026-03-30T09:20:04.733Z",
+    "orderNumber": "ORD-1046",
+    "deliveryConfirmedBy": "admin",
+    "customerPhone": "9172632945",
+    "outstandingAddedBy": "admin",
+    "total": 645,
+    "subtotal": 640,
+    "couponCode": null,
+    "customerName": "REHAN",
+    "outstandingAdded": true,
+    "tax": 0,
+    "statusHistory": [
+      {
+        "status": "Placed",
+        "timestamp": "2026-03-30T09:19:06.938Z"
+      },
+      {
+        "status": "confirmed",
+        "timestamp": "2026-03-30T09:19:58.401Z"
+      },
+      {
+        "status": "processing",
+        "timestamp": "2026-03-30T09:20:01.197Z"
+      },
+      {
+        "status": "shipped",
+        "timestamp": "2026-03-30T09:20:03.255Z"
+      },
+      {
+        "timestamp": "2026-03-30T09:20:04.099Z",
+        "note": "Customer delivery confirmation requested by admin",
+        "status": "Awaiting Confirmation"
+      },
+      {
+        "status": "delivered",
+        "timestamp": "2026-03-30T09:20:04.731Z"
+      }
+    ],
+    "paymentMethod": "COD"
+  },
+  {
+    "statusHistory": [
+      {
+        "status": "Placed",
+        "timestamp": "2026-03-30T09:46:12.344Z"
+      },
+      {
+        "status": "confirmed",
+        "timestamp": "2026-03-31T06:14:18.045Z"
+      },
+      {
+        "timestamp": "2026-03-31T06:14:18.721Z",
+        "status": "processing"
+      },
+      {
+        "status": "shipped",
+        "timestamp": "2026-03-31T06:14:18.908Z"
+      },
+      {
+        "timestamp": "2026-03-31T06:14:19.823Z",
+        "note": "Customer delivery confirmation requested by admin",
+        "status": "Awaiting Confirmation"
+      },
+      {
+        "status": "delivered",
+        "timestamp": "2026-03-31T06:14:22.742Z"
+      }
+    ],
+    "tax": 0,
+    "outstandingAdded": true,
+    "customerName": "REHAN",
+    "paymentMethod": "COD",
+    "couponCode": null,
+    "subtotal": 920,
+    "outstandingAddedBy": "admin",
+    "total": 935,
+    "customerPhone": "9172632945",
+    "deliveryConfirmedBy": "admin",
+    "orderNumber": "ORD-1047",
+    "outstandingAddedAt": "2026-03-31T06:14:22.749Z",
+    "deliveredAt": "2026-03-31T06:14:22.742Z",
+    "deliveryConfirmationRequestedBy": "USR-001",
+    "userId": "USR-002",
+    "orderStatus": "delivered",
+    "deliveryAddress": "100 feet Road\nbehind sumaiyya marriage halll",
+    "deliveryCharge": 15,
+    "deliveryConfirmationRequestedAt": "2026-03-31T06:14:19.823Z",
+    "items": [
+      {
+        "boxEquivalent": 1,
+        "deliveryCharge": 0,
+        "image": "",
+        "purchaseMode": "full_box",
+        "name": "FRUITY",
+        "gstPercent": 0,
+        "pricePerBox": 200,
+        "boxQuantity": 20,
+        "unitLabel": "box",
+        "price": 200,
+        "quantity": 1,
+        "productId": "PRD-012"
+      },
+      {
+        "boxQuantity": 24,
+        "unitLabel": "box",
+        "quantity": 1,
+        "price": 480,
+        "pricePerBox": 480,
+        "productId": "PRD-001",
+        "image": "/images/coca-cola.svg",
+        "boxEquivalent": 1,
+        "deliveryCharge": 10,
+        "name": "Coca Cola 300ml",
+        "gstPercent": null,
+        "purchaseMode": "full_box"
+      },
+      {
+        "unitLabel": "half box",
+        "boxQuantity": 24,
+        "price": 240,
+        "quantity": 1,
+        "pricePerBox": 480,
+        "productId": "PRD-001",
+        "image": "/images/coca-cola.svg",
+        "boxEquivalent": 0.5,
+        "deliveryCharge": 10,
+        "purchaseMode": "half_box",
+        "name": "Coca Cola 300ml",
+        "gstPercent": null
+      }
+    ],
+    "orderDate": "2026-03-30T09:46:12.344Z",
+    "id": "ORD-047",
+    "updatedAt": "2026-03-31T06:14:22.742Z",
+    "paymentStatus": "Pending",
+    "discount": 0
+  },
+  {
+    "customerName": "REHAN",
+    "tax": 0,
+    "statusHistory": [
+      {
+        "timestamp": "2026-03-30T10:13:27.876Z",
+        "status": "Placed"
+      },
+      {
+        "timestamp": "2026-04-03T06:38:00.127Z",
+        "status": "confirmed"
+      }
+    ],
+    "paymentMethod": "Online",
+    "subtotal": 2000,
+    "couponCode": null,
+    "userId": "USR-002",
+    "deliveryCharge": 0,
+    "deliveryAddress": "100 feet Road\nbehind sumaiyya marriage halll",
+    "orderStatus": "confirmed",
+    "total": 2000,
+    "orderDate": "2026-03-30T10:13:27.876Z",
+    "items": [
+      {
+        "name": "FRUITY",
+        "gstPercent": 0,
+        "purchaseMode": "full_box",
+        "deliveryCharge": 0,
+        "boxEquivalent": 10,
+        "image": "",
+        "productId": "PRD-012",
+        "pricePerBox": 200,
+        "unitLabel": "boxes",
+        "boxQuantity": 20,
+        "price": 200,
+        "quantity": 10
+      }
+    ],
+    "updatedAt": "2026-04-03T06:38:00.127Z",
+    "orderNumber": "ORD-1048",
+    "id": "ORD-048",
+    "customerPhone": "9172632945",
+    "discount": 0,
+    "paymentStatus": "Verification Pending"
+  },
+  {
+    "deliveryAddress": "100 feet Road\nbehind sumaiyya marriage halll",
+    "orderStatus": "confirmed",
+    "deliveryCharge": 0,
+    "total": 2000,
+    "orderDate": "2026-03-30T10:14:37.209Z",
+    "items": [
+      {
+        "unitLabel": "boxes",
+        "boxQuantity": 20,
+        "price": 200,
+        "quantity": 10,
+        "pricePerBox": 200,
+        "productId": "PRD-012",
+        "image": "",
+        "deliveryCharge": 0,
+        "boxEquivalent": 10,
+        "gstPercent": 0,
+        "purchaseMode": "full_box",
+        "name": "FRUITY"
+      }
+    ],
+    "id": "ORD-049",
+    "customerPhone": "9172632945",
+    "orderNumber": "ORD-1049",
+    "updatedAt": "2026-04-03T06:37:54.490Z",
+    "discount": 0,
+    "paymentStatus": "Pending",
+    "tax": 0,
+    "statusHistory": [
+      {
+        "status": "Placed",
+        "timestamp": "2026-03-30T10:14:37.209Z"
+      },
+      {
+        "status": "confirmed",
+        "timestamp": "2026-04-03T06:37:54.490Z"
+      }
+    ],
+    "customerName": "REHAN",
+    "paymentMethod": "COD",
+    "subtotal": 2000,
+    "couponCode": null,
+    "userId": "USR-002"
+  },
+  {
+    "paymentStatus": "Pending",
+    "discount": 0,
+    "orderNumber": "ORD-1050",
+    "updatedAt": "2026-04-03T06:41:45.163Z",
+    "customerPhone": "9172632945",
+    "id": "ORD-050",
+    "items": [
+      {
+        "image": "",
+        "deliveryCharge": 0,
+        "boxEquivalent": 10,
+        "name": "FRUITY",
+        "gstPercent": 0,
+        "purchaseMode": "full_box",
+        "boxQuantity": 20,
+        "quantity": 10,
+        "unitLabel": "boxes",
+        "price": 200,
+        "pricePerBox": 200,
+        "productId": "PRD-012"
+      }
+    ],
+    "orderDate": "2026-03-30T10:32:15.478Z",
+    "total": 2000,
+    "deliveryCharge": 0,
+    "orderStatus": "confirmed",
+    "deliveryAddress": "100 feet Road\nbehind sumaiyya marriage halll",
+    "userId": "USR-002",
+    "couponCode": null,
+    "subtotal": 2000,
+    "paymentMethod": "COD",
+    "customerName": "REHAN",
+    "statusHistory": [
+      {
+        "timestamp": "2026-03-30T10:32:15.478Z",
+        "status": "Placed"
+      },
+      {
+        "timestamp": "2026-04-03T06:41:45.163Z",
+        "status": "confirmed"
+      }
+    ],
+    "tax": 0
+  },
+  {
+    "paymentMethod": "Online",
+    "statusHistory": [
+      {
+        "status": "Placed",
+        "timestamp": "2026-03-30T10:33:01.806Z"
+      },
+      {
+        "timestamp": "2026-04-03T06:29:45.611Z",
+        "status": "confirmed"
+      }
+    ],
+    "tax": 0,
+    "customerName": "REHAN",
+    "userId": "USR-002",
+    "couponCode": null,
+    "subtotal": 2000,
+    "items": [
+      {
+        "boxEquivalent": 10,
+        "deliveryCharge": 0,
+        "image": "",
+        "gstPercent": 0,
+        "purchaseMode": "full_box",
+        "name": "FRUITY",
+        "pricePerBox": 200,
+        "price": 200,
+        "quantity": 10,
+        "unitLabel": "boxes",
+        "boxQuantity": 20,
+        "productId": "PRD-012"
+      }
+    ],
+    "total": 2000,
+    "orderDate": "2026-03-30T10:33:01.806Z",
+    "orderStatus": "confirmed",
+    "deliveryAddress": "100 feet Road\nbehind sumaiyya marriage halll",
+    "deliveryCharge": 0,
+    "paymentStatus": "Verification Pending",
+    "discount": 0,
+    "customerPhone": "9172632945",
+    "id": "ORD-051",
+    "updatedAt": "2026-04-03T06:29:45.611Z",
+    "orderNumber": "ORD-1051"
+  },
+  {
+    "items": [
+      {
+        "unitLabel": "boxes",
+        "boxQuantity": 24,
+        "price": 480,
+        "quantity": 10,
+        "pricePerBox": 480,
+        "productId": "PRD-001",
+        "image": "/images/coca-cola.svg",
+        "boxEquivalent": 10,
+        "deliveryCharge": 10,
+        "name": "Coca Cola 300ml",
+        "gstPercent": null,
+        "purchaseMode": "full_box"
+      }
+    ],
+    "orderDate": "2026-03-30T10:38:34.398Z",
+    "total": 4900,
+    "orderStatus": "confirmed",
+    "deliveryAddress": "100 feet Road\nbehind sumaiyya marriage halll",
+    "deliveryCharge": 100,
+    "paymentStatus": "Pending",
+    "discount": 0,
+    "customerPhone": "9172632945",
+    "id": "ORD-052",
+    "updatedAt": "2026-04-03T06:29:13.038Z",
+    "orderNumber": "ORD-1052",
+    "paymentMethod": "COD",
+    "statusHistory": [
+      {
+        "timestamp": "2026-03-30T10:38:34.398Z",
+        "status": "Placed"
+      },
+      {
+        "timestamp": "2026-04-03T06:29:13.038Z",
+        "status": "confirmed"
+      }
+    ],
+    "tax": 0,
+    "customerName": "REHAN",
+    "userId": "USR-002",
+    "couponCode": null,
+    "subtotal": 4800
+  },
+  {
+    "deliveryCharge": 0,
+    "deliveryAddress": "100 feet Road\nbehind sumaiyya marriage halll",
+    "orderStatus": "delivered",
+    "orderDate": "2026-03-30T11:11:50.058Z",
+    "deliveryConfirmationRequestedAt": "2026-03-30T11:12:30.114Z",
+    "items": [
+      {
+        "name": "FRUITY",
+        "purchaseMode": "full_box",
+        "gstPercent": 0,
+        "image": "",
+        "boxEquivalent": 10,
+        "deliveryCharge": 0,
+        "productId": "PRD-012",
+        "unitLabel": "boxes",
+        "price": 200,
+        "boxQuantity": 20,
+        "quantity": 10,
+        "pricePerBox": 200
+      }
+    ],
+    "updatedAt": "2026-03-30T11:12:46.689Z",
+    "id": "ORD-053",
+    "discount": 0,
+    "paymentStatus": "Pending",
+    "deliveryConfirmationRequestedBy": "USR-001",
+    "deliveredAt": "2026-03-30T11:12:46.689Z",
+    "outstandingAddedAt": "2026-03-30T11:12:46.696Z",
+    "customerDeliveryConfirmed": true,
+    "userId": "USR-002",
+    "outstandingAddedBy": "customer",
+    "customerDeliveryConfirmedAt": "2026-03-30T11:12:46.689Z",
+    "total": 2000,
+    "orderNumber": "ORD-1053",
+    "deliveryConfirmedBy": "customer",
+    "customerPhone": "9172632945",
+    "customerName": "REHAN",
+    "outstandingAdded": true,
+    "tax": 0,
+    "statusHistory": [
+      {
+        "timestamp": "2026-03-30T11:11:50.058Z",
+        "status": "Placed"
+      },
+      {
+        "timestamp": "2026-03-30T11:12:03.276Z",
+        "status": "confirmed"
+      },
+      {
+        "status": "processing",
+        "timestamp": "2026-03-30T11:12:15.977Z"
+      },
+      {
+        "timestamp": "2026-03-30T11:12:16.408Z",
+        "status": "shipped"
+      },
+      {
+        "status": "Awaiting Confirmation",
+        "note": "Customer delivery confirmation requested by admin",
+        "timestamp": "2026-03-30T11:12:30.114Z"
+      },
+      {
+        "status": "Delivered",
+        "timestamp": "2026-03-30T11:12:46.689Z",
+        "note": "Confirmed by customer"
+      }
+    ],
+    "paymentMethod": "COD",
+    "subtotal": 2000,
+    "couponCode": null
+  },
+  {
+    "total": 1540,
+    "orderDate": "2026-03-31T14:46:43.147Z",
+    "deliveryConfirmationRequestedAt": "2026-04-03T06:28:59.439Z",
+    "items": [
+      {
+        "purchaseMode": "full_box",
+        "name": "Sprite 750ml",
+        "gstPercent": null,
+        "image": "/images/sprite.svg",
+        "deliveryCharge": 20,
+        "boxEquivalent": 1,
+        "productId": "PRD-005",
+        "unitLabel": "box",
+        "price": 600,
+        "quantity": 1,
+        "boxQuantity": 12,
+        "pricePerBox": 600
+      },
+      {
+        "boxEquivalent": 2,
+        "deliveryCharge": 10,
+        "image": "/images/real-mango.svg",
+        "purchaseMode": "full_box",
+        "gstPercent": null,
+        "name": "Maaza Mango 200ml",
+        "pricePerBox": 450,
+        "unitLabel": "boxes",
+        "quantity": 2,
+        "boxQuantity": 30,
+        "price": 450,
+        "productId": "PRD-003"
+      }
+    ],
+    "deliveryAddress": "Faizan barkat masjid",
+    "orderStatus": "shipped",
+    "deliveryCharge": 40,
+    "discount": 0,
+    "paymentStatus": "Pending",
+    "id": "ORD-054",
+    "customerPhone": "9834827675",
+    "updatedAt": "2026-04-03T06:28:59.439Z",
+    "orderNumber": "ORD-1054",
+    "paymentMethod": "COD",
+    "tax": 0,
+    "statusHistory": [
+      {
+        "timestamp": "2026-03-31T14:46:43.147Z",
+        "status": "Placed"
+      },
+      {
+        "timestamp": "2026-04-03T06:26:36.021Z",
+        "status": "confirmed"
+      },
+      {
+        "status": "processing",
+        "timestamp": "2026-04-03T06:28:56.504Z"
+      },
+      {
+        "timestamp": "2026-04-03T06:28:58.293Z",
+        "status": "shipped"
+      },
+      {
+        "status": "Awaiting Confirmation",
+        "timestamp": "2026-04-03T06:28:59.439Z",
+        "note": "Customer delivery confirmation requested by admin"
+      }
+    ],
+    "customerName": "GULAM",
+    "deliveryConfirmationRequestedBy": "USR-001",
+    "userId": "USR-010",
+    "subtotal": 1500,
+    "couponCode": null
+  },
+  {
+    "updatedAt": "2026-03-31T15:10:49.727Z",
+    "orderNumber": "ORD-1055",
+    "id": "ORD-055",
+    "customerPhone": "9834827675",
+    "discount": 0,
+    "paymentStatus": "Pending",
+    "deliveryCharge": 50,
+    "deliveryAddress": "Faizan barkat masjid",
+    "orderStatus": "Cancelled",
+    "orderDate": "2026-03-31T15:09:55.561Z",
+    "total": 2450,
+    "items": [
+      {
+        "pricePerBox": 720,
+        "price": 720,
+        "boxQuantity": 24,
+        "quantity": 2,
+        "unitLabel": "boxes",
+        "productId": "PRD-002",
+        "deliveryCharge": 15,
+        "boxEquivalent": 2,
+        "image": "/images/pepsi.svg",
+        "gstPercent": null,
+        "name": "Pepsi 500ml",
+        "purchaseMode": "full_box"
+      },
+      {
+        "gstPercent": null,
+        "purchaseMode": "full_box",
+        "name": "Coca Cola 300ml",
+        "image": "/images/coca-cola.svg",
+        "boxEquivalent": 2,
+        "deliveryCharge": 10,
+        "productId": "PRD-001",
+        "price": 480,
+        "boxQuantity": 24,
+        "quantity": 2,
+        "unitLabel": "boxes",
+        "pricePerBox": 480
+      }
+    ],
+    "subtotal": 2400,
+    "couponCode": null,
+    "userId": "USR-010",
+    "customerName": "GULAM",
+    "tax": 0,
+    "statusHistory": [
+      {
+        "timestamp": "2026-03-31T15:09:55.561Z",
+        "status": "Placed"
+      },
+      {
+        "timestamp": "2026-03-31T15:10:49.727Z",
+        "note": "Cancelled by customer",
+        "status": "Cancelled"
+      }
+    ],
+    "paymentMethod": "COD"
+  },
+  {
+    "subtotal": 1040,
+    "couponCode": null,
+    "paymentMethod": "COD",
+    "tax": 0,
+    "statusHistory": [
+      {
+        "status": "Placed",
+        "timestamp": "2026-04-01T13:59:55.769Z"
+      },
+      {
+        "timestamp": "2026-04-01T14:00:12.640Z",
+        "status": "confirmed"
+      },
+      {
+        "status": "processing",
+        "timestamp": "2026-04-01T14:00:21.251Z"
+      },
+      {
+        "timestamp": "2026-04-01T14:00:33.156Z",
+        "status": "shipped"
+      },
+      {
+        "status": "Awaiting Confirmation",
+        "timestamp": "2026-04-01T14:00:40.190Z",
+        "note": "Customer delivery confirmation requested by admin"
+      },
+      {
+        "note": "Confirmed by customer",
+        "timestamp": "2026-04-01T14:01:25.897Z",
+        "status": "Delivered"
+      }
+    ],
+    "customerName": "GULAM",
+    "outstandingAdded": true,
+    "deliveryConfirmedBy": "customer",
+    "customerPhone": "9834827675",
+    "orderNumber": "ORD-1056",
+    "total": 1045,
+    "customerDeliveryConfirmedAt": "2026-04-01T14:01:25.897Z",
+    "outstandingAddedBy": "customer",
+    "userId": "USR-010",
+    "customerDeliveryConfirmed": true,
+    "outstandingAddedAt": "2026-04-01T14:01:25.900Z",
+    "deliveryConfirmationRequestedBy": "USR-001",
+    "deliveredAt": "2026-04-01T14:01:25.897Z",
+    "discount": 0,
+    "paymentStatus": "Pending",
+    "id": "ORD-056",
+    "updatedAt": "2026-04-01T14:01:25.897Z",
+    "orderDate": "2026-04-01T13:59:55.769Z",
+    "deliveryConfirmationRequestedAt": "2026-04-01T14:00:40.190Z",
+    "items": [
+      {
+        "unitLabel": "boxes",
+        "quantity": 3,
+        "boxQuantity": 12,
+        "price": 200,
+        "pricePerBox": 200,
+        "productId": "PRD-010",
+        "image": "https://lh3.googleusercontent.com/d/1rBAiyppb-NglGdmdmtLOyYjPK3x1teQC",
+        "boxEquivalent": 3,
+        "deliveryCharge": 0,
+        "purchaseMode": "full_box",
+        "name": "APPE",
+        "gstPercent": 0
+      },
+      {
+        "boxQuantity": 20,
+        "unitLabel": "box",
+        "quantity": 1,
+        "price": 200,
+        "pricePerBox": 200,
+        "productId": "PRD-012",
+        "image": "",
+        "deliveryCharge": 0,
+        "boxEquivalent": 1,
+        "name": "FRUITY",
+        "gstPercent": 0,
+        "purchaseMode": "full_box"
+      },
+      {
+        "productId": "PRD-004",
+        "pricePerBox": 240,
+        "quantity": 1,
+        "price": 240,
+        "boxQuantity": 12,
+        "unitLabel": "box",
+        "name": "Bisleri Water 1L",
+        "gstPercent": null,
+        "purchaseMode": "full_box",
+        "boxEquivalent": 1,
+        "deliveryCharge": 5,
+        "image": "/images/bisleri.svg"
+      }
+    ],
+    "deliveryAddress": "Faizan barkat masjid",
+    "orderStatus": "delivered",
+    "deliveryCharge": 5
+  },
+  {
+    "paymentMethod": "COD",
+    "outstandingAdded": true,
+    "customerName": "GULAM",
+    "statusHistory": [
+      {
+        "timestamp": "2026-04-03T06:10:29.491Z",
+        "status": "Placed"
+      },
+      {
+        "status": "confirmed",
+        "timestamp": "2026-04-03T06:11:12.479Z"
+      },
+      {
+        "timestamp": "2026-04-03T06:11:29.791Z",
+        "status": "processing"
+      },
+      {
+        "timestamp": "2026-04-03T06:11:31.629Z",
+        "status": "shipped"
+      },
+      {
+        "note": "Customer delivery confirmation requested by admin",
+        "timestamp": "2026-04-03T06:11:34.374Z",
+        "status": "Awaiting Confirmation"
+      },
+      {
+        "note": "Confirmed by customer",
+        "timestamp": "2026-04-03T06:12:00.431Z",
+        "status": "Delivered"
+      }
+    ],
+    "tax": 0,
+    "couponCode": null,
+    "subtotal": 242.5,
+    "total": 247.5,
+    "outstandingAddedBy": "customer",
+    "customerDeliveryConfirmedAt": "2026-04-03T06:12:00.431Z",
+    "orderNumber": "ORD-1057",
+    "customerPhone": "9834827675",
+    "deliveryConfirmedBy": "customer",
+    "customerDeliveryConfirmed": true,
+    "deliveredAt": "2026-04-03T06:12:00.431Z",
+    "deliveryConfirmationRequestedBy": "USR-001",
+    "outstandingAddedAt": "2026-04-03T06:12:00.436Z",
+    "userId": "USR-010",
+    "deliveryConfirmationRequestedAt": "2026-04-03T06:11:34.374Z",
+    "items": [
+      {
+        "gstPercent": null,
+        "purchaseMode": "full_box",
+        "name": "Bisleri Water ",
+        "deliveryCharge": 5,
+        "boxEquivalent": 1,
+        "image": "data:image/jpeg;base64,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",
+        "productId": "PRD-004",
+        "pricePerBox": 240,
+        "price": 240,
+        "unitLabel": "box",
+        "quantity": 1,
+        "boxQuantity": 12
+      },
+      {
+        "productId": "PRD-007",
+        "pricePerBox": 300,
+        "unitLabel": "piece",
+        "boxQuantity": 120,
+        "quantity": 1,
+        "price": 2.5,
+        "gstPercent": 0,
+        "name": "Campa orange",
+        "purchaseMode": "piece",
+        "boxEquivalent": 0.01,
+        "deliveryCharge": 0,
+        "image": "data:image/jpeg;base64,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"
+      }
+    ],
+    "orderDate": "2026-04-03T06:10:29.491Z",
+    "deliveryCharge": 5,
+    "orderStatus": "delivered",
+    "deliveryAddress": "Faizan barkat masjid",
+    "paymentStatus": "Pending",
+    "discount": 0,
+    "updatedAt": "2026-04-03T06:12:00.431Z",
+    "id": "ORD-057"
+  },
+  {
+    "tax": 0,
+    "statusHistory": [
+      {
+        "status": "Placed",
+        "timestamp": "2026-04-03T06:53:38.988Z"
+      },
+      {
+        "note": "Cancelled by customer",
+        "timestamp": "2026-04-03T06:54:12.799Z",
+        "status": "Cancelled"
+      }
+    ],
+    "customerName": "GULAM",
+    "paymentMethod": "COD",
+    "subtotal": 2250,
+    "couponCode": null,
+    "userId": "USR-010",
+    "deliveryAddress": "Faizan barkat masjid 100 road",
+    "orderStatus": "Cancelled",
+    "deliveryCharge": 0,
+    "orderDate": "2026-04-03T06:53:38.988Z",
+    "total": 2250,
+    "items": [
+      {
+        "productId": "PRD-003",
+        "price": 450,
+        "quantity": 1,
+        "unitLabel": "box",
+        "boxQuantity": 30,
+        "pricePerBox": 450,
+        "gstPercent": null,
+        "name": "Maaza Mango ",
+        "purchaseMode": "full_box",
+        "image": "data:image/jpeg;base64,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",
+        "deliveryCharge": null,
+        "boxEquivalent": 1
+      },
+      {
+        "unitLabel": "boxes",
+        "boxQuantity": 12,
+        "price": 200,
+        "quantity": 9,
+        "pricePerBox": 200,
+        "productId": "PRD-005",
+        "image": "data:image/jpeg;base64,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",
+        "boxEquivalent": 9,
+        "deliveryCharge": null,
+        "purchaseMode": "full_box",
+        "gstPercent": null,
+        "name": "Sprite "
+      }
+    ],
+    "id": "ORD-058",
+    "customerPhone": "9834827675",
+    "orderNumber": "ORD-1058",
+    "updatedAt": "2026-04-03T06:54:12.799Z",
+    "discount": 0,
+    "paymentStatus": "Pending"
+  },
+  {
+    "id": "ORD-059",
+    "customerPhone": "9834827675",
+    "orderNumber": "ORD-1059",
+    "updatedAt": "2026-04-03T06:54:29.883Z",
+    "discount": 0,
+    "paymentStatus": "Pending",
+    "deliveryAddress": "Faizan barkat masjid",
+    "orderStatus": "Placed",
+    "deliveryCharge": 0,
+    "total": 206.5,
+    "orderDate": "2026-04-03T06:54:29.883Z",
+    "items": [
+      {
+        "name": "Sprite ",
+        "purchaseMode": "full_box",
+        "gstPercent": null,
+        "image": "data:image/jpeg;base64,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",
+        "deliveryCharge": null,
+        "boxEquivalent": 1,
+        "productId": "PRD-005",
+        "boxQuantity": 12,
+        "unitLabel": "box",
+        "price": 200,
+        "quantity": 1,
+        "pricePerBox": 200
+      },
+      {
+        "productId": "PRD-007",
+        "boxQuantity": 120,
+        "quantity": 1,
+        "price": 2.5,
+        "unitLabel": "piece",
+        "pricePerBox": 300,
+        "name": "Campa orange",
+        "purchaseMode": "piece",
+        "gstPercent": 0,
+        "image": "data:image/jpeg;base64,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",
+        "deliveryCharge": 0,
+        "boxEquivalent": 0.01
+      },
+      {
+        "gstPercent": 0,
+        "name": "Campa Lemon",
+        "purchaseMode": "piece",
+        "deliveryCharge": 0,
+        "boxEquivalent": 0.01,
+        "image": "https://5.imimg.com/data5/SELLER/Default/2023/7/323154654/NZ/PX/ZQ/148200806/campa-lemon-tin-can-drink-500x500.jpeg",
+        "productId": "PRD-008",
+        "pricePerBox": 400,
+        "quantity": 1,
+        "price": 4,
+        "unitLabel": "piece",
+        "boxQuantity": 100
+      }
+    ],
+    "subtotal": 206.5,
+    "couponCode": null,
+    "userId": "USR-010",
+    "tax": 0,
+    "statusHistory": [
+      {
+        "status": "Placed",
+        "timestamp": "2026-04-03T06:54:29.883Z"
+      }
+    ],
+    "customerName": "GULAM",
+    "paymentMethod": "COD"
+  },
+  {
+    "deliveryConfirmationRequestedAt": "2026-04-03T12:44:37.335Z",
+    "items": [
+      {
+        "pricePerBox": 300,
+        "boxQuantity": 12,
+        "unitLabel": "boxes",
+        "quantity": 10,
+        "price": 300,
+        "productId": "PRD-015",
+        "boxEquivalent": 10,
+        "deliveryCharge": 0,
+        "image": "data:image/jpeg;base64,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",
+        "gstPercent": 0,
+        "name": "FIZZZ",
+        "purchaseMode": "full_box"
+      }
+    ],
+    "orderDate": "2026-04-03T12:43:55.626Z",
+    "deliveryCharge": 0,
+    "orderStatus": "delivered",
+    "deliveryAddress": "fasdf",
+    "paymentStatus": "Paid",
+    "discount": 0,
+    "updatedAt": "2026-04-03T12:44:52.005Z",
+    "id": "ORD-060",
+    "customerDeliveryConfirmed": true,
+    "deliveredAt": "2026-04-03T12:44:52.005Z",
+    "deliveryConfirmationRequestedBy": "USR-001",
+    "userId": "USR-008",
+    "total": 3000,
+    "customerDeliveryConfirmedAt": "2026-04-03T12:44:52.005Z",
+    "orderNumber": "ORD-1060",
+    "deliveryConfirmedBy": "customer",
+    "customerPhone": "8698608166",
+    "paymentMethod": "Online",
+    "customerName": "Masala",
+    "paymentVerifiedAt": "2026-04-03T12:44:12.797Z",
+    "statusHistory": [
+      {
+        "timestamp": "2026-04-03T12:43:55.626Z",
+        "status": "Placed"
+      },
+      {
+        "status": "confirmed",
+        "timestamp": "2026-04-03T12:44:15.084Z"
+      },
+      {
+        "timestamp": "2026-04-03T12:44:31.074Z",
+        "status": "processing"
+      },
+      {
+        "status": "shipped",
+        "timestamp": "2026-04-03T12:44:32.667Z"
+      },
+      {
+        "status": "Awaiting Confirmation",
+        "timestamp": "2026-04-03T12:44:37.335Z",
+        "note": "Customer delivery confirmation requested by admin"
+      },
+      {
+        "status": "Delivered",
+        "timestamp": "2026-04-03T12:44:52.005Z",
+        "note": "Confirmed by customer"
+      }
+    ],
+    "tax": 0,
+    "couponCode": null,
+    "paymentActionBy": "admin",
+    "subtotal": 3000
+  },
+  {
+    "id": "ORD-061",
+    "customerPhone": "9423190308",
+    "orderNumber": "ORD-1061",
+    "updatedAt": "2026-04-03T14:38:45.338Z",
+    "discount": 0,
+    "paymentStatus": "Pending",
+    "deliveryAddress": "Jam ka mala Akhtar Nisha masjid",
+    "orderStatus": "Cancelled",
+    "deliveryCharge": 0,
+    "total": 8.33,
+    "orderDate": "2026-04-03T14:31:02.314Z",
+    "items": [
+      {
+        "image": "data:image/jpeg;base64,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",
+        "boxEquivalent": 0.04,
+        "deliveryCharge": 0,
+        "purchaseMode": "piece",
+        "gstPercent": 0,
+        "name": "Campa  Zero Sugar",
+        "price": 8.33,
+        "boxQuantity": 24,
+        "unitLabel": "piece",
+        "quantity": 1,
+        "pricePerBox": 200,
+        "productId": "PRD-011"
+      }
+    ],
+    "subtotal": 8.33,
+    "couponCode": null,
+    "userId": "USR-011",
+    "tax": 0,
+    "statusHistory": [
+      {
+        "timestamp": "2026-04-03T14:31:02.314Z",
+        "status": "Placed"
+      },
+      {
+        "note": "Cancelled by customer",
+        "timestamp": "2026-04-03T14:38:45.338Z",
+        "status": "Cancelled"
+      }
+    ],
+    "customerName": "Khan",
+    "paymentMethod": "COD"
+  },
+  {
+    "deliveryConfirmationRequestedAt": "2026-04-04T14:47:47.437Z",
+    "items": [
+      {
+        "productId": "PRD-008",
+        "price": 4,
+        "unitLabel": "piece",
+        "quantity": 1,
+        "boxQuantity": 100,
+        "pricePerBox": 400,
+        "purchaseMode": "piece",
+        "gstPercent": 0,
+        "name": "Campa Lemon",
+        "image": "https://5.imimg.com/data5/SELLER/Default/2023/7/323154654/NZ/PX/ZQ/148200806/campa-lemon-tin-can-drink-500x500.jpeg",
+        "deliveryCharge": 0,
+        "boxEquivalent": 0.01
+      }
+    ],
+    "orderDate": "2026-04-04T14:47:13.034Z",
+    "deliveryCharge": 0,
+    "orderStatus": "delivered",
+    "deliveryAddress": "Jam Ka Malha Green Kalni Dhule",
+    "paymentStatus": "Pending",
+    "discount": 0,
+    "updatedAt": "2026-04-04T14:48:23.592Z",
+    "id": "ORD-062",
+    "customerDeliveryConfirmed": true,
+    "deliveryConfirmationRequestedBy": "USR-001",
+    "deliveredAt": "2026-04-04T14:48:23.592Z",
+    "outstandingAddedAt": "2026-04-04T14:48:23.599Z",
+    "userId": "USR-012",
+    "total": 4,
+    "outstandingAddedBy": "customer",
+    "customerDeliveryConfirmedAt": "2026-04-04T14:48:23.592Z",
+    "orderNumber": "ORD-1062",
+    "deliveryConfirmedBy": "customer",
+    "customerPhone": "9763615754",
+    "paymentMethod": "COD",
+    "outstandingAdded": true,
+    "customerName": "Mudassir Khan",
+    "statusHistory": [
+      {
+        "timestamp": "2026-04-04T14:47:13.034Z",
+        "status": "Placed"
+      },
+      {
+        "timestamp": "2026-04-04T14:47:33.825Z",
+        "status": "confirmed"
+      },
+      {
+        "status": "processing",
+        "timestamp": "2026-04-04T14:47:43.701Z"
+      },
+      {
+        "timestamp": "2026-04-04T14:47:44.617Z",
+        "status": "shipped"
+      },
+      {
+        "note": "Customer delivery confirmation requested by admin",
+        "timestamp": "2026-04-04T14:47:47.437Z",
+        "status": "Awaiting Confirmation"
+      },
+      {
+        "timestamp": "2026-04-04T14:48:23.592Z",
+        "note": "Confirmed by customer",
+        "status": "Delivered"
+      }
+    ],
+    "tax": 0,
+    "couponCode": null,
+    "subtotal": 4
+  },
+  {
+    "discount": 0,
+    "paymentStatus": "Pending",
+    "id": "ORD-063",
+    "customerPhone": "9158425821",
+    "updatedAt": "2026-04-04T15:02:55.584Z",
+    "orderNumber": "ORD-1063",
+    "orderDate": "2026-04-04T15:02:26.622Z",
+    "total": 500,
+    "items": [
+      {
+        "productId": "PRD-001",
+        "pricePerBox": 500,
+        "boxQuantity": 24,
+        "price": 500,
+        "unitLabel": "box",
+        "quantity": 1,
+        "purchaseMode": "full_box",
+        "gstPercent": null,
+        "name": "Coca Cola",
+        "boxEquivalent": 1,
+        "deliveryCharge": null,
+        "image": "data:image/jpeg;base64,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"
+      }
+    ],
+    "deliveryAddress": "Jamka malla near faizane barkat masjid",
+    "orderStatus": "Cancelled",
+    "deliveryCharge": 0,
+    "userId": "USR-013",
+    "subtotal": 500,
+    "couponCode": null,
+    "paymentMethod": "COD",
+    "tax": 0,
+    "statusHistory": [
+      {
+        "timestamp": "2026-04-04T15:02:26.622Z",
+        "status": "Placed"
+      },
+      {
+        "status": "confirmed",
+        "timestamp": "2026-04-04T15:02:46.873Z"
+      },
+      {
+        "note": "Cancelled by customer",
+        "timestamp": "2026-04-04T15:02:55.584Z",
+        "status": "Cancelled"
+      }
+    ],
+    "customerName": "Ali amjad"
+  },
+  {
+    "outstandingAdded": true,
+    "customerName": "Ali amjad",
+    "statusHistory": [
+      {
+        "status": "Placed",
+        "timestamp": "2026-04-04T15:07:10.080Z"
+      },
+      {
+        "timestamp": "2026-04-04T15:07:30.621Z",
+        "status": "confirmed"
+      },
+      {
+        "timestamp": "2026-04-04T15:07:52.060Z",
+        "status": "processing"
+      },
+      {
+        "status": "shipped",
+        "timestamp": "2026-04-04T15:08:04.391Z"
+      },
+      {
+        "note": "Customer delivery confirmation requested by admin",
+        "timestamp": "2026-04-04T15:08:05.389Z",
+        "status": "Awaiting Confirmation"
+      },
+      {
+        "status": "Delivered",
+        "timestamp": "2026-04-04T15:08:33.912Z",
+        "note": "Confirmed by customer"
+      }
+    ],
+    "tax": 0,
+    "paymentMethod": "COD",
+    "couponCode": null,
+    "subtotal": 450,
+    "outstandingAddedBy": "customer",
+    "customerDeliveryConfirmedAt": "2026-04-04T15:08:33.912Z",
+    "total": 450,
+    "orderNumber": "ORD-1064",
+    "customerPhone": "9158425821",
+    "deliveryConfirmedBy": "customer",
+    "deliveryConfirmationRequestedBy": "USR-001",
+    "deliveredAt": "2026-04-04T15:08:33.912Z",
+    "outstandingAddedAt": "2026-04-04T15:08:33.915Z",
+    "customerDeliveryConfirmed": true,
+    "userId": "USR-013",
+    "deliveryCharge": 0,
+    "orderStatus": "delivered",
+    "deliveryAddress": "Jamka malla near faizane barkat masjid",
+    "deliveryConfirmationRequestedAt": "2026-04-04T15:08:05.389Z",
+    "items": [
+      {
+        "image": "data:image/jpeg;base64,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",
+        "deliveryCharge": null,
+        "boxEquivalent": 1,
+        "gstPercent": null,
+        "purchaseMode": "full_box",
+        "name": "Maaza Mango 10 mrp",
+        "boxQuantity": 30,
+        "price": 450,
+        "unitLabel": "box",
+        "quantity": 1,
+        "pricePerBox": 450,
+        "productId": "PRD-003"
+      }
+    ],
+    "orderDate": "2026-04-04T15:07:10.080Z",
+    "updatedAt": "2026-04-04T15:08:33.912Z",
+    "id": "ORD-064",
+    "paymentStatus": "Pending",
+    "discount": 0
+  }
+]
