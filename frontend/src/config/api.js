@@ -1,9 +1,10 @@
 import axios from 'axios'
 
-const API_HOST = typeof window !== 'undefined' ? window.location.hostname : 'localhost'
+const isLocal = typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+const BASE_URL = isLocal ? `http://localhost:8000/api` : `https://colddrinks-backend.onrender.com/api`
 
 const API = axios.create({
-  baseURL: `http://${API_HOST}:8000/api`,
+  baseURL: BASE_URL,
   headers: {
     'Content-Type': 'application/json'
   }
