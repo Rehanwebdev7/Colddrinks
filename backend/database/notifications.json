@@ -1,0 +1,42 @@
+[
+  {
+    "id": "NOTIF-001",
+    "type": "order",
+    "title": "Offline Sale Recorded",
+    "message": "SALE-5001 recorded for Walk-in Customer worth ₹450.00.",
+    "image": "",
+    "targetUserId": null,
+    "isRead": false,
+    "createdAt": "2026-04-05T06:58:21.904Z"
+  },
+  {
+    "id": "NOTIF-002",
+    "type": "order",
+    "title": "Offline Sale Recorded",
+    "message": "SALE-5002 recorded for REHAN worth ₹200.00.",
+    "image": "",
+    "targetUserId": null,
+    "isRead": false,
+    "createdAt": "2026-04-05T06:59:01.647Z"
+  },
+  {
+    "id": "NOTIF-003",
+    "type": "order",
+    "title": "Offline Sale Recorded",
+    "message": "SALE-5003 recorded for YEEER worth ₹650.00.",
+    "image": "",
+    "targetUserId": null,
+    "isRead": false,
+    "createdAt": "2026-04-05T07:05:13.190Z"
+  },
+  {
+    "id": "NOTIF-004",
+    "type": "order",
+    "title": "Offline Sale Recorded",
+    "message": "SALE-5004 recorded for Parvez  worth ₹45720.00.",
+    "image": "",
+    "targetUserId": null,
+    "isRead": false,
+    "createdAt": "2026-04-05T08:25:30.195Z"
+  }
+]

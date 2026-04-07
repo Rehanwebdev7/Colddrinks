@@ -1,0 +1,30 @@
+[
+  {
+    "name": "Rehan Shaikh",
+    "phone": "9090909090",
+    "id": "SUP-001",
+    "address": "100 feet Road",
+    "createdAt": "2026-04-03T13:14:30.211Z"
+  },
+  {
+    "createdAt": "2026-04-03T14:16:33.746Z",
+    "address": "100 feet Road",
+    "id": "SUP-002",
+    "phone": "9898989898",
+    "name": "Gulam"
+  },
+  {
+    "name": "NOOr",
+    "phone": "9098909899",
+    "id": "SUP-003",
+    "address": "100 feet Road",
+    "createdAt": "2026-04-04T14:07:55.594Z"
+  },
+  {
+    "name": "mujahid",
+    "phone": "7676767676",
+    "id": "SUP-004",
+    "address": "100 feet Road",
+    "createdAt": "2026-04-04T14:17:32.971Z"
+  }
+]

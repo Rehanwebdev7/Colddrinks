@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#FFD700"/>
+      <stop offset="50%" style="stop-color:#e6a800"/>
+      <stop offset="100%" style="stop-color:#cc8400"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="50%" cy="40%" r="50%">
+      <stop offset="0%" style="stop-color:rgba(255,255,255,0.25)"/>
+      <stop offset="100%" style="stop-color:rgba(255,255,255,0)"/>
+    </radialGradient>
+  </defs>
+  <rect width="400" height="400" fill="url(#bg)" rx="20"/>
+  <rect width="400" height="400" fill="url(#glow)"/>
+  <!-- Bottle shape -->
+  <path d="M178 310 L178 240 Q165 222 165 205 L165 148 Q165 128 175 118 L175 88 Q175 78 185 78 L215 78 Q225 78 225 88 L225 118 Q235 128 235 148 L235 205 Q235 222 222 240 L222 310 Q222 320 212 320 L188 320 Q178 320 178 310Z" fill="rgba(255,255,255,0.2)" stroke="rgba(255,255,255,0.5)" stroke-width="1.5"/>
+  <!-- Cap -->
+  <rect x="182" y="69" width="36" height="13" rx="3" fill="rgba(255,255,255,0.35)"/>
+  <!-- Lightning bolt on bottle -->
+  <path d="M205 130 L192 180 L202 180 L188 230" fill="none" stroke="rgba(255,255,255,0.5)" stroke-width="3" stroke-linecap="round"/>
+  <!-- Scorpion tail hint -->
+  <path d="M280 80 Q300 60 310 80 Q320 100 300 110 Q290 115 285 105" fill="none" stroke="rgba(139,69,19,0.4)" stroke-width="2.5" stroke-linecap="round"/>
+  <!-- Energy sparks -->
+  <circle cx="140" cy="130" r="3" fill="rgba(255,255,255,0.4)"/>
+  <circle cx="270" cy="160" r="2" fill="rgba(255,255,255,0.35)"/>
+  <circle cx="120" cy="250" r="2.5" fill="rgba(255,255,255,0.3)"/>
+  <circle cx="290" cy="270" r="1.8" fill="rgba(255,255,255,0.25)"/>
+  <!-- Brand text -->
+  <text x="200" y="365" text-anchor="middle" font-family="Arial Black, sans-serif" font-size="48" font-weight="900" fill="white" stroke="rgba(0,0,0,0.15)" stroke-width="1">STING</text>
+  <text x="200" y="392" text-anchor="middle" font-family="Arial, sans-serif" font-size="13" fill="rgba(255,255,255,0.7)">Real Energy</text>
+</svg>

@@ -1,0 +1,80 @@
+[
+  {
+    "updatedAt": "2026-03-23T08:08:51.966Z",
+    "status": "approved",
+    "userName": "Riya Patel",
+    "createdAt": "2026-03-23T08:08:51.960Z",
+    "id": "PREQ-001",
+    "userPhone": "+918877665544",
+    "userId": "USR-004",
+    "amount": 500
+  },
+  {
+    "amount": 100,
+    "userId": "USR-003",
+    "id": "PREQ-002",
+    "userPhone": "9876543215",
+    "userName": "Parvez ",
+    "createdAt": "2026-03-23T08:45:07.864Z",
+    "updatedAt": "2026-03-23T08:45:36.917Z",
+    "status": "approved"
+  },
+  {
+    "amount": 3500,
+    "userId": "USR-010",
+    "id": "PREQ-003",
+    "userPhone": "9834827675",
+    "createdAt": "2026-03-29T08:55:19.048Z",
+    "userName": "GULAM",
+    "status": "approved",
+    "updatedAt": "2026-03-29T08:55:57.680Z"
+  },
+  {
+    "userId": "USR-010",
+    "amount": 500,
+    "id": "PREQ-004",
+    "userPhone": "9834827675",
+    "updatedAt": "2026-03-29T08:56:30.953Z",
+    "status": "rejected",
+    "userName": "GULAM",
+    "createdAt": "2026-03-29T08:56:14.910Z"
+  },
+  {
+    "userId": "USR-002",
+    "amount": 200,
+    "id": "PREQ-005",
+    "userPhone": "9172632945",
+    "status": "approved",
+    "updatedAt": "2026-03-30T09:08:42.886Z",
+    "createdAt": "2026-03-30T09:08:28.245Z",
+    "userName": "REHAN"
+  },
+  {
+    "userName": "GULAM",
+    "createdAt": "2026-03-31T14:50:16.305Z",
+    "status": "pending",
+    "id": "PREQ-006",
+    "userPhone": "9834827675",
+    "amount": 1000,
+    "userId": "USR-010"
+  },
+  {
+    "amount": 6500,
+    "userId": "USR-010",
+    "userName": "GULAM",
+    "createdAt": "2026-04-01T13:59:14.600Z",
+    "status": "pending",
+    "userPhone": "9834827675",
+    "id": "PREQ-007"
+  },
+  {
+    "userId": "USR-010",
+    "amount": 7000,
+    "id": "PREQ-008",
+    "userPhone": "9834827675",
+    "status": "approved",
+    "updatedAt": "2026-04-03T06:56:15.955Z",
+    "createdAt": "2026-04-03T06:55:10.226Z",
+    "userName": "GULAM"
+  }
+]

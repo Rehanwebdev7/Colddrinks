@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#004B93"/>
+      <stop offset="100%" style="stop-color:#001f4d"/>
+    </linearGradient>
+    <linearGradient id="can" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:rgba(255,255,255,0.1)"/>
+      <stop offset="40%" style="stop-color:rgba(255,255,255,0.2)"/>
+      <stop offset="100%" style="stop-color:rgba(255,255,255,0.05)"/>
+    </linearGradient>
+  </defs>
+  <rect width="400" height="400" fill="url(#bg)" rx="20"/>
+  <!-- Can shape -->
+  <rect x="155" y="80" width="90" height="220" rx="10" fill="url(#can)" stroke="rgba(255,255,255,0.25)" stroke-width="1.5"/>
+  <!-- Can top -->
+  <ellipse cx="200" cy="82" rx="45" ry="8" fill="rgba(255,255,255,0.15)" stroke="rgba(255,255,255,0.25)" stroke-width="1"/>
+  <!-- Can bottom -->
+  <ellipse cx="200" cy="298" rx="45" ry="8" fill="rgba(255,255,255,0.08)"/>
+  <!-- Pepsi circle logo -->
+  <circle cx="200" cy="190" r="40" fill="none" stroke="rgba(255,255,255,0.35)" stroke-width="2"/>
+  <path d="M160 190 Q180 175 200 190 Q220 205 240 190" fill="none" stroke="white" stroke-width="2.5" opacity="0.4"/>
+  <!-- Red accent on circle -->
+  <path d="M200 150 A40 40 0 0 1 240 190 L200 190Z" fill="rgba(229,50,56,0.3)"/>
+  <!-- Highlight -->
+  <rect x="165" y="90" width="15" height="200" rx="7" fill="rgba(255,255,255,0.07)"/>
+  <!-- Brand text -->
+  <text x="200" y="365" text-anchor="middle" font-family="Arial, sans-serif" font-size="42" font-weight="bold" fill="white">PEPSI</text>
+  <text x="200" y="390" text-anchor="middle" font-family="Arial, sans-serif" font-size="13" fill="rgba(255,255,255,0.5)">Refresh Everything</text>
+</svg>

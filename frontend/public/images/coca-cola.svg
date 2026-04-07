@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#e60012"/>
+      <stop offset="100%" style="stop-color:#8b0000"/>
+    </linearGradient>
+    <linearGradient id="bottle" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:rgba(255,255,255,0.15)"/>
+      <stop offset="50%" style="stop-color:rgba(255,255,255,0.25)"/>
+      <stop offset="100%" style="stop-color:rgba(255,255,255,0.1)"/>
+    </linearGradient>
+  </defs>
+  <rect width="400" height="400" fill="url(#bg)" rx="20"/>
+  <!-- Bottle silhouette -->
+  <path d="M175 320 L175 240 Q160 220 160 200 L160 140 Q160 120 170 110 L170 80 Q170 70 180 70 L220 70 Q230 70 230 80 L230 110 Q240 120 240 140 L240 200 Q240 220 225 240 L225 320 Q225 330 215 330 L185 330 Q175 330 175 320Z" fill="url(#bottle)" stroke="rgba(255,255,255,0.3)" stroke-width="1.5"/>
+  <!-- Cap -->
+  <rect x="178" y="60" width="44" height="14" rx="3" fill="rgba(255,255,255,0.3)"/>
+  <!-- Highlight on bottle -->
+  <path d="M185 140 L185 240 Q175 220 175 200 L175 140 Q175 125 185 118Z" fill="rgba(255,255,255,0.1)"/>
+  <!-- Bubbles -->
+  <circle cx="195" cy="180" r="4" fill="rgba(255,255,255,0.15)"/>
+  <circle cx="210" cy="200" r="3" fill="rgba(255,255,255,0.12)"/>
+  <circle cx="200" cy="160" r="2.5" fill="rgba(255,255,255,0.1)"/>
+  <circle cx="215" cy="170" r="3.5" fill="rgba(255,255,255,0.13)"/>
+  <!-- Brand text -->
+  <text x="200" y="380" text-anchor="middle" font-family="Georgia, serif" font-size="36" font-weight="bold" fill="white" font-style="italic">Coca-Cola</text>
+  <!-- Decorative ribbon -->
+  <path d="M0 350 Q100 340 200 355 Q300 370 400 350 L400 400 L0 400Z" fill="rgba(0,0,0,0.15)"/>
+  <text x="200" y="390" text-anchor="middle" font-family="Georgia, serif" font-size="14" fill="rgba(255,255,255,0.6)">Original Taste</text>
+</svg>

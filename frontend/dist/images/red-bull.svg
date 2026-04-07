@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#1a1a3e"/>
+      <stop offset="50%" style="stop-color:#0d0d2b"/>
+      <stop offset="100%" style="stop-color:#050515"/>
+    </linearGradient>
+  </defs>
+  <rect width="400" height="400" fill="url(#bg)" rx="20"/>
+  <!-- Tall can shape -->
+  <rect x="165" y="60" width="70" height="250" rx="8" fill="rgba(255,255,255,0.08)" stroke="rgba(255,255,255,0.2)" stroke-width="1.5"/>
+  <!-- Can top -->
+  <ellipse cx="200" cy="62" rx="35" ry="7" fill="rgba(192,192,192,0.15)" stroke="rgba(255,255,255,0.2)" stroke-width="1"/>
+  <!-- Can bottom -->
+  <ellipse cx="200" cy="308" rx="35" ry="7" fill="rgba(255,255,255,0.05)"/>
+  <!-- Red/yellow diagonal stripes on can -->
+  <rect x="165" y="140" width="70" height="40" fill="rgba(255,215,0,0.15)"/>
+  <rect x="165" y="180" width="70" height="40" fill="rgba(200,30,30,0.15)"/>
+  <!-- Bull silhouette (simplified) -->
+  <path d="M175 160 L185 150 L195 155 L200 145 L205 155 L215 150 L225 160 L215 165 L205 160 L200 170 L195 160 L185 165Z" fill="rgba(255,215,0,0.4)" stroke="rgba(255,215,0,0.6)" stroke-width="1"/>
+  <!-- Yellow sun/diamond accent -->
+  <path d="M200 90 L210 110 L200 130 L190 110Z" fill="rgba(255,215,0,0.2)" stroke="rgba(255,215,0,0.4)" stroke-width="1"/>
+  <!-- Highlight -->
+  <rect x="170" y="70" width="12" height="230" rx="6" fill="rgba(255,255,255,0.05)"/>
+  <!-- Brand text -->
+  <text x="200" y="355" text-anchor="middle" font-family="Arial Black, sans-serif" font-size="36" font-weight="900" fill="#FFD700">RED BULL</text>
+  <text x="200" y="385" text-anchor="middle" font-family="Arial, sans-serif" font-size="13" fill="rgba(255,255,255,0.5)">Gives You Wings</text>
+  <!-- Wing accents -->
+  <path d="M100 340 Q130 320 160 335" fill="none" stroke="rgba(255,215,0,0.3)" stroke-width="1.5"/>
+  <path d="M300 340 Q270 320 240 335" fill="none" stroke="rgba(255,215,0,0.3)" stroke-width="1.5"/>
+</svg>

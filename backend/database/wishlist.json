@@ -1,0 +1,38 @@
+[
+  {
+    "userId": "USR-003",
+    "productId": "PRD-001",
+    "addedAt": "2026-03-23T10:21:56.721Z",
+    "id": "WL-001"
+  },
+  {
+    "userId": "USR-010",
+    "addedAt": "2026-03-31T14:39:41.933Z",
+    "productId": "PRD-004",
+    "id": "WL-004"
+  },
+  {
+    "userId": "USR-008",
+    "productId": "PRD-012",
+    "addedAt": "2026-04-03T11:35:11.246Z",
+    "id": "WL-005"
+  },
+  {
+    "userId": "USR-008",
+    "addedAt": "2026-04-03T11:35:24.030Z",
+    "productId": "PRD-013",
+    "id": "WL-006"
+  },
+  {
+    "userId": "USR-008",
+    "productId": "PRD-002",
+    "addedAt": "2026-04-03T11:35:41.500Z",
+    "id": "WL-007"
+  },
+  {
+    "userId": "USR-011",
+    "addedAt": "2026-04-03T14:55:43.247Z",
+    "productId": "PRD-016",
+    "id": "WL-008"
+  }
+]
