@@ -30,9 +30,10 @@ const ProductCard = ({ product }) => {
 
   const productId = product._id || product.id
   const name = product.name
-  const image = product.image
+  const image = product.images?.[0] || product.image
   const category = product.category
   const price = product.pricePerBox || product.price
+  const offer = product.offer?.enabled ? product.offer : null
   const mrp = product.mrp
   const stock = product.stockQuantity ?? product.stock ?? 0
 
@@ -46,6 +47,11 @@ const ProductCard = ({ product }) => {
   const cartItemId = getCartItemId(productId, purchaseMode)
   const cartItem = items.find((item) => item.cartItemId === cartItemId)
   const cartQuantity = cartItem?.quantity || 0
+  const offerText = offer?.label?.trim() || (
+    offer?.enabled
+      ? `Buy ${offer.buyQty || 1}, Get ${offer.freeQty || 1} Free`
+      : ''
+  )
   const lowStockText = isPieceMode
     ? `Only ${maxQuantity} pieces left`
     : Number.isInteger(stock)
@@ -194,6 +200,12 @@ const ProductCard = ({ product }) => {
               {unitMrp > unitPrice && <span className="original-price">&#8377;{unitMrp.toFixed(2).replace(/\.00$/, '')}</span>}
             </div>
           </div>
+          {offerText && (
+            <div className="product-card-offer-strip">
+              <span className="product-card-offer-tag">Free Offer</span>
+              <span className="product-card-offer-text">{offerText}</span>
+            </div>
+          )}
           <div className="product-card-meta-row">
             <div className="product-card-box-info">
               {product.volume ? `${product.volume}ml · ` : ''}{product.boxQuantity || product.unitsPerBox || 24} {isPieceMode ? 'cans' : 'bottles'}/box

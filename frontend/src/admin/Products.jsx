@@ -13,6 +13,8 @@ import useDrive from '../services/useDrive'
 import ImageCropModal from '../components/ImageCropModal'
 import { uploadImage, deleteImage, getImageUrl } from '../services/googleDrive'
 
+const MAX_IMAGES = 4
+
 const initialForm = {
   name: '',
   category: '',
@@ -24,12 +26,13 @@ const initialForm = {
   mrp: '',
   stockQuantity: '',
   lowStockAlert: '10',
-  image: '',
+  images: [],
   status: 'active',
   gstPercent: '',
   deliveryCharge: '',
   allowPiecePurchase: false,
   allowHalfBox: false,
+  offer: null,
 }
 
 const getSellingModeLabel = (product) => {
@@ -98,7 +101,8 @@ const Products = () => {
   const [saving, setSaving] = useState(false)
   const [currentPage, setCurrentPage] = useState(1)
   const [categories, setCategories] = useState([])
-  const [imageFile, setImageFile] = useState(null)
+  const [imageFiles, setImageFiles] = useState([])
+  const [activeImageSlot, setActiveImageSlot] = useState(null)
   const [cropSrc, setCropSrc] = useState(null)
   const [showCrop, setShowCrop] = useState(false)
   const [uploadingImage, setUploadingImage] = useState(false)
@@ -178,7 +182,7 @@ const Products = () => {
     })
   }
 
-  const handleImageUpload = (e) => {
+  const handleImageUpload = (e, slotIndex) => {
     const file = e.target.files[0]
     if (!file) return
     if (!file.type.startsWith('image/')) {
@@ -189,7 +193,12 @@ const Products = () => {
       toast.error('Image size must be less than 5MB')
       return
     }
-    setImageFile(file)
+    setActiveImageSlot(slotIndex)
+    setImageFiles(prev => {
+      const next = [...prev]
+      next[slotIndex] = file
+      return next
+    })
     const reader = new FileReader()
     reader.onloadend = () => {
       setCropSrc(reader.result)
@@ -202,18 +211,40 @@ const Products = () => {
   }
 
   const handleCropDone = (croppedDataUrl) => {
-    setFormData(prev => ({ ...prev, image: croppedDataUrl }))
+    const slot = activeImageSlot
+    setFormData(prev => {
+      const next = [...(prev.images || [])]
+      next[slot] = croppedDataUrl
+      return { ...prev, images: next }
+    })
+  }
+
+  const removeImage = (slotIndex) => {
+    setFormData(prev => {
+      const next = [...(prev.images || [])]
+      next.splice(slotIndex, 1)
+      return { ...prev, images: next }
+    })
+    setImageFiles(prev => {
+      const next = [...prev]
+      next.splice(slotIndex, 1)
+      return next
+    })
   }
 
   const openAddModal = () => {
     setEditingProduct(null)
     setFormData(initialForm)
-    setImageFile(null)
+    setImageFiles([])
     setShowModal(true)
   }
 
   const openEditModal = (product) => {
     setEditingProduct(product)
+    // Backward compat: load images array or fallback to single image
+    const existingImages = Array.isArray(product.images) && product.images.length > 0
+      ? product.images
+      : product.image ? [product.image] : []
     setFormData({
       name: product.name || '',
       category: product.category || '',
@@ -225,13 +256,15 @@ const Products = () => {
       mrp: product.mrp || '',
       stockQuantity: product.stockQuantity || '',
       lowStockAlert: product.lowStockAlert || '10',
-      image: product.image || '',
+      images: existingImages,
       status: product.status || 'active',
       gstPercent: product.gstPercent ?? '',
       deliveryCharge: product.deliveryCharge ?? '',
       allowPiecePurchase: Boolean(product.allowPiecePurchase),
       allowHalfBox: Boolean(product.allowHalfBox),
+      offer: product.offer || null,
     })
+    setImageFiles([])
     setShowModal(true)
   }
 
@@ -248,17 +281,22 @@ const Products = () => {
 
     try {
       setSaving(true)
-      let imageUrl = formData.image
+      const finalImages = [...(formData.images || [])]
 
-      // Upload new image to Google Drive if a file was selected
-      if (imageFile && driveReady) {
+      // Upload new images to Google Drive
+      if (driveReady) {
         setUploadingImage(true)
         try {
-          const fileName = `product_${formData.name.replace(/\s+/g, '_')}_${Date.now()}.jpg`
-          const fileId = await uploadImage(imageFile, 'products', fileName)
-          imageUrl = getImageUrl(fileId)
+          for (let i = 0; i < finalImages.length; i++) {
+            // Only upload if it's a new base64 image (not already a URL)
+            if (finalImages[i] && finalImages[i].startsWith('data:') && imageFiles[i]) {
+              const fileName = `product_${formData.name.replace(/\s+/g, '_')}_${i}_${Date.now()}.jpg`
+              const fileId = await uploadImage(imageFiles[i], 'products', fileName)
+              finalImages[i] = getImageUrl(fileId)
+            }
+          }
 
-          // Delete old Drive image if editing and old image was from Drive
+          // Delete old Drive image if editing
           if (editingProduct?.driveFileId) {
             await deleteImage(editingProduct.driveFileId).catch(() => {})
           }
@@ -269,6 +307,8 @@ const Products = () => {
           setUploadingImage(false)
         }
       }
+
+      const cleanImages = finalImages.filter(Boolean)
 
       const payload = {
         name: formData.name,
@@ -281,12 +321,20 @@ const Products = () => {
         mrp: Number(formData.mrp) || 0,
         stockQuantity: Number(formData.stockQuantity) || 0,
         lowStockAlert: Number(formData.lowStockAlert) || 10,
-        image: imageUrl,
+        images: cleanImages,
+        image: cleanImages[0] || '',
         status: formData.status,
         gstPercent: formData.gstPercent !== '' ? Number(formData.gstPercent) : null,
         deliveryCharge: formData.deliveryCharge !== '' ? Number(formData.deliveryCharge) : null,
         allowPiecePurchase: Boolean(formData.allowPiecePurchase),
         allowHalfBox: formData.allowPiecePurchase ? false : Boolean(formData.allowHalfBox),
+        offer: formData.offer?.enabled ? {
+          enabled: true,
+          buyQty: Number(formData.offer.buyQty) || 1,
+          freeProductId: formData.offer.freeProductId || null,
+          freeQty: Number(formData.offer.freeQty) || 1,
+          label: formData.offer.label || '',
+        } : null,
       }
 
       if (editingProduct) {
@@ -298,7 +346,7 @@ const Products = () => {
       }
 
       setShowModal(false)
-      setImageFile(null)
+      setImageFiles([])
       fetchProducts()
     } catch (error) {
       toast.error(error.response?.data?.message || 'Failed to save product')
@@ -446,7 +494,7 @@ const Products = () => {
                       <td style={styles.td}>
                         <div style={styles.productInfo}>
                           <img
-                            src={product.image || '/images/placeholder-drink.svg'}
+                            src={product.images?.[0] || product.image || '/images/placeholder-drink.svg'}
                             alt={product.name}
                             style={styles.productImage}
                             referrerPolicy="no-referrer"
@@ -714,51 +762,76 @@ const Products = () => {
             </p>
           </div>
           <div style={{ ...styles.formGroup, gridColumn: '1 / -1' }}>
-            <label style={styles.label}>Product Image</label>
-            <div style={styles.imageUploadArea}>
-              {formData.image ? (
-                <div style={styles.imagePreviewContainer}>
-                  <img
-                    src={formData.image}
-                    alt="Preview"
-                    style={styles.imagePreview}
-                    onError={(e) => { e.target.src = '/images/placeholder-drink.svg' }}
-                  />
-                  <button
-                    type="button"
-                    style={styles.removeImageBtn}
-                    onClick={() => setFormData(prev => ({ ...prev, image: '' }))}
-                  >
-                    Remove
-                  </button>
-                </div>
-              ) : (
-                <div style={styles.uploadPlaceholder}>
-                  <FaUpload style={{ fontSize: '24px', color: c.textSecondary }} />
-                  <span style={{ color: c.textSecondary, fontSize: '13px' }}>Upload an image</span>
-                </div>
-              )}
-              <input
-                type="file"
-                accept="image/*"
-                onChange={handleImageUpload}
-                style={styles.fileInput}
-                id="product-image-upload"
-              />
-              <label htmlFor="product-image-upload" style={styles.uploadBtn}>
-                <FaUpload /> Choose File
-              </label>
-            </div>
-            <div style={{ marginTop: '8px' }}>
-              <label style={{ ...styles.label, fontSize: '12px', color: c.textSecondary }}>Or enter image URL</label>
-              <input
-                type="text"
-                name="image"
-                value={formData.image.startsWith('data:') ? '' : formData.image}
-                onChange={handleInputChange}
-                style={{ ...styles.input, marginTop: '4px' }}
-                placeholder="https://..."
-              />
+            <label style={styles.label}>Product Images <span style={{ fontSize: 12, color: c.textSecondary, fontWeight: 400 }}>(max 4 — first image is required)</span></label>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 10 }}>
+              {Array.from({ length: MAX_IMAGES }).map((_, idx) => {
+                const img = (formData.images || [])[idx]
+                const slotId = `product-image-upload-${idx}`
+                return (
+                  <div key={idx} style={{
+                    position: 'relative',
+                    border: `2px dashed ${img ? 'transparent' : idx === 0 ? '#f97316' : c.border}`,
+                    borderRadius: 12,
+                    background: img ? 'transparent' : c.bg,
+                    aspectRatio: '1',
+                    overflow: 'hidden',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    cursor: 'pointer',
+                  }}>
+                    {img ? (
+                      <>
+                        <img
+                          src={img}
+                          alt={`Image ${idx + 1}`}
+                          style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: 10 }}
+                          onError={(e) => { e.target.src = '/images/placeholder-drink.svg' }}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => removeImage(idx)}
+                          style={{
+                            position: 'absolute', top: 4, right: 4,
+                            background: 'rgba(239,68,68,0.85)', border: 'none', borderRadius: '50%',
+                            width: 24, height: 24, color: '#fff', fontSize: 12,
+                            cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          }}
+                        >
+                          <FaTrash style={{ fontSize: 10 }} />
+                        </button>
+                        {idx === 0 && (
+                          <span style={{
+                            position: 'absolute', bottom: 4, left: 4,
+                            background: 'rgba(249,115,22,0.9)', color: '#fff',
+                            fontSize: 10, fontWeight: 700, padding: '2px 8px', borderRadius: 6,
+                          }}>
+                            Primary
+                          </span>
+                        )}
+                      </>
+                    ) : (
+                      <label htmlFor={slotId} style={{
+                        display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4,
+                        cursor: 'pointer', padding: 10, width: '100%', height: '100%',
+                        justifyContent: 'center',
+                      }}>
+                        <FaCloudUploadAlt style={{ fontSize: 20, color: idx === 0 ? '#f97316' : c.textSecondary }} />
+                        <span style={{ fontSize: 11, color: idx === 0 ? '#f97316' : c.textSecondary, fontWeight: idx === 0 ? 600 : 400, textAlign: 'center' }}>
+                          {idx === 0 ? 'Primary *' : `Image ${idx + 1}`}
+                        </span>
+                      </label>
+                    )}
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => handleImageUpload(e, idx)}
+                      style={{ display: 'none' }}
+                      id={slotId}
+                    />
+                  </div>
+                )
+              })}
             </div>
           </div>
           <div style={styles.formGroup}>
@@ -799,6 +872,160 @@ const Products = () => {
             <p style={styles.optionHint}>
               `Sell by Piece` on hoga to product sirf piece mode me bikega. Agar off hai, to `Allow Half Box` se full box ke saath half box enable hoga.
             </p>
+          </div>
+
+          {/* Offer Section */}
+          <div style={{ ...styles.formGroup, gridColumn: '1 / -1' }}>
+            <label style={styles.label}>
+              <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                Buy X Get Y Free Offer
+                <label style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer', fontSize: 13, fontWeight: 500, color: formData.offer?.enabled ? '#22c55e' : c.textSecondary }}>
+                  <input
+                    type="checkbox"
+                    checked={Boolean(formData.offer?.enabled)}
+                    onChange={(e) => {
+                      if (e.target.checked) {
+                        setFormData(prev => ({ ...prev, offer: { enabled: true, buyQty: 2, freeProductId: '', freeQty: 1, label: '' } }))
+                      } else {
+                        setFormData(prev => ({ ...prev, offer: null }))
+                      }
+                    }}
+                  />
+                  {formData.offer?.enabled ? 'Active' : 'Off'}
+                </label>
+              </span>
+            </label>
+
+            {formData.offer?.enabled && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 12, padding: 16, background: c.bg, borderRadius: 12, border: `1px solid ${c.border}` }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                  <div>
+                    <label style={{ ...styles.label, fontSize: 12 }}>Buy Quantity</label>
+                    <input
+                      type="number"
+                      min="1"
+                      value={formData.offer.buyQty || ''}
+                      onChange={(e) => setFormData(prev => ({ ...prev, offer: { ...prev.offer, buyQty: e.target.value } }))}
+                      style={styles.input}
+                      placeholder="e.g. 2"
+                    />
+                  </div>
+                  <div>
+                    <label style={{ ...styles.label, fontSize: 12 }}>Free Quantity</label>
+                    <input
+                      type="number"
+                      min="1"
+                      value={formData.offer.freeQty || ''}
+                      onChange={(e) => setFormData(prev => ({ ...prev, offer: { ...prev.offer, freeQty: e.target.value } }))}
+                      style={styles.input}
+                      placeholder="e.g. 1"
+                    />
+                  </div>
+                </div>
+                <div style={{ position: 'relative' }}>
+                  <label style={{ ...styles.label, fontSize: 12 }}>Free Product</label>
+                  <input
+                    type="text"
+                    value={formData.offer._searchQuery ?? (formData.offer.freeProductId ? (products.find(p => p.id === formData.offer.freeProductId)?.name || '') : '')}
+                    onChange={(e) => {
+                      setFormData(prev => ({
+                        ...prev,
+                        offer: { ...prev.offer, _searchQuery: e.target.value, freeProductId: '' }
+                      }))
+                    }}
+                    onFocus={() => setFormData(prev => ({ ...prev, offer: { ...prev.offer, _searchOpen: true, _searchQuery: prev.offer._searchQuery ?? '' } }))}
+                    onBlur={() => setTimeout(() => setFormData(prev => ({ ...prev, offer: { ...prev.offer, _searchOpen: false } })), 200)}
+                    style={styles.input}
+                    placeholder="Search product name..."
+                  />
+                  {formData.offer._searchOpen && (
+                    <div style={{
+                      position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 100,
+                      background: c.surface, border: `1px solid ${c.border}`, borderRadius: 10,
+                      maxHeight: 200, overflowY: 'auto', marginTop: 4,
+                      boxShadow: '0 8px 24px rgba(0,0,0,0.3)',
+                    }}>
+                      {products
+                        .filter(p => {
+                          const q = (formData.offer._searchQuery || '').toLowerCase()
+                          return !q || p.name?.toLowerCase().includes(q) || p.id?.toLowerCase().includes(q)
+                        })
+                        .slice(0, 20)
+                        .map(p => (
+                          <div
+                            key={p.id}
+                            onMouseDown={() => {
+                              const autoLabel = `Buy ${formData.offer.buyQty || 2}, Get ${formData.offer.freeQty || 1} ${p.name} Free!`
+                              setFormData(prev => ({
+                                ...prev,
+                                offer: {
+                                  ...prev.offer,
+                                  freeProductId: p.id,
+                                  _searchQuery: undefined,
+                                  _searchOpen: false,
+                                  label: prev.offer.label || autoLabel,
+                                }
+                              }))
+                            }}
+                            style={{
+                              padding: '10px 14px', cursor: 'pointer', fontSize: 13,
+                              color: c.text, borderBottom: `1px solid ${c.border}`,
+                              display: 'flex', alignItems: 'center', gap: 10,
+                            }}
+                            onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(59,130,246,0.08)'}
+                            onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+                          >
+                            {p.images?.[0] || p.image ? (
+                              <img src={p.images?.[0] || p.image} alt="" style={{ width: 28, height: 28, borderRadius: 6, objectFit: 'cover' }} referrerPolicy="no-referrer" />
+                            ) : (
+                              <div style={{ width: 28, height: 28, borderRadius: 6, background: c.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, color: c.textSecondary }}>?</div>
+                            )}
+                            <div>
+                              <div style={{ fontWeight: 600 }}>{p.name}</div>
+                              <div style={{ fontSize: 11, color: c.textSecondary }}>{p.id} · {p.category}</div>
+                            </div>
+                          </div>
+                        ))}
+                      {products.filter(p => {
+                        const q = (formData.offer._searchQuery || '').toLowerCase()
+                        return !q || p.name?.toLowerCase().includes(q) || p.id?.toLowerCase().includes(q)
+                      }).length === 0 && (
+                        <div style={{ padding: '14px', textAlign: 'center', color: c.textSecondary, fontSize: 13 }}>No products found</div>
+                      )}
+                    </div>
+                  )}
+                </div>
+                <div>
+                  <label style={{ ...styles.label, fontSize: 12 }}>Offer Label <span style={{ fontWeight: 400, color: c.textSecondary }}>(customer ko ye dikhega)</span></label>
+                  <input
+                    type="text"
+                    value={formData.offer.label || ''}
+                    onChange={(e) => setFormData(prev => ({ ...prev, offer: { ...prev.offer, label: e.target.value } }))}
+                    style={styles.input}
+                    placeholder="e.g. Buy 2 Boxes, Get 1 Sprite Free!"
+                  />
+                </div>
+
+                {/* Preview */}
+                {formData.offer.label && (
+                  <div style={{
+                    padding: '12px 16px',
+                    background: 'linear-gradient(135deg, rgba(34,197,94,0.12), rgba(34,197,94,0.04))',
+                    border: '1px solid rgba(34,197,94,0.25)',
+                    borderRadius: 10,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 10,
+                  }}>
+                    <span style={{ fontSize: 20 }}>🎁</span>
+                    <div>
+                      <div style={{ fontSize: 11, color: c.textSecondary, fontWeight: 600, textTransform: 'uppercase', letterSpacing: 0.5 }}>Customer Preview</div>
+                      <div style={{ fontSize: 14, fontWeight: 700, color: '#22c55e' }}>{formData.offer.label}</div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </div>
         <div style={styles.modalFooter}>

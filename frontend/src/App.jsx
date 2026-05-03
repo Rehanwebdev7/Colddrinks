@@ -1,4 +1,4 @@
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import { Toaster } from 'react-hot-toast'
 import { AuthProvider, useAuth } from './context/AuthContext'
 import { CartProvider } from './context/CartContext'
@@ -36,10 +36,12 @@ import AdminCategories from './admin/Categories'
 import AdminThemeConfig from './admin/ThemeConfig'
 import AdminCoupons from './admin/Coupons'
 import AdminOfflineSales from './admin/OfflineSales'
+import AdminOfflineSalesHistory from './admin/OfflineSalesHistory'
 
 // Protected Route wrapper for authenticated users
 const ProtectedRoute = ({ children }) => {
   const { isAuthenticated, loading } = useAuth()
+  const location = useLocation()
 
   if (loading) {
     return (
@@ -51,7 +53,13 @@ const ProtectedRoute = ({ children }) => {
   }
 
   if (!isAuthenticated) {
-    return <Navigate to="/login" replace />
+    return (
+      <Navigate
+        to="/login"
+        replace
+        state={{ returnTo: `${location.pathname}${location.search}${location.hash}` }}
+      />
+    )
   }
 
   return children
@@ -89,7 +97,7 @@ const AppRoutes = () => {
       <Route path="/products" element={<Home />} />
       <Route path="/product/:id" element={<ProductDetail />} />
       <Route path="/login" element={<Login />} />
-      <Route path="/register" element={<Register />} />
+      <Route path="/register" element={<Navigate to="/login" replace />} />
       <Route path="/forgot-password" element={<ForgotPassword />} />
       <Route path="/reset-password" element={<ResetPassword />} />
 
@@ -248,6 +256,14 @@ const AppRoutes = () => {
         element={
           <AdminRoute>
             <AdminOfflineSales />
+          </AdminRoute>
+        }
+      />
+      <Route
+        path="/admin/offline-sales-history"
+        element={
+          <AdminRoute>
+            <AdminOfflineSalesHistory />
           </AdminRoute>
         }
       />

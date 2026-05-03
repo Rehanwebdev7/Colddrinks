@@ -11,6 +11,7 @@ const ForgotPassword = () => {
   const [email, setEmail] = useState('')
   const [loading, setLoading] = useState(false)
   const [submitted, setSubmitted] = useState(false)
+  const [devResetLink, setDevResetLink] = useState('')
 
   const loginPath = isAdmin ? '/admin/login' : '/login'
   const title = isAdmin ? 'Admin Password Reset' : 'Forgot Password'
@@ -25,8 +26,15 @@ const ForgotPassword = () => {
 
     try {
       setLoading(true)
-      await API.post('/auth/forgot-password', { email: email.trim() })
-      toast.success('If the email exists, the reset link has been sent.')
+      const resp = await API.post('/auth/forgot-password', { email: email.trim() })
+      const link = resp?.data?.data?.resetLink
+      if (link) {
+        setDevResetLink(link)
+        toast.success('Email service not configured — use the reset link below.')
+      } else {
+        setDevResetLink('')
+        toast.success('If the email exists, the reset link has been sent.')
+      }
       setSubmitted(true)
     } catch (err) {
       toast.error(err.response?.data?.message || 'Failed to send reset email')
@@ -94,7 +102,24 @@ const ForgotPassword = () => {
                 If an account exists for <strong>{email}</strong>, the reset link has been sent.
               </div>
 
-              <button type="button" className="btn btn-secondary btn-lg btn-block" onClick={() => setSubmitted(false)}>
+              {devResetLink && (
+                <div
+                  style={{
+                    padding: '14px 16px',
+                    borderRadius: '12px',
+                    background: 'rgba(234, 179, 8, 0.08)',
+                    border: '1px solid rgba(234, 179, 8, 0.3)',
+                    color: 'var(--text-secondary)',
+                    wordBreak: 'break-all',
+                    fontSize: '13px'
+                  }}
+                >
+                  <strong style={{ display: 'block', marginBottom: 6 }}>Dev mode — email not configured:</strong>
+                  <a href={devResetLink} className="auth-link">{devResetLink}</a>
+                </div>
+              )}
+
+              <button type="button" className="btn btn-secondary btn-lg btn-block" onClick={() => { setSubmitted(false); setDevResetLink('') }}>
                 Try Another Email
               </button>
             </div>

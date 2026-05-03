@@ -18,6 +18,7 @@ import {
   FaCashRegister,
   FaChevronLeft,
   FaChevronRight,
+  FaHistory,
 } from 'react-icons/fa'
 import { useAuth } from '../context/AuthContext'
 import { useTheme } from '../context/ThemeContext'
@@ -36,6 +37,7 @@ const menuItems = [
   { path: '/admin/notifications', icon: FaBell, label: 'Notifications' },
   { path: '/admin/categories', icon: FaTags, label: 'Categories' },
   { path: '/admin/offline-sales', icon: FaCashRegister, label: 'Offline Sales' },
+  { path: '/admin/offline-sales-history', icon: FaHistory, label: 'Sales History' },
   { path: '/admin/coupons', icon: FaTags, label: 'Coupons' },
   { path: '/admin/theme', icon: FaPalette, label: 'Theme Config' },
   { path: '/admin/profile', icon: FaUserCog, label: 'Profile' },

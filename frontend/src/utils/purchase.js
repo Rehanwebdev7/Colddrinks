@@ -87,6 +87,7 @@ export const buildCartItem = (product, quantity = 1, purchaseMode = getDefaultPu
     stock: Number(product?.stock ?? product?.stockQuantity ?? 0),
     maxQuantity,
     deliveryCharge: Number(product?.deliveryCharge || 0),
+    offer: product?.offer?.enabled ? product.offer : null,
   }
 }
 

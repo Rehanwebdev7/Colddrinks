@@ -64,6 +64,27 @@ const formatAddress = (address) => {
     .join(', ')
 }
 
+const sanitizeWholeNumberInput = (value) => String(value || '').replace(/\D/g, '')
+
+const normalizeQuantityValue = (value, maxQuantity) => {
+  const parsed = Number.parseInt(String(value || ''), 10)
+  const safeMax = Math.max(1, Number(maxQuantity) || 1)
+  if (Number.isNaN(parsed) || parsed < 1) return 1
+  return Math.min(parsed, safeMax)
+}
+
+const preventAccidentalQuantityScroll = (event) => {
+  event.preventDefault()
+}
+
+const preventStepperKeys = (event) => {
+  if (['ArrowUp', 'ArrowDown', 'PageUp', 'PageDown'].includes(event.key)) {
+    event.preventDefault()
+  }
+}
+
+const getSaleItemKey = (item) => `${item.productId}-${item.purchaseMode}`
+
 const OfflineSales = () => {
   const navigate = useNavigate()
   const { darkMode } = useTheme()
@@ -78,7 +99,9 @@ const OfflineSales = () => {
   const [catalogQuery, setCatalogQuery] = useState('')
   const [categoryFilter, setCategoryFilter] = useState('all')
   const [draft, setDraft] = useState(emptyDraft)
+  const [draftQuantityInput, setDraftQuantityInput] = useState('1')
   const [saleItems, setSaleItems] = useState([])
+  const [itemQuantityInputs, setItemQuantityInputs] = useState({})
   const [selectedCustomerId, setSelectedCustomerId] = useState('')
   const [walkInName, setWalkInName] = useState('')
   const [walkInPhone, setWalkInPhone] = useState('')
@@ -90,6 +113,17 @@ const OfflineSales = () => {
   useEffect(() => {
     fetchData()
   }, [])
+
+  useEffect(() => {
+    setItemQuantityInputs((prev) => {
+      const next = {}
+      saleItems.forEach((item) => {
+        const itemKey = getSaleItemKey(item)
+        next[itemKey] = prev[itemKey] ?? String(item.quantity || 1)
+      })
+      return next
+    })
+  }, [saleItems])
 
   const fetchData = async () => {
     try {
@@ -181,7 +215,9 @@ const OfflineSales = () => {
 
   const resetForm = () => {
     setDraft(emptyDraft)
+    setDraftQuantityInput('1')
     setSaleItems([])
+    setItemQuantityInputs({})
     setSelectedCustomerId('')
     setWalkInName('')
     setWalkInPhone('')
@@ -197,7 +233,7 @@ const OfflineSales = () => {
       return
     }
 
-    const quantity = draft.purchaseMode === 'half_box' ? 1 : Number(draft.quantity)
+    const quantity = draft.purchaseMode === 'half_box' ? 1 : Number(draftQuantityInput)
     if (!quantity || quantity <= 0) {
       toast.error('Valid quantity enter karo')
       return
@@ -250,6 +286,7 @@ const OfflineSales = () => {
       quantity: 1,
       purchaseMode: 'full_box',
     })
+    setDraftQuantityInput('1')
   }
 
   const updateItemQuantity = (index, nextQuantity) => {
@@ -272,6 +309,50 @@ const OfflineSales = () => {
           }
         : item
     )))
+  }
+
+  const handleDraftQuantityChange = (value) => {
+    if (draft.purchaseMode === 'half_box') return
+    const sanitizedValue = sanitizeWholeNumberInput(value)
+    setDraftQuantityInput(sanitizedValue)
+    setDraft((prev) => ({
+      ...prev,
+      quantity: sanitizedValue === '' ? '' : Number(sanitizedValue),
+    }))
+  }
+
+  const commitDraftQuantity = () => {
+    if (draft.purchaseMode === 'half_box') {
+      setDraftQuantityInput('1')
+      setDraft((prev) => ({ ...prev, quantity: 1 }))
+      return
+    }
+
+    const normalizedQuantity = normalizeQuantityValue(draftQuantityInput, maxDraftQuantity)
+    setDraftQuantityInput(String(normalizedQuantity))
+    setDraft((prev) => ({ ...prev, quantity: normalizedQuantity }))
+  }
+
+  const handleItemQuantityChange = (item, value) => {
+    if (item.purchaseMode === 'half_box') return
+    const sanitizedValue = sanitizeWholeNumberInput(value)
+    setItemQuantityInputs((prev) => ({
+      ...prev,
+      [getSaleItemKey(item)]: sanitizedValue,
+    }))
+  }
+
+  const commitItemQuantity = (index) => {
+    const target = saleItems[index]
+    if (!target || target.purchaseMode === 'half_box') return
+
+    const itemKey = getSaleItemKey(target)
+    const normalizedQuantity = normalizeQuantityValue(itemQuantityInputs[itemKey], target.maxQuantity)
+    updateItemQuantity(index, normalizedQuantity)
+    setItemQuantityInputs((prev) => ({
+      ...prev,
+      [itemKey]: String(normalizedQuantity),
+    }))
   }
 
   const removeItem = (index) => {
@@ -395,6 +476,22 @@ const OfflineSales = () => {
       <div style={styles.page}>
         <style>{`
           @keyframes spin { to { transform: rotate(360deg); } }
+          .offline-sales-input::placeholder,
+          .offline-sales-textarea::placeholder,
+          .offline-sales-qty-input::placeholder {
+            color: ${c.textSecondary};
+            opacity: 1;
+          }
+          .offline-sales-input:focus,
+          .offline-sales-textarea:focus,
+          .offline-sales-qty-input:focus {
+            border-color: ${c.accent} !important;
+            box-shadow: 0 0 0 1px ${c.accent}, 0 0 0 4px rgba(14, 165, 233, 0.12);
+          }
+          .offline-sales-qty-input[disabled] {
+            cursor: not-allowed;
+            opacity: 0.72;
+          }
           @media (max-width: 1100px) {
             .offline-sales-grid { grid-template-columns: 1fr !important; }
             .offline-sales-hero { grid-template-columns: 1fr !important; }
@@ -463,6 +560,7 @@ const OfflineSales = () => {
                 <div style={styles.field}>
                   <label style={styles.label}>Quick search</label>
                   <input
+                    className="offline-sales-input"
                     value={catalogQuery}
                     onChange={(e) => setCatalogQuery(e.target.value)}
                     placeholder="Name, category ya product id"
@@ -472,6 +570,7 @@ const OfflineSales = () => {
                 <div style={styles.field}>
                   <label style={styles.label}>Category list</label>
                   <select
+                    className="offline-sales-input"
                     value={categoryFilter}
                     onChange={(e) => setCategoryFilter(e.target.value)}
                     style={styles.input}
@@ -490,6 +589,7 @@ const OfflineSales = () => {
                 <div style={styles.field}>
                   <label style={styles.label}>Product</label>
                   <select
+                    className="offline-sales-input"
                     value={draft.productId}
                     onChange={(e) => {
                       const product = products.find((item) => item.id === e.target.value)
@@ -498,6 +598,7 @@ const OfflineSales = () => {
                         quantity: 1,
                         purchaseMode: product ? getDefaultPurchaseMode(product) : 'full_box',
                       })
+                      setDraftQuantityInput('1')
                     }}
                     style={styles.input}
                   >
@@ -549,7 +650,10 @@ const OfflineSales = () => {
                       <button
                         key={mode}
                         type="button"
-                        onClick={() => setDraft((prev) => ({ ...prev, purchaseMode: mode, quantity: mode === 'half_box' ? 1 : prev.quantity }))}
+                        onClick={() => {
+                          setDraft((prev) => ({ ...prev, purchaseMode: mode, quantity: mode === 'half_box' ? 1 : prev.quantity || 1 }))
+                          setDraftQuantityInput(mode === 'half_box' ? '1' : (draftQuantityInput || '1'))
+                        }}
                         style={{
                           ...styles.segmentBtn,
                           ...(draft.purchaseMode === mode ? styles.segmentBtnActive : {}),
@@ -563,11 +667,19 @@ const OfflineSales = () => {
                 <div style={styles.field}>
                   <label style={styles.label}>Quantity</label>
                   <input
-                    type="number"
-                    min={1}
-                    max={Math.max(1, maxDraftQuantity)}
-                    value={draft.purchaseMode === 'half_box' ? 1 : draft.quantity}
-                    onChange={(e) => setDraft((prev) => ({ ...prev, quantity: Number(e.target.value || 1) }))}
+                    className="offline-sales-qty-input"
+                    type="text"
+                    inputMode="numeric"
+                    pattern="[0-9]*"
+                    value={draft.purchaseMode === 'half_box' ? '1' : draftQuantityInput}
+                    onChange={(e) => handleDraftQuantityChange(e.target.value)}
+                    onBlur={commitDraftQuantity}
+                    onWheel={preventAccidentalQuantityScroll}
+                    onKeyDown={(e) => {
+                      preventStepperKeys(e)
+                      if (e.key === 'Enter') e.currentTarget.blur()
+                    }}
+                    onFocus={(e) => e.target.select()}
                     disabled={draft.purchaseMode === 'half_box'}
                     style={styles.input}
                   />
@@ -592,6 +704,7 @@ const OfflineSales = () => {
                 <div style={styles.field}>
                   <label style={styles.label}>Existing customer</label>
                   <select
+                    className="offline-sales-input"
                     value={selectedCustomerId}
                     onChange={(e) => setSelectedCustomerId(e.target.value)}
                     style={styles.input}
@@ -607,6 +720,7 @@ const OfflineSales = () => {
                 <div style={styles.field}>
                   <label style={styles.label}>Discount</label>
                   <input
+                    className="offline-sales-input"
                     type="number"
                     min={0}
                     value={discount}
@@ -621,11 +735,11 @@ const OfflineSales = () => {
                 <div className="offline-sales-form-grid" style={styles.formGrid}>
                   <div style={styles.field}>
                     <label style={styles.label}>Walk-in name</label>
-                    <input value={walkInName} onChange={(e) => setWalkInName(e.target.value)} placeholder="Optional" style={styles.input} />
+                    <input className="offline-sales-input" value={walkInName} onChange={(e) => setWalkInName(e.target.value)} placeholder="Optional" style={styles.input} />
                   </div>
                   <div style={styles.field}>
                     <label style={styles.label}>Phone</label>
-                    <input value={walkInPhone} onChange={(e) => setWalkInPhone(e.target.value)} placeholder="Optional" style={styles.input} />
+                    <input className="offline-sales-input" value={walkInPhone} onChange={(e) => setWalkInPhone(e.target.value)} placeholder="Optional" style={styles.input} />
                   </div>
                 </div>
               )}
@@ -633,7 +747,7 @@ const OfflineSales = () => {
               {!linkedCustomer && (
                 <div style={styles.field}>
                   <label style={styles.label}>Address / note for bill</label>
-                  <input value={walkInAddress} onChange={(e) => setWalkInAddress(e.target.value)} placeholder="Optional" style={styles.input} />
+                  <input className="offline-sales-input" value={walkInAddress} onChange={(e) => setWalkInAddress(e.target.value)} placeholder="Optional" style={styles.input} />
                 </div>
               )}
 
@@ -670,6 +784,7 @@ const OfflineSales = () => {
               <div style={styles.field}>
                 <label style={styles.label}>Internal note</label>
                 <textarea
+                  className="offline-sales-textarea"
                   value={note}
                   onChange={(e) => setNote(e.target.value)}
                   placeholder="Example: shop counter sale, quick dispatch, partial carton request"
@@ -713,12 +828,20 @@ const OfflineSales = () => {
                     </div>
                     <div style={styles.itemFooter}>
                       <input
-                        type="number"
-                        min={1}
-                        max={item.maxQuantity}
+                        className="offline-sales-qty-input"
+                        type="text"
+                        inputMode="numeric"
+                        pattern="[0-9]*"
                         disabled={item.purchaseMode === 'half_box'}
-                        value={item.quantity}
-                        onChange={(e) => updateItemQuantity(index, e.target.value)}
+                        value={item.purchaseMode === 'half_box' ? '1' : (itemQuantityInputs[getSaleItemKey(item)] ?? String(item.quantity))}
+                        onChange={(e) => handleItemQuantityChange(item, e.target.value)}
+                        onBlur={() => commitItemQuantity(index)}
+                        onWheel={preventAccidentalQuantityScroll}
+                        onKeyDown={(e) => {
+                          preventStepperKeys(e)
+                          if (e.key === 'Enter') e.currentTarget.blur()
+                        }}
+                        onFocus={(e) => e.target.select()}
                         style={styles.qtyInput}
                       />
                       <span style={styles.itemValue}>{formatCurrency(item.price * item.quantity)}</span>
@@ -744,63 +867,28 @@ const OfflineSales = () => {
               </button>
             </div>
 
-            <div style={styles.historyCard}>
-              <div style={styles.summaryHeader}>
-                <div>
-                  <h2 style={styles.panelTitle}>Recent Offline Sales</h2>
-                  <p style={styles.panelSubtext}>Last entries, taaki counter team ko instant context mile.</p>
-                </div>
-              </div>
-
-              <div style={styles.historyList}>
-                {sales.slice(0, 8).map((sale) => (
-                  <div key={sale.id} style={styles.historyItem}>
-                    <div style={styles.historyTop}>
-                      <div>
-                        <div style={styles.historyNumber}>{sale.saleNumber}</div>
-                        <div style={styles.historyCustomer}>{sale.customerName || 'Walk-in Customer'}</div>
-                      </div>
-                      <div style={{
-                        ...styles.historyBadge,
-                        background: String(sale.paymentMethod).toLowerCase() === 'udhar' ? 'rgba(249, 115, 22, 0.14)' : 'rgba(34, 197, 94, 0.14)',
-                        color: String(sale.paymentMethod).toLowerCase() === 'udhar' ? '#f97316' : '#22c55e',
-                      }}>
-                        {sale.paymentMethod}
-                      </div>
-                    </div>
-                    <div style={styles.historyMeta}>
-                      {formatDateTime(sale.saleDate || sale.createdAt)} • {sale.items?.length || 0} items
-                    </div>
-                    {String(sale.paymentMethod || '').toLowerCase() === 'udhar' && (
-                      <div style={styles.udharNote}>
-                        Added {formatCurrency(sale.total)} on udhar{sale.customer?.outstanding != null ? ` • Total outstanding ${formatCurrency(sale.customer.outstanding)}` : ''}
-                      </div>
-                    )}
-                    <div style={styles.historyBottom}>
-                      <span>{sale.customerPhone || 'No phone'}</span>
-                      <strong>{formatCurrency(sale.total)}</strong>
-                    </div>
-                    <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
-                      <button type="button" onClick={() => printBill(sale)} style={{ ...styles.collectBtn, background: 'rgba(59,130,246,0.14)', color: '#3b82f6', flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
-                        <FaPrint /> Print Bill
-                      </button>
-                      {String(sale.paymentMethod || '').toLowerCase() === 'udhar' && sale.customerId && (
-                        <button type="button" onClick={() => goToPaymentsForCustomer(sale.customerId)} style={{ ...styles.collectBtn, flex: 1 }}>
-                          Manage Udhar →
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                ))}
-
-                {sales.length === 0 && (
-                  <div style={styles.emptyState}>
-                    <FaReceipt style={{ fontSize: 24, color: c.textSecondary }} />
-                    <p style={styles.emptyText}>Offline sales history abhi empty hai.</p>
-                  </div>
-                )}
-              </div>
-            </div>
+            <button
+              type="button"
+              onClick={() => navigate('/admin/offline-sales-history')}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 8,
+                width: '100%',
+                padding: '14px 20px',
+                background: `linear-gradient(135deg, rgba(249,115,22,0.12), rgba(249,115,22,0.06))`,
+                border: `1px solid rgba(249,115,22,0.25)`,
+                borderRadius: 12,
+                color: '#f97316',
+                fontSize: 14,
+                fontWeight: 600,
+                cursor: 'pointer',
+                transition: 'all 0.2s',
+              }}
+            >
+              <FaReceipt /> View Sales History →
+            </button>
           </aside>
         </div>
 
@@ -1000,6 +1088,8 @@ const getStyles = (c) => ({
     padding: '12px 14px',
     fontSize: 14,
     outline: 'none',
+    transition: 'border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease',
+    boxShadow: c.surface === c.inputBg ? `inset 0 0 0 1px ${c.border}` : 'none',
   },
   textarea: {
     width: '100%',
@@ -1012,6 +1102,8 @@ const getStyles = (c) => ({
     padding: '12px 14px',
     fontSize: 14,
     outline: 'none',
+    transition: 'border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease',
+    boxShadow: c.surface === c.inputBg ? `inset 0 0 0 1px ${c.border}` : 'none',
   },
   segmentRow: {
     display: 'flex',
@@ -1185,6 +1277,7 @@ const getStyles = (c) => ({
     border: `1px solid ${c.border}`,
     background: c.inputBg,
     padding: '14px',
+    boxShadow: c.surface === c.inputBg ? `inset 0 0 0 1px ${c.border}` : 'none',
   },
   itemTop: {
     display: 'flex',
@@ -1222,9 +1315,13 @@ const getStyles = (c) => ({
     width: 84,
     borderRadius: '12px',
     border: `1px solid ${c.border}`,
-    background: c.surface,
+    background: c.inputBg,
     color: c.text,
     padding: '9px 10px',
+    fontWeight: 700,
+    outline: 'none',
+    transition: 'border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease',
+    boxShadow: c.surface === c.inputBg ? `inset 0 0 0 1px ${c.border}` : 'none',
   },
   itemValue: {
     fontWeight: 800,

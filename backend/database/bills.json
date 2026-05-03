@@ -1,886 +1,1009 @@
 [
   {
-    "subtotal": 3120,
-    "gst": 530.4,
     "id": "BILL-001",
     "userId": "USR-002",
-    "paymentStatus": "Paid",
-    "orderId": "ORD-001",
+    "gst": 530.4,
     "customerName": "Aman Sheikh",
+    "orderId": "ORD-001",
+    "pdfUrl": "/bills/BILL-2001.pdf",
+    "subtotal": 3120,
+    "paymentStatus": "Paid",
+    "billDate": "2026-03-23T06:36:06.819Z",
     "items": [
       {
-        "price": 480,
-        "quantity": 3,
-        "productId": "PRD-001",
         "amount": 1440,
-        "name": "Coca Cola 300ml"
+        "quantity": 3,
+        "name": "Coca Cola 300ml",
+        "productId": "PRD-001",
+        "price": 480
       },
       {
-        "amount": 1440,
-        "productId": "PRD-002",
         "name": "Pepsi 500ml",
+        "productId": "PRD-002",
         "price": 720,
+        "amount": 1440,
         "quantity": 2
       },
       {
-        "price": 240,
-        "quantity": 1,
         "amount": 240,
+        "quantity": 1,
         "productId": "PRD-004",
+        "price": 240,
         "name": "Bisleri Water 1L"
       }
     ],
-    "pdfUrl": "/bills/BILL-2001.pdf",
     "total": 3715.4,
-    "billDate": "2026-03-23T06:36:06.819Z",
     "billNumber": "BILL-2001"
   },
   {
-    "customerName": "Aman Sheikh",
-    "billNumber": "BILL-2002",
-    "total": 2243.2,
     "billDate": "2026-03-23T08:08:52.481Z",
+    "paymentStatus": "Paid",
+    "billNumber": "BILL-2002",
     "items": [
       {
-        "amount": 1440,
         "productId": "PRD-001",
-        "name": "Coca Cola 300ml",
         "price": 480,
+        "name": "Coca Cola 300ml",
+        "amount": 1440,
         "quantity": 3
       },
       {
-        "price": 450,
         "quantity": 1,
         "amount": 450,
-        "productId": "PRD-003",
-        "name": "Maaza Mango 200ml"
+        "name": "Maaza Mango 200ml",
+        "price": 450,
+        "productId": "PRD-003"
       }
     ],
+    "total": 2243.2,
     "pdfUrl": "/bills/BILL-2002.pdf",
     "subtotal": 1890,
-    "id": "BILL-002",
-    "gst": 313.2,
+    "customerName": "Aman Sheikh",
     "orderId": "ORD-008",
     "userId": "USR-002",
-    "paymentStatus": "Paid"
+    "id": "BILL-002",
+    "gst": 313.2
   },
   {
-    "subtotal": 1920,
+    "orderId": "ORD-009",
+    "customerName": "Riya Patel",
     "gst": 283.2,
     "id": "BILL-003",
     "userId": "USR-004",
-    "paymentStatus": "Pending",
-    "orderId": "ORD-009",
-    "customerName": "Riya Patel",
-    "pdfUrl": "/bills/BILL-2003.pdf",
     "items": [
       {
-        "name": "Pepsi 500ml",
+        "quantity": 2,
         "amount": 1440,
-        "productId": "PRD-002",
         "price": 720,
-        "quantity": 2
+        "productId": "PRD-002",
+        "name": "Pepsi 500ml"
       },
       {
-        "productId": "PRD-004",
+        "quantity": 2,
         "amount": 480,
         "name": "Bisleri Water 1L",
         "price": 240,
-        "quantity": 2
+        "productId": "PRD-004"
       }
     ],
+    "total": 2243.2,
     "billNumber": "BILL-2003",
+    "paymentStatus": "Pending",
     "billDate": "2026-03-23T08:08:52.483Z",
-    "total": 2243.2
+    "pdfUrl": "/bills/BILL-2003.pdf",
+    "subtotal": 1920
   },
   {
-    "orderId": "ORD-012",
     "paymentStatus": "Pending",
-    "userId": "USR-003",
-    "id": "BILL-004",
-    "gst": 129.6,
-    "subtotal": 720,
-    "billNumber": "BILL-2004",
     "billDate": "2026-03-23T08:44:08.230Z",
+    "billNumber": "BILL-2004",
     "total": 864.6,
-    "pdfUrl": "/bills/BILL-2004.pdf",
     "items": [
       {
-        "productId": "PRD-002",
         "amount": 720,
+        "quantity": 1,
         "name": "Pepsi 500ml",
-        "price": 720,
-        "quantity": 1
+        "productId": "PRD-002",
+        "price": 720
       }
     ],
-    "customerName": "Parvez "
+    "subtotal": 720,
+    "pdfUrl": "/bills/BILL-2004.pdf",
+    "customerName": "Parvez ",
+    "orderId": "ORD-012",
+    "id": "BILL-004",
+    "userId": "USR-003",
+    "gst": 129.6
   },
   {
-    "subtotal": 600,
-    "id": "BILL-005",
     "gst": 108,
-    "orderId": "ORD-014",
+    "id": "BILL-005",
     "userId": "USR-003",
-    "paymentStatus": "Rejected",
+    "orderId": "ORD-014",
     "customerName": "Parvez ",
-    "total": 728,
-    "billDate": "2026-03-24T05:19:07.157Z",
-    "billNumber": "BILL-2005",
+    "subtotal": 600,
+    "pdfUrl": "/bills/BILL-2005.pdf",
     "items": [
       {
         "price": 600,
-        "quantity": 1,
-        "amount": 600,
         "productId": "PRD-005",
-        "name": "Sprite 750ml"
+        "name": "Sprite 750ml",
+        "quantity": 1,
+        "amount": 600
       }
     ],
-    "pdfUrl": "/bills/BILL-2005.pdf"
+    "total": 728,
+    "billNumber": "BILL-2005",
+    "paymentStatus": "Rejected",
+    "billDate": "2026-03-24T05:19:07.157Z"
   },
   {
-    "gst": 0,
-    "id": "BILL-006",
-    "subtotal": 600,
-    "paymentStatus": "Pending",
-    "userId": "USR-005",
-    "orderId": "ORD-020",
-    "customerName": "Gulam ",
     "items": [
       {
-        "amount": 600,
-        "productId": "PRD-006",
         "name": "Cooc",
+        "productId": "PRD-006",
         "price": 120,
+        "amount": 600,
         "quantity": 5
       }
     ],
-    "pdfUrl": "/bills/BILL-2006.pdf",
+    "total": 600,
     "billNumber": "BILL-2006",
+    "paymentStatus": "Pending",
     "billDate": "2026-03-24T05:41:01.776Z",
-    "total": 600
+    "pdfUrl": "/bills/BILL-2006.pdf",
+    "subtotal": 600,
+    "orderId": "ORD-020",
+    "customerName": "Gulam ",
+    "gst": 0,
+    "id": "BILL-006",
+    "userId": "USR-005"
   },
   {
-    "orderId": "ORD-024",
-    "userId": "USR-009",
-    "paymentStatus": "Pending",
-    "subtotal": 4500,
-    "id": "BILL-007",
-    "gst": 810,
-    "billNumber": "BILL-2007",
-    "total": 5310,
     "billDate": "2026-03-27T17:29:53.111Z",
+    "paymentStatus": "Pending",
+    "total": 5310,
     "items": [
       {
-        "price": 300,
-        "quantity": 15,
-        "amount": 4500,
+        "name": "PArr",
         "productId": "PRD-007",
-        "name": "PArr"
+        "price": 300,
+        "amount": 4500,
+        "quantity": 15
       }
     ],
+    "billNumber": "BILL-2007",
     "pdfUrl": "/bills/BILL-2007.pdf",
-    "customerName": "Test User"
+    "subtotal": 4500,
+    "customerName": "Test User",
+    "orderId": "ORD-024",
+    "id": "BILL-007",
+    "userId": "USR-009",
+    "gst": 810
   },
   {
-    "subtotal": 2000,
-    "gst": 0,
-    "id": "BILL-008",
-    "userId": "USR-008",
-    "paymentStatus": "Pending",
-    "orderId": "ORD-032",
     "customerName": "Masala",
+    "orderId": "ORD-032",
+    "userId": "USR-008",
+    "id": "BILL-008",
+    "gst": 0,
+    "billDate": "2026-03-28T11:16:59.525Z",
+    "paymentStatus": "Pending",
+    "total": 2000,
     "items": [
       {
         "name": "FRUITY",
-        "amount": 2000,
         "productId": "PRD-012",
         "price": 200,
+        "amount": 2000,
         "quantity": 10
       }
     ],
+    "billNumber": "BILL-2008",
     "pdfUrl": "/bills/BILL-2008.pdf",
-    "total": 2000,
-    "billDate": "2026-03-28T11:16:59.525Z",
-    "billNumber": "BILL-2008"
+    "subtotal": 2000
   },
   {
-    "gst": 172.8,
-    "id": "BILL-009",
     "subtotal": 960,
+    "pdfUrl": "/bills/BILL-2009.pdf",
     "paymentStatus": "Pending",
-    "userId": "USR-008",
-    "orderId": "ORD-030",
-    "customerName": "Masala",
+    "billDate": "2026-03-28T12:39:34.630Z",
     "items": [
       {
-        "price": 480,
-        "quantity": 2,
         "name": "Coca Cola 300ml",
+        "productId": "PRD-001",
+        "price": 480,
         "amount": 960,
-        "productId": "PRD-001"
+        "quantity": 2
       }
     ],
-    "pdfUrl": "/bills/BILL-2009.pdf",
+    "total": 1152.8,
     "billNumber": "BILL-2009",
-    "billDate": "2026-03-28T12:39:34.630Z",
-    "total": 1152.8
+    "id": "BILL-009",
+    "userId": "USR-008",
+    "gst": 172.8,
+    "customerName": "Masala",
+    "orderId": "ORD-030"
   },
   {
-    "id": "BILL-010",
-    "gst": 0,
-    "subtotal": 2000,
-    "orderId": "ORD-041",
-    "userId": "USR-010",
-    "paymentStatus": "Rejected",
-    "customerName": "GULAM",
-    "billNumber": "BILL-2010",
     "total": 2000,
-    "billDate": "2026-03-29T09:12:14.353Z",
-    "pdfUrl": "/bills/BILL-2010.pdf",
     "items": [
       {
-        "price": 400,
-        "quantity": 5,
-        "amount": 2000,
         "productId": "PRD-013",
-        "name": "FRUITY"
+        "price": 400,
+        "name": "FRUITY",
+        "amount": 2000,
+        "quantity": 5
       }
-    ]
+    ],
+    "billNumber": "BILL-2010",
+    "billDate": "2026-03-29T09:12:14.353Z",
+    "paymentStatus": "Rejected",
+    "subtotal": 2000,
+    "pdfUrl": "/bills/BILL-2010.pdf",
+    "orderId": "ORD-041",
+    "customerName": "GULAM",
+    "gst": 0,
+    "id": "BILL-010",
+    "userId": "USR-010"
   },
   {
-    "orderId": "ORD-039",
-    "paymentStatus": "Pending",
-    "userId": "USR-010",
     "subtotal": 30000,
-    "id": "BILL-011",
-    "gst": 0,
-    "billNumber": "BILL-2011",
+    "pdfUrl": "/bills/BILL-2011.pdf",
     "billDate": "2026-03-29T09:14:26.704Z",
-    "total": 30000,
+    "paymentStatus": "Pending",
+    "billNumber": "BILL-2011",
     "items": [
       {
-        "amount": 30000,
-        "productId": "PRD-013",
         "name": "FRUITY",
         "price": 400,
-        "quantity": 75
+        "productId": "PRD-013",
+        "quantity": 75,
+        "amount": 30000
       }
     ],
-    "pdfUrl": "/bills/BILL-2011.pdf",
-    "customerName": "GULAM"
+    "total": 30000,
+    "id": "BILL-011",
+    "userId": "USR-010",
+    "gst": 0,
+    "customerName": "GULAM",
+    "orderId": "ORD-039"
   },
   {
+    "pdfUrl": "/bills/BILL-2012.pdf",
     "subtotal": 2000,
+    "billDate": "2026-03-30T09:04:12.010Z",
+    "paymentStatus": "Pending",
+    "total": 2000,
+    "items": [
+      {
+        "productId": "PRD-012",
+        "price": 200,
+        "name": "FRUITY",
+        "amount": 2000,
+        "quantity": 10
+      }
+    ],
+    "billNumber": "BILL-2012",
+    "userId": "USR-002",
     "id": "BILL-012",
     "gst": 0,
-    "orderId": "ORD-044",
-    "paymentStatus": "Pending",
-    "userId": "USR-002",
     "customerName": "REHAN",
-    "billDate": "2026-03-30T09:04:12.010Z",
-    "total": 2000,
-    "billNumber": "BILL-2012",
-    "pdfUrl": "/bills/BILL-2012.pdf",
-    "items": [
-      {
-        "name": "FRUITY",
-        "productId": "PRD-012",
-        "amount": 2000,
-        "price": 200,
-        "quantity": 10
-      }
-    ]
+    "orderId": "ORD-044"
   },
   {
+    "userId": "USR-002",
     "id": "BILL-013",
     "gst": 0,
-    "subtotal": 640,
-    "orderId": "ORD-046",
-    "paymentStatus": "Pending",
-    "userId": "USR-002",
     "customerName": "REHAN",
-    "billNumber": "BILL-2013",
+    "orderId": "ORD-046",
+    "subtotal": 640,
+    "pdfUrl": "/bills/BILL-2013.pdf",
     "billDate": "2026-03-30T09:20:06.601Z",
-    "total": 645,
+    "paymentStatus": "Pending",
+    "billNumber": "BILL-2013",
     "items": [
       {
-        "price": 200,
+        "amount": 200,
         "quantity": 1,
         "name": "FRUITY",
         "productId": "PRD-012",
+        "price": 200
+      },
+      {
+        "name": "APPE",
+        "price": 200,
+        "productId": "PRD-010",
+        "quantity": 1,
         "amount": 200
       },
       {
+        "quantity": 1,
+        "amount": 240,
+        "price": 240,
+        "productId": "PRD-001",
+        "name": "Coca Cola 300ml"
+      }
+    ],
+    "total": 645
+  },
+  {
+    "orderId": "ORD-053",
+    "customerName": "REHAN",
+    "gst": 0,
+    "id": "BILL-014",
+    "userId": "USR-002",
+    "billNumber": "BILL-2014",
+    "total": 2000,
+    "items": [
+      {
+        "quantity": 10,
+        "amount": 2000,
         "price": 200,
+        "productId": "PRD-012",
+        "name": "FRUITY"
+      }
+    ],
+    "paymentStatus": "Pending",
+    "billDate": "2026-03-30T11:14:39.059Z",
+    "subtotal": 2000,
+    "pdfUrl": "/bills/BILL-2014.pdf"
+  },
+  {
+    "orderId": "ORD-037",
+    "gst": 0,
+    "id": "BILL-015",
+    "userId": "USR-010",
+    "orderNumber": "ORD-1037",
+    "createdAt": "2026-03-31T06:06:10.231Z",
+    "paymentMethod": "COD",
+    "customerPhone": "9834827675",
+    "customerName": "GULAM",
+    "customerAddress": "Faizan barkat masjid",
+    "items": [
+      {
+        "purchaseMode": "full_box",
+        "amount": 4000,
+        "quantity": 10,
+        "unitLabel": null,
+        "name": "FRUITY",
+        "productId": "PRD-013",
+        "price": 400
+      }
+    ],
+    "total": 4000,
+    "billNumber": "BILL-2015",
+    "paymentStatus": "Pending",
+    "billDate": "2026-03-31T06:06:10.231Z",
+    "orderStatus": "delivered",
+    "pdfUrl": "/bills/BILL-2015.pdf",
+    "subtotal": 4000,
+    "orderDate": "2026-03-29T08:12:39.221Z"
+  },
+  {
+    "createdAt": "2026-03-31T06:14:24.359Z",
+    "orderNumber": "ORD-1047",
+    "gst": 0,
+    "id": "BILL-016",
+    "userId": "USR-002",
+    "orderId": "ORD-047",
+    "subtotal": 920,
+    "orderStatus": "delivered",
+    "pdfUrl": "/bills/BILL-2016.pdf",
+    "orderDate": "2026-03-30T09:46:12.344Z",
+    "billNumber": "BILL-2016",
+    "total": 935,
+    "items": [
+      {
+        "unitLabel": "box",
         "quantity": 1,
         "amount": 200,
+        "purchaseMode": "full_box",
+        "price": 200,
+        "productId": "PRD-012",
+        "name": "FRUITY"
+      },
+      {
+        "quantity": 1,
+        "unitLabel": "box",
+        "amount": 480,
+        "purchaseMode": "full_box",
+        "name": "Coca Cola 300ml",
+        "price": 480,
+        "productId": "PRD-001"
+      },
+      {
+        "purchaseMode": "half_box",
+        "amount": 240,
+        "quantity": 1,
+        "unitLabel": "half box",
+        "productId": "PRD-001",
+        "price": 240,
+        "name": "Coca Cola 300ml"
+      }
+    ],
+    "billDate": "2026-03-31T06:14:24.359Z",
+    "paymentStatus": "Pending",
+    "customerAddress": "100 feet Road\nbehind sumaiyya marriage halll",
+    "paymentMethod": "COD",
+    "customerName": "REHAN",
+    "customerPhone": "9172632945"
+  },
+  {
+    "createdAt": "2026-04-01T14:01:32.719Z",
+    "orderNumber": "ORD-1056",
+    "id": "BILL-017",
+    "userId": "USR-010",
+    "gst": 0,
+    "orderId": "ORD-056",
+    "orderDate": "2026-04-01T13:59:55.769Z",
+    "orderStatus": "delivered",
+    "pdfUrl": "/bills/BILL-2017.pdf",
+    "subtotal": 1040,
+    "paymentStatus": "Pending",
+    "billDate": "2026-04-01T14:01:32.719Z",
+    "items": [
+      {
+        "purchaseMode": "full_box",
+        "amount": 600,
+        "quantity": 3,
+        "unitLabel": "boxes",
         "productId": "PRD-010",
+        "price": 200,
         "name": "APPE"
       },
       {
-        "price": 240,
-        "quantity": 1,
-        "amount": 240,
-        "productId": "PRD-001",
-        "name": "Coca Cola 300ml"
-      }
-    ],
-    "pdfUrl": "/bills/BILL-2013.pdf"
-  },
-  {
-    "pdfUrl": "/bills/BILL-2014.pdf",
-    "items": [
-      {
-        "price": 200,
-        "quantity": 10,
-        "name": "FRUITY",
         "productId": "PRD-012",
-        "amount": 2000
-      }
-    ],
-    "billDate": "2026-03-30T11:14:39.059Z",
-    "total": 2000,
-    "billNumber": "BILL-2014",
-    "customerName": "REHAN",
-    "paymentStatus": "Pending",
-    "userId": "USR-002",
-    "orderId": "ORD-053",
-    "subtotal": 2000,
-    "gst": 0,
-    "id": "BILL-014"
-  },
-  {
-    "orderDate": "2026-03-29T08:12:39.221Z",
-    "total": 4000,
-    "items": [
-      {
-        "amount": 4000,
-        "productId": "PRD-013",
-        "purchaseMode": "full_box",
-        "name": "FRUITY",
-        "unitLabel": null,
-        "price": 400,
-        "quantity": 10
-      }
-    ],
-    "pdfUrl": "/bills/BILL-2015.pdf",
-    "orderStatus": "delivered",
-    "paymentStatus": "Pending",
-    "id": "BILL-015",
-    "customerPhone": "9834827675",
-    "createdAt": "2026-03-31T06:06:10.231Z",
-    "orderNumber": "ORD-1037",
-    "billNumber": "BILL-2015",
-    "billDate": "2026-03-31T06:06:10.231Z",
-    "paymentMethod": "COD",
-    "customerName": "GULAM",
-    "orderId": "ORD-037",
-    "userId": "USR-010",
-    "customerAddress": "Faizan barkat masjid",
-    "gst": 0,
-    "subtotal": 4000
-  },
-  {
-    "customerAddress": "100 feet Road\nbehind sumaiyya marriage halll",
-    "gst": 0,
-    "subtotal": 920,
-    "orderId": "ORD-047",
-    "userId": "USR-002",
-    "customerName": "REHAN",
-    "billDate": "2026-03-31T06:14:24.359Z",
-    "billNumber": "BILL-2016",
-    "paymentMethod": "COD",
-    "id": "BILL-016",
-    "customerPhone": "9172632945",
-    "createdAt": "2026-03-31T06:14:24.359Z",
-    "orderNumber": "ORD-1047",
-    "paymentStatus": "Pending",
-    "orderStatus": "delivered",
-    "total": 935,
-    "orderDate": "2026-03-30T09:46:12.344Z",
-    "items": [
-      {
-        "unitLabel": "box",
         "price": 200,
-        "quantity": 1,
-        "productId": "PRD-012",
+        "name": "FRUITY",
         "amount": 200,
-        "name": "FRUITY",
-        "purchaseMode": "full_box"
-      },
-      {
-        "quantity": 1,
-        "unitLabel": "box",
-        "price": 480,
-        "productId": "PRD-001",
-        "amount": 480,
         "purchaseMode": "full_box",
-        "name": "Coca Cola 300ml"
-      },
-      {
-        "productId": "PRD-001",
-        "amount": 240,
-        "name": "Coca Cola 300ml",
-        "purchaseMode": "half_box",
-        "price": 240,
-        "quantity": 1,
-        "unitLabel": "half box"
-      }
-    ],
-    "pdfUrl": "/bills/BILL-2016.pdf"
-  },
-  {
-    "gst": 0,
-    "customerAddress": "Faizan barkat masjid",
-    "subtotal": 1040,
-    "userId": "USR-010",
-    "orderId": "ORD-056",
-    "customerName": "GULAM",
-    "billDate": "2026-04-01T14:01:32.719Z",
-    "billNumber": "BILL-2017",
-    "paymentMethod": "COD",
-    "customerPhone": "9834827675",
-    "id": "BILL-017",
-    "orderNumber": "ORD-1056",
-    "createdAt": "2026-04-01T14:01:32.719Z",
-    "paymentStatus": "Pending",
-    "orderStatus": "delivered",
-    "items": [
-      {
-        "purchaseMode": "full_box",
-        "name": "APPE",
-        "amount": 600,
-        "productId": "PRD-010",
-        "price": 200,
-        "quantity": 3,
-        "unitLabel": "boxes"
-      },
-      {
-        "purchaseMode": "full_box",
-        "name": "FRUITY",
-        "productId": "PRD-012",
-        "amount": 200,
-        "price": 200,
         "quantity": 1,
         "unitLabel": "box"
       },
       {
+        "amount": 240,
+        "purchaseMode": "full_box",
         "unitLabel": "box",
-        "price": 240,
         "quantity": 1,
+        "name": "Bisleri Water 1L",
         "productId": "PRD-004",
-        "amount": 240,
-        "purchaseMode": "full_box",
-        "name": "Bisleri Water 1L"
+        "price": 240
       }
     ],
-    "pdfUrl": "/bills/BILL-2017.pdf",
     "total": 1045,
-    "orderDate": "2026-04-01T13:59:55.769Z"
-  },
-  {
-    "customerName": "GULAM",
-    "billNumber": "BILL-2018",
-    "billDate": "2026-04-03T06:12:09.392Z",
-    "paymentMethod": "COD",
+    "billNumber": "BILL-2017",
     "customerAddress": "Faizan barkat masjid",
-    "gst": 0,
-    "subtotal": 242.5,
-    "orderId": "ORD-057",
-    "userId": "USR-010",
-    "orderStatus": "delivered",
-    "total": 247.5,
-    "orderDate": "2026-04-03T06:10:29.491Z",
-    "items": [
-      {
-        "quantity": 1,
-        "unitLabel": "box",
-        "price": 240,
-        "purchaseMode": "full_box",
-        "name": "Bisleri Water ",
-        "amount": 240,
-        "productId": "PRD-004"
-      },
-      {
-        "amount": 2.5,
-        "productId": "PRD-007",
-        "purchaseMode": "piece",
-        "name": "Campa orange",
-        "unitLabel": "piece",
-        "price": 2.5,
-        "quantity": 1
-      }
-    ],
-    "pdfUrl": "/bills/BILL-2018.pdf",
-    "id": "BILL-018",
     "customerPhone": "9834827675",
-    "createdAt": "2026-04-03T06:12:09.392Z",
-    "orderNumber": "ORD-1057",
-    "paymentStatus": "Pending"
-  },
-  {
-    "paymentMethod": "Online",
-    "billNumber": "BILL-2019",
-    "billDate": "2026-04-03T06:29:55.199Z",
-    "customerName": "REHAN",
-    "userId": "USR-002",
-    "orderId": "ORD-051",
-    "subtotal": 2000,
-    "gst": 0,
-    "customerAddress": "100 feet Road\nbehind sumaiyya marriage halll",
-    "pdfUrl": "/bills/BILL-2019.pdf",
-    "items": [
-      {
-        "price": 200,
-        "quantity": 10,
-        "unitLabel": "boxes",
-        "productId": "PRD-012",
-        "amount": 2000,
-        "purchaseMode": "full_box",
-        "name": "FRUITY"
-      }
-    ],
-    "orderDate": "2026-03-30T10:33:01.806Z",
-    "total": 2000,
-    "orderStatus": "confirmed",
-    "paymentStatus": "Verification Pending",
-    "orderNumber": "ORD-1051",
-    "createdAt": "2026-04-03T06:29:55.199Z",
-    "customerPhone": "9172632945",
-    "id": "BILL-019"
-  },
-  {
-    "pdfUrl": "/bills/BILL-2020.pdf",
-    "items": [
-      {
-        "quantity": 10,
-        "unitLabel": "boxes",
-        "price": 200,
-        "purchaseMode": "full_box",
-        "name": "FRUITY",
-        "productId": "PRD-012",
-        "amount": 2000
-      }
-    ],
-    "orderDate": "2026-03-30T10:14:37.209Z",
-    "total": 2000,
-    "orderStatus": "confirmed",
-    "paymentStatus": "Pending",
-    "customerPhone": "9172632945",
-    "id": "BILL-020",
-    "orderNumber": "ORD-1049",
-    "createdAt": "2026-04-03T06:37:54.538Z",
-    "billNumber": "BILL-2020",
-    "billDate": "2026-04-03T06:37:54.538Z",
-    "paymentMethod": "COD",
-    "customerName": "REHAN",
-    "userId": "USR-002",
-    "orderId": "ORD-049",
-    "gst": 0,
-    "customerAddress": "100 feet Road\nbehind sumaiyya marriage halll",
-    "subtotal": 2000
-  },
-  {
-    "userId": "USR-002",
-    "orderId": "ORD-048",
-    "gst": 0,
-    "customerAddress": "100 feet Road\nbehind sumaiyya marriage halll",
-    "subtotal": 2000,
-    "billNumber": "BILL-2021",
-    "billDate": "2026-04-03T06:38:00.189Z",
-    "paymentMethod": "Online",
-    "customerName": "REHAN",
-    "paymentStatus": "Verification Pending",
-    "customerPhone": "9172632945",
-    "id": "BILL-021",
-    "orderNumber": "ORD-1048",
-    "createdAt": "2026-04-03T06:38:00.189Z",
-    "items": [
-      {
-        "price": 200,
-        "quantity": 10,
-        "unitLabel": "boxes",
-        "productId": "PRD-012",
-        "amount": 2000,
-        "name": "FRUITY",
-        "purchaseMode": "full_box"
-      }
-    ],
-    "pdfUrl": "/bills/BILL-2021.pdf",
-    "orderDate": "2026-03-30T10:13:27.876Z",
-    "total": 2000,
-    "orderStatus": "confirmed"
-  },
-  {
-    "customerPhone": "9172632945",
-    "id": "BILL-022",
-    "orderNumber": "ORD-1050",
-    "createdAt": "2026-04-03T06:41:48.649Z",
-    "paymentStatus": "Pending",
-    "orderStatus": "confirmed",
-    "pdfUrl": "/bills/BILL-2022.pdf",
-    "items": [
-      {
-        "unitLabel": "boxes",
-        "price": 200,
-        "quantity": 10,
-        "purchaseMode": "full_box",
-        "name": "FRUITY",
-        "productId": "PRD-012",
-        "amount": 2000
-      }
-    ],
-    "orderDate": "2026-03-30T10:32:15.478Z",
-    "total": 2000,
-    "gst": 0,
-    "customerAddress": "100 feet Road\nbehind sumaiyya marriage halll",
-    "subtotal": 2000,
-    "userId": "USR-002",
-    "orderId": "ORD-050",
-    "customerName": "REHAN",
-    "billDate": "2026-04-03T06:41:48.649Z",
-    "billNumber": "BILL-2022",
+    "customerName": "GULAM",
     "paymentMethod": "COD"
   },
   {
+    "orderNumber": "ORD-1057",
+    "createdAt": "2026-04-03T06:12:09.392Z",
+    "orderId": "ORD-057",
     "gst": 0,
-    "customerAddress": "100 feet Road\nbehind sumaiyya marriage halll",
-    "subtotal": 4800,
-    "userId": "USR-002",
-    "orderId": "ORD-052",
-    "customerName": "REHAN",
-    "billNumber": "BILL-2023",
-    "billDate": "2026-04-03T06:51:08.008Z",
-    "paymentMethod": "COD",
-    "customerPhone": "9172632945",
-    "id": "BILL-023",
-    "orderNumber": "ORD-1052",
-    "createdAt": "2026-04-03T06:51:08.008Z",
-    "paymentStatus": "Pending",
-    "orderStatus": "confirmed",
-    "pdfUrl": "/bills/BILL-2023.pdf",
+    "userId": "USR-010",
+    "id": "BILL-018",
+    "billNumber": "BILL-2018",
     "items": [
       {
-        "productId": "PRD-001",
-        "amount": 4800,
         "purchaseMode": "full_box",
+        "amount": 240,
+        "unitLabel": "box",
+        "quantity": 1,
+        "name": "Bisleri Water ",
+        "productId": "PRD-004",
+        "price": 240
+      },
+      {
+        "unitLabel": "piece",
+        "quantity": 1,
+        "purchaseMode": "piece",
+        "amount": 2.5,
+        "name": "Campa orange",
+        "price": 2.5,
+        "productId": "PRD-007"
+      }
+    ],
+    "total": 247.5,
+    "billDate": "2026-04-03T06:12:09.392Z",
+    "paymentStatus": "Pending",
+    "subtotal": 242.5,
+    "pdfUrl": "/bills/BILL-2018.pdf",
+    "orderStatus": "delivered",
+    "orderDate": "2026-04-03T06:10:29.491Z",
+    "paymentMethod": "COD",
+    "customerName": "GULAM",
+    "customerPhone": "9834827675",
+    "customerAddress": "Faizan barkat masjid"
+  },
+  {
+    "orderNumber": "ORD-1051",
+    "createdAt": "2026-04-03T06:29:55.199Z",
+    "orderId": "ORD-051",
+    "gst": 0,
+    "id": "BILL-019",
+    "userId": "USR-002",
+    "items": [
+      {
+        "price": 200,
+        "productId": "PRD-012",
+        "name": "FRUITY",
+        "unitLabel": "boxes",
+        "quantity": 10,
+        "amount": 2000,
+        "purchaseMode": "full_box"
+      }
+    ],
+    "total": 2000,
+    "billNumber": "BILL-2019",
+    "billDate": "2026-04-03T06:29:55.199Z",
+    "paymentStatus": "Verification Pending",
+    "pdfUrl": "/bills/BILL-2019.pdf",
+    "orderStatus": "confirmed",
+    "subtotal": 2000,
+    "orderDate": "2026-03-30T10:33:01.806Z",
+    "paymentMethod": "Online",
+    "customerPhone": "9172632945",
+    "customerName": "REHAN",
+    "customerAddress": "100 feet Road\nbehind sumaiyya marriage halll"
+  },
+  {
+    "createdAt": "2026-04-03T06:37:54.538Z",
+    "orderNumber": "ORD-1049",
+    "gst": 0,
+    "id": "BILL-020",
+    "userId": "USR-002",
+    "orderId": "ORD-049",
+    "pdfUrl": "/bills/BILL-2020.pdf",
+    "orderStatus": "confirmed",
+    "subtotal": 2000,
+    "orderDate": "2026-03-30T10:14:37.209Z",
+    "items": [
+      {
+        "purchaseMode": "full_box",
+        "amount": 2000,
+        "unitLabel": "boxes",
+        "quantity": 10,
+        "productId": "PRD-012",
+        "price": 200,
+        "name": "FRUITY"
+      }
+    ],
+    "total": 2000,
+    "billNumber": "BILL-2020",
+    "billDate": "2026-04-03T06:37:54.538Z",
+    "paymentStatus": "Pending",
+    "customerAddress": "100 feet Road\nbehind sumaiyya marriage halll",
+    "paymentMethod": "COD",
+    "customerPhone": "9172632945",
+    "customerName": "REHAN"
+  },
+  {
+    "orderId": "ORD-048",
+    "gst": 0,
+    "userId": "USR-002",
+    "id": "BILL-021",
+    "orderNumber": "ORD-1048",
+    "createdAt": "2026-04-03T06:38:00.189Z",
+    "paymentMethod": "Online",
+    "customerName": "REHAN",
+    "customerPhone": "9172632945",
+    "customerAddress": "100 feet Road\nbehind sumaiyya marriage halll",
+    "billNumber": "BILL-2021",
+    "items": [
+      {
+        "price": 200,
+        "productId": "PRD-012",
+        "name": "FRUITY",
+        "quantity": 10,
+        "unitLabel": "boxes",
+        "amount": 2000,
+        "purchaseMode": "full_box"
+      }
+    ],
+    "total": 2000,
+    "billDate": "2026-04-03T06:38:00.189Z",
+    "paymentStatus": "Verification Pending",
+    "subtotal": 2000,
+    "pdfUrl": "/bills/BILL-2021.pdf",
+    "orderStatus": "confirmed",
+    "orderDate": "2026-03-30T10:13:27.876Z"
+  },
+  {
+    "customerPhone": "9172632945",
+    "customerName": "REHAN",
+    "paymentMethod": "COD",
+    "customerAddress": "100 feet Road\nbehind sumaiyya marriage halll",
+    "billDate": "2026-04-03T06:41:48.649Z",
+    "paymentStatus": "Pending",
+    "items": [
+      {
+        "purchaseMode": "full_box",
+        "amount": 2000,
+        "quantity": 10,
+        "unitLabel": "boxes",
+        "productId": "PRD-012",
+        "price": 200,
+        "name": "FRUITY"
+      }
+    ],
+    "total": 2000,
+    "billNumber": "BILL-2022",
+    "orderDate": "2026-03-30T10:32:15.478Z",
+    "orderStatus": "confirmed",
+    "pdfUrl": "/bills/BILL-2022.pdf",
+    "subtotal": 2000,
+    "orderId": "ORD-050",
+    "id": "BILL-022",
+    "userId": "USR-002",
+    "gst": 0,
+    "orderNumber": "ORD-1050",
+    "createdAt": "2026-04-03T06:41:48.649Z"
+  },
+  {
+    "customerPhone": "9172632945",
+    "customerName": "REHAN",
+    "paymentMethod": "COD",
+    "customerAddress": "100 feet Road\nbehind sumaiyya marriage halll",
+    "billDate": "2026-04-03T06:51:08.008Z",
+    "paymentStatus": "Pending",
+    "billNumber": "BILL-2023",
+    "total": 4900,
+    "items": [
+      {
         "name": "Coca Cola 300ml",
         "price": 480,
+        "productId": "PRD-001",
         "quantity": 10,
-        "unitLabel": "boxes"
+        "unitLabel": "boxes",
+        "amount": 4800,
+        "purchaseMode": "full_box"
       }
     ],
     "orderDate": "2026-03-30T10:38:34.398Z",
-    "total": 4900
+    "pdfUrl": "/bills/BILL-2023.pdf",
+    "orderStatus": "confirmed",
+    "subtotal": 4800,
+    "orderId": "ORD-052",
+    "id": "BILL-023",
+    "userId": "USR-002",
+    "gst": 0,
+    "orderNumber": "ORD-1052",
+    "createdAt": "2026-04-03T06:51:08.008Z"
   },
   {
-    "paymentStatus": "Paid",
+    "gst": 0,
+    "id": "BILL-024",
+    "userId": "USR-008",
+    "orderId": "ORD-060",
     "createdAt": "2026-04-03T12:44:20.335Z",
     "orderNumber": "ORD-1060",
-    "id": "BILL-024",
+    "customerAddress": "fasdf",
+    "paymentMethod": "Online",
     "customerPhone": "8698608166",
-    "total": 3000,
+    "customerName": "Masala",
+    "orderStatus": "confirmed",
+    "pdfUrl": "/bills/BILL-2024.pdf",
+    "subtotal": 3000,
     "orderDate": "2026-04-03T12:43:55.626Z",
+    "billNumber": "BILL-2024",
+    "total": 3000,
     "items": [
       {
-        "amount": 3000,
-        "productId": "PRD-015",
         "purchaseMode": "full_box",
-        "name": "FIZZZ",
-        "price": 300,
+        "amount": 3000,
+        "unitLabel": "boxes",
         "quantity": 10,
-        "unitLabel": "boxes"
+        "productId": "PRD-015",
+        "price": 300,
+        "name": "FIZZZ"
       }
     ],
-    "pdfUrl": "/bills/BILL-2024.pdf",
-    "orderStatus": "confirmed",
-    "orderId": "ORD-060",
-    "userId": "USR-008",
-    "subtotal": 3000,
-    "customerAddress": "fasdf",
-    "gst": 0,
-    "paymentMethod": "Online",
-    "billNumber": "BILL-2024",
-    "billDate": "2026-04-03T12:44:20.335Z",
-    "customerName": "Masala"
+    "paymentStatus": "Paid",
+    "billDate": "2026-04-03T12:44:20.335Z"
   },
   {
     "createdAt": "2026-04-04T05:33:11.967Z",
     "orderNumber": "ORD-1036",
+    "gst": 0,
     "id": "BILL-025",
-    "customerPhone": "9834827675",
-    "paymentStatus": "Pending",
+    "userId": "USR-010",
+    "orderId": "ORD-036",
+    "subtotal": 4000,
     "orderStatus": "delivered",
+    "pdfUrl": "/bills/BILL-2025.pdf",
     "orderDate": "2026-03-29T07:14:17.024Z",
-    "total": 4000,
     "items": [
       {
-        "quantity": 10,
-        "unitLabel": null,
+        "name": "FRUITY",
         "price": 400,
         "productId": "PRD-013",
+        "unitLabel": null,
+        "quantity": 10,
         "amount": 4000,
-        "name": "FRUITY",
         "purchaseMode": "full_box"
       }
     ],
-    "pdfUrl": "/bills/BILL-2025.pdf",
-    "subtotal": 4000,
-    "customerAddress": "Faizan barkat masjid",
-    "gst": 0,
-    "orderId": "ORD-036",
-    "userId": "USR-010",
-    "customerName": "GULAM",
-    "paymentMethod": "COD",
+    "total": 4000,
     "billNumber": "BILL-2025",
-    "billDate": "2026-04-04T05:33:11.967Z"
+    "billDate": "2026-04-04T05:33:11.967Z",
+    "paymentStatus": "Pending",
+    "customerAddress": "Faizan barkat masjid",
+    "paymentMethod": "COD",
+    "customerName": "GULAM",
+    "customerPhone": "9834827675"
   },
   {
-    "orderDate": "2026-04-04T14:47:13.034Z",
-    "total": 4,
-    "pdfUrl": "/bills/BILL-2026.pdf",
-    "items": [
-      {
-        "unitLabel": "piece",
-        "price": 4,
-        "quantity": 1,
-        "purchaseMode": "piece",
-        "name": "Campa Lemon",
-        "productId": "PRD-008",
-        "amount": 4
-      }
-    ],
-    "orderStatus": "delivered",
-    "paymentStatus": "Pending",
     "createdAt": "2026-04-04T14:48:32.511Z",
     "orderNumber": "ORD-1062",
+    "gst": 0,
     "id": "BILL-026",
-    "customerPhone": "9763615754",
-    "paymentMethod": "COD",
+    "userId": "USR-012",
+    "orderId": "ORD-062",
+    "subtotal": 4,
+    "pdfUrl": "/bills/BILL-2026.pdf",
+    "orderStatus": "delivered",
+    "orderDate": "2026-04-04T14:47:13.034Z",
+    "items": [
+      {
+        "amount": 4,
+        "purchaseMode": "piece",
+        "quantity": 1,
+        "unitLabel": "piece",
+        "productId": "PRD-008",
+        "price": 4,
+        "name": "Campa Lemon"
+      }
+    ],
+    "total": 4,
     "billNumber": "BILL-2026",
     "billDate": "2026-04-04T14:48:32.511Z",
-    "customerName": "Mudassir Khan",
-    "orderId": "ORD-062",
-    "userId": "USR-012",
-    "subtotal": 4,
+    "paymentStatus": "Pending",
     "customerAddress": "Jam Ka Malha Green Kalni Dhule",
-    "gst": 0
+    "paymentMethod": "COD",
+    "customerName": "Mudassir Khan",
+    "customerPhone": "9763615754"
   },
   {
-    "userId": "USR-013",
-    "orderId": "ORD-064",
-    "gst": 0,
-    "customerAddress": "Jamka malla near faizane barkat masjid",
-    "subtotal": 450,
-    "billNumber": "BILL-2027",
-    "billDate": "2026-04-04T15:07:34.706Z",
-    "paymentMethod": "COD",
     "customerName": "Ali amjad",
-    "paymentStatus": "Pending",
     "customerPhone": "9158425821",
+    "paymentMethod": "COD",
+    "customerAddress": "Jamka malla near faizane barkat masjid",
+    "billDate": "2026-04-04T15:07:34.706Z",
+    "paymentStatus": "Pending",
+    "billNumber": "BILL-2027",
+    "total": 450,
+    "items": [
+      {
+        "name": "Maaza Mango 10 mrp",
+        "productId": "PRD-003",
+        "price": 450,
+        "amount": 450,
+        "purchaseMode": "full_box",
+        "quantity": 1,
+        "unitLabel": "box"
+      }
+    ],
+    "orderDate": "2026-04-04T15:07:10.080Z",
+    "subtotal": 450,
+    "orderStatus": "confirmed",
+    "pdfUrl": "/bills/BILL-2027.pdf",
+    "orderId": "ORD-064",
+    "userId": "USR-013",
     "id": "BILL-027",
+    "gst": 0,
     "orderNumber": "ORD-1064",
-    "createdAt": "2026-04-04T15:07:34.706Z",
+    "createdAt": "2026-04-04T15:07:34.706Z"
+  },
+  {
+    "discount": 0,
+    "createdAt": "2026-04-05T06:58:21.897Z",
+    "orderNumber": "SALE-5001",
+    "id": "BILL-028",
+    "userId": null,
+    "gst": 0,
+    "orderId": "SALE-0001",
+    "orderDate": "2026-04-05T06:58:21.881Z",
+    "subtotal": 450,
+    "sourceType": "offline_sale",
+    "orderStatus": "Completed",
+    "pdfUrl": "/bills/BILL-2028.pdf",
+    "billDate": "2026-04-05T06:58:21.897Z",
+    "paymentStatus": "Paid",
+    "billNumber": "BILL-2028",
     "items": [
       {
         "price": 450,
+        "productId": "PRD-003",
+        "name": "Maaza Mango 10 mrp",
+        "unitLabel": "box",
+        "quantity": 1,
+        "purchaseMode": "full_box",
+        "amount": 450
+      }
+    ],
+    "total": 450,
+    "customerAddress": "",
+    "sourceId": "SALE-0001",
+    "customerName": "Walk-in Customer",
+    "customerPhone": "",
+    "paymentMethod": "Cash",
+    "deliveryCharge": 0
+  },
+  {
+    "orderDate": "2026-04-05T06:59:01.633Z",
+    "sourceType": "offline_sale",
+    "subtotal": 200,
+    "orderStatus": "Completed",
+    "pdfUrl": "/bills/BILL-2029.pdf",
+    "paymentStatus": "Pending",
+    "billDate": "2026-04-05T06:59:01.645Z",
+    "total": 200,
+    "items": [
+      {
         "quantity": 1,
         "unitLabel": "box",
-        "name": "Maaza Mango 10 mrp",
+        "amount": 200,
         "purchaseMode": "full_box",
-        "amount": 450,
+        "name": "Swing",
+        "price": 200,
+        "productId": "PRD-018"
+      }
+    ],
+    "billNumber": "BILL-2029",
+    "customerAddress": "100 feet Road\nbehind sumaiyya marriage halll",
+    "sourceId": "SALE-0002",
+    "customerName": "REHAN",
+    "customerPhone": "9172632945",
+    "paymentMethod": "Udhar",
+    "deliveryCharge": 0,
+    "discount": 0,
+    "createdAt": "2026-04-05T06:59:01.645Z",
+    "orderNumber": "SALE-5002",
+    "id": "BILL-029",
+    "userId": "USR-002",
+    "gst": 0,
+    "orderId": "SALE-0002"
+  },
+  {
+    "sourceType": "offline_sale",
+    "subtotal": 650,
+    "orderStatus": "Completed",
+    "pdfUrl": "/bills/BILL-2030.pdf",
+    "orderDate": "2026-04-05T07:05:13.173Z",
+    "total": 650,
+    "items": [
+      {
+        "unitLabel": "box",
+        "quantity": 1,
+        "amount": 500,
+        "purchaseMode": "full_box",
+        "name": "Coca Cola",
+        "price": 500,
+        "productId": "PRD-001"
+      },
+      {
+        "name": "FIZZZ",
+        "price": 150,
+        "productId": "PRD-015",
+        "quantity": 1,
+        "unitLabel": "half box",
+        "amount": 150,
+        "purchaseMode": "half_box"
+      }
+    ],
+    "billNumber": "BILL-2030",
+    "paymentStatus": "Paid",
+    "billDate": "2026-04-05T07:05:13.187Z",
+    "customerAddress": "",
+    "sourceId": "SALE-0003",
+    "paymentMethod": "Cash",
+    "deliveryCharge": 0,
+    "customerName": "YEEER",
+    "customerPhone": "",
+    "createdAt": "2026-04-05T07:05:13.187Z",
+    "discount": 0,
+    "orderNumber": "SALE-5003",
+    "gst": 0,
+    "id": "BILL-030",
+    "userId": null,
+    "orderId": "SALE-0003"
+  },
+  {
+    "sourceId": "SALE-0004",
+    "customerAddress": "Aazad nagar.  Dhule ",
+    "deliveryCharge": 0,
+    "paymentMethod": "Udhar",
+    "customerPhone": "9876543215",
+    "customerName": "Parvez ",
+    "pdfUrl": "/bills/BILL-2031.pdf",
+    "orderStatus": "Completed",
+    "subtotal": 45720,
+    "sourceType": "offline_sale",
+    "orderDate": "2026-04-05T08:25:30.171Z",
+    "billNumber": "BILL-2031",
+    "items": [
+      {
+        "quantity": 90,
+        "unitLabel": "boxes",
+        "purchaseMode": "full_box",
+        "amount": 45000,
+        "price": 500,
+        "productId": "PRD-001",
+        "name": "Coca Cola"
+      },
+      {
+        "name": "Pepsi ",
+        "price": 720,
+        "productId": "PRD-002",
+        "unitLabel": "box",
+        "quantity": 1,
+        "amount": 720,
+        "purchaseMode": "full_box"
+      }
+    ],
+    "total": 45720,
+    "billDate": "2026-04-05T08:25:30.192Z",
+    "paymentStatus": "Pending",
+    "gst": 0,
+    "id": "BILL-031",
+    "userId": "USR-003",
+    "orderId": "SALE-0004",
+    "createdAt": "2026-04-05T08:25:30.192Z",
+    "discount": 0,
+    "orderNumber": "SALE-5004"
+  },
+  {
+    "orderId": "SALE-0005",
+    "id": "BILL-032",
+    "userId": null,
+    "gst": 0,
+    "orderNumber": "SALE-5005",
+    "discount": 0,
+    "createdAt": "2026-04-13T03:54:54.049Z",
+    "customerName": "SHARUKH",
+    "customerPhone": "9090909090",
+    "paymentMethod": "Cash",
+    "deliveryCharge": 0,
+    "customerAddress": "tydydsvghsdhgvd",
+    "sourceId": "SALE-0005",
+    "paymentStatus": "Paid",
+    "billDate": "2026-04-13T03:54:54.049Z",
+    "items": [
+      {
+        "unitLabel": "boxes",
+        "quantity": 10,
+        "purchaseMode": "full_box",
+        "amount": 4500,
+        "name": "Maaza Mango 10 mrp",
+        "price": 450,
         "productId": "PRD-003"
       }
     ],
-    "pdfUrl": "/bills/BILL-2027.pdf",
-    "orderDate": "2026-04-04T15:07:10.080Z",
-    "total": 450,
-    "orderStatus": "confirmed"
-  },
-  {
-    "id": "BILL-028",
-    "billNumber": "BILL-2028",
+    "total": 4500,
+    "billNumber": "BILL-2032",
+    "orderDate": "2026-04-13T03:54:54.024Z",
     "sourceType": "offline_sale",
-    "sourceId": "SALE-0001",
-    "orderId": "SALE-0001",
-    "orderNumber": "SALE-5001",
-    "userId": null,
-    "customerName": "Walk-in Customer",
-    "customerPhone": "",
-    "customerAddress": "",
-    "billDate": "2026-04-05T06:58:21.897Z",
-    "createdAt": "2026-04-05T06:58:21.897Z",
-    "orderDate": "2026-04-05T06:58:21.881Z",
-    "items": [
-      {
-        "productId": "PRD-003",
-        "name": "Maaza Mango 10 mrp",
-        "quantity": 1,
-        "price": 450,
-        "amount": 450,
-        "purchaseMode": "full_box",
-        "unitLabel": "box"
-      }
-    ],
-    "subtotal": 450,
-    "gst": 0,
-    "discount": 0,
-    "deliveryCharge": 0,
-    "total": 450,
-    "paymentStatus": "Paid",
-    "paymentMethod": "Cash",
+    "subtotal": 4500,
     "orderStatus": "Completed",
-    "pdfUrl": "/bills/BILL-2028.pdf"
+    "pdfUrl": "/bills/BILL-2032.pdf"
   },
   {
-    "id": "BILL-029",
-    "billNumber": "BILL-2029",
-    "sourceType": "offline_sale",
-    "sourceId": "SALE-0002",
-    "orderId": "SALE-0002",
-    "orderNumber": "SALE-5002",
-    "userId": "USR-002",
-    "customerName": "REHAN",
-    "customerPhone": "9172632945",
-    "customerAddress": "100 feet Road\nbehind sumaiyya marriage halll",
-    "billDate": "2026-04-05T06:59:01.645Z",
-    "createdAt": "2026-04-05T06:59:01.645Z",
-    "orderDate": "2026-04-05T06:59:01.633Z",
-    "items": [
-      {
-        "productId": "PRD-018",
-        "name": "Swing",
-        "quantity": 1,
-        "price": 200,
-        "amount": 200,
-        "purchaseMode": "full_box",
-        "unitLabel": "box"
-      }
-    ],
-    "subtotal": 200,
-    "gst": 0,
-    "discount": 0,
-    "deliveryCharge": 0,
-    "total": 200,
-    "paymentStatus": "Pending",
-    "paymentMethod": "Udhar",
-    "orderStatus": "Completed",
-    "pdfUrl": "/bills/BILL-2029.pdf"
-  },
-  {
-    "id": "BILL-030",
-    "billNumber": "BILL-2030",
-    "sourceType": "offline_sale",
-    "sourceId": "SALE-0003",
-    "orderId": "SALE-0003",
-    "orderNumber": "SALE-5003",
-    "userId": null,
-    "customerName": "YEEER",
-    "customerPhone": "",
-    "customerAddress": "",
-    "billDate": "2026-04-05T07:05:13.187Z",
-    "createdAt": "2026-04-05T07:05:13.187Z",
-    "orderDate": "2026-04-05T07:05:13.173Z",
+    "id": "BILL-033",
+    "billNumber": "BILL-2033",
+    "sourceType": "order",
+    "sourceId": "ORD-066",
+    "orderId": "ORD-066",
+    "orderNumber": "ORD-1066",
+    "userId": "USR-010",
+    "customerName": "Samer ",
+    "customerPhone": "9834827675",
+    "customerAddress": "Faizane Barakat Masjid",
+    "billDate": "2026-05-03T07:52:47.246Z",
+    "createdAt": "2026-05-03T07:52:47.246Z",
+    "orderDate": "2026-05-03T07:51:34.962Z",
     "items": [
       {
         "productId": "PRD-001",
@@ -892,67 +1015,67 @@
         "unitLabel": "box"
       },
       {
-        "productId": "PRD-015",
-        "name": "FIZZZ",
+        "productId": "PRD-004",
+        "name": "Bisleri Water ",
         "quantity": 1,
-        "price": 150,
-        "amount": 150,
-        "purchaseMode": "half_box",
-        "unitLabel": "half box"
-      }
-    ],
-    "subtotal": 650,
-    "gst": 0,
-    "discount": 0,
-    "deliveryCharge": 0,
-    "total": 650,
-    "paymentStatus": "Paid",
-    "paymentMethod": "Cash",
-    "orderStatus": "Completed",
-    "pdfUrl": "/bills/BILL-2030.pdf"
-  },
-  {
-    "id": "BILL-031",
-    "billNumber": "BILL-2031",
-    "sourceType": "offline_sale",
-    "sourceId": "SALE-0004",
-    "orderId": "SALE-0004",
-    "orderNumber": "SALE-5004",
-    "userId": "USR-003",
-    "customerName": "Parvez ",
-    "customerPhone": "9876543215",
-    "customerAddress": "Aazad nagar.  Dhule ",
-    "billDate": "2026-04-05T08:25:30.192Z",
-    "createdAt": "2026-04-05T08:25:30.192Z",
-    "orderDate": "2026-04-05T08:25:30.171Z",
-    "items": [
-      {
-        "productId": "PRD-001",
-        "name": "Coca Cola",
-        "quantity": 90,
-        "price": 500,
-        "amount": 45000,
+        "price": 240,
+        "amount": 240,
         "purchaseMode": "full_box",
-        "unitLabel": "boxes"
+        "unitLabel": "box"
       },
       {
-        "productId": "PRD-002",
-        "name": "Pepsi ",
+        "productId": "PRD-005",
+        "name": "Sprite ",
         "quantity": 1,
-        "price": 720,
-        "amount": 720,
+        "price": 200,
+        "amount": 200,
         "purchaseMode": "full_box",
         "unitLabel": "box"
       }
     ],
-    "subtotal": 45720,
+    "subtotal": 940,
+    "gst": 0,
+    "discount": 0,
+    "deliveryCharge": 5,
+    "total": 945,
+    "paymentStatus": "Pending",
+    "paymentMethod": "COD",
+    "orderStatus": "confirmed",
+    "pdfUrl": "/bills/BILL-2033.pdf"
+  },
+  {
+    "id": "BILL-034",
+    "billNumber": "BILL-2034",
+    "sourceType": "offline_sale",
+    "sourceId": "SALE-0006",
+    "orderId": "SALE-0006",
+    "orderNumber": "SALE-5006",
+    "userId": null,
+    "customerName": "Walk-in Customer",
+    "customerPhone": "",
+    "customerAddress": "",
+    "billDate": "2026-05-03T08:49:51.926Z",
+    "createdAt": "2026-05-03T08:49:51.926Z",
+    "orderDate": "2026-05-03T08:49:51.909Z",
+    "items": [
+      {
+        "productId": "PRD-004",
+        "name": "Bisleri Water ",
+        "quantity": 1,
+        "price": 240,
+        "amount": 240,
+        "purchaseMode": "full_box",
+        "unitLabel": "box"
+      }
+    ],
+    "subtotal": 240,
     "gst": 0,
     "discount": 0,
     "deliveryCharge": 0,
-    "total": 45720,
-    "paymentStatus": "Pending",
-    "paymentMethod": "Udhar",
+    "total": 240,
+    "paymentStatus": "Paid",
+    "paymentMethod": "Cash",
     "orderStatus": "Completed",
-    "pdfUrl": "/bills/BILL-2031.pdf"
+    "pdfUrl": "/bills/BILL-2034.pdf"
   }
 ]

@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react'
-import { useParams, useNavigate, Link } from 'react-router-dom'
+import { useState, useEffect, useRef } from 'react'
+import { useParams, useNavigate } from 'react-router-dom'
 import API from '../config/api'
 import { useCart } from '../context/CartContext'
 import Navbar from '../components/Navbar'
@@ -8,8 +8,7 @@ import ProductCard from '../components/ProductCard'
 import BackToTop from '../components/BackToTop'
 import toast from 'react-hot-toast'
 import { FaShoppingCart, FaBolt, FaWhatsapp } from 'react-icons/fa'
-import { FiMinus, FiPlus, FiHeart, FiShare2, FiCopy, FiClock } from 'react-icons/fi'
-import { MdLocalShipping } from 'react-icons/md'
+import { FiMinus, FiPlus, FiHeart, FiCopy, FiClock } from 'react-icons/fi'
 import { BsBoxSeam } from 'react-icons/bs'
 import { useAuth } from '../context/AuthContext'
 import {
@@ -21,6 +20,196 @@ import {
   getModeShortLabel,
   getUnitPrice,
 } from '../utils/purchase'
+
+const RELATED_PRODUCTS_LIMIT = 6
+const LARGE_DIFF = Number.MAX_SAFE_INTEGER
+const VARIANT_TOKEN_BLACKLIST = new Set([
+  'ml',
+  'ltr',
+  'liter',
+  'litre',
+  'l',
+  'bottle',
+  'bottles',
+  'box',
+  'boxes',
+])
+const KNOWN_FAMILY_PATTERNS = [
+  { key: 'coca cola', patterns: ['coca cola'] },
+  { key: 'pepsi', patterns: ['pepsi'] },
+  { key: 'sprite', patterns: ['sprite'] },
+  { key: 'campa', patterns: ['campa'] },
+  { key: 'maaza', patterns: ['maaza'] },
+  { key: 'bisleri', patterns: ['bisleri'] },
+  { key: 'aqua water', patterns: ['aqua water', 'aqua'] },
+  { key: 'sting', patterns: ['sting'] },
+  { key: 'predator', patterns: ['predator'] },
+  { key: 'fizzz', patterns: ['fizzz'] },
+  { key: 'apple fizz', patterns: ['apple fizz'] },
+  { key: 'paper boat', patterns: ['paper boat'] },
+  { key: 'red bull', patterns: ['red bull'] },
+  { key: 'swing', patterns: ['swing'] },
+  { key: 'menthol', patterns: ['menthol'] },
+]
+const GENERIC_NAME_TOKENS = new Set([
+  'can',
+  'drink',
+  'drinks',
+  'ml',
+  'ltr',
+  'liter',
+  'litre',
+  'zero',
+  'sugar',
+  'water',
+  'soda',
+  'energy',
+  'mrp',
+])
+
+const normalizeText = (value) => String(value || '')
+  .toLowerCase()
+  .replace(/[^a-z0-9]+/g, ' ')
+  .trim()
+  .replace(/\s+/g, ' ')
+
+const getProductId = (product) => product?._id || product?.id || ''
+
+const getSafeNumber = (value) => {
+  const numericValue = Number(value)
+  return Number.isFinite(numericValue) ? numericValue : null
+}
+
+const hasValidVolume = (product) => {
+  const volume = getSafeNumber(product?.volume)
+  return volume !== null && volume > 0
+}
+
+const formatVolumeLabel = (value) => {
+  const volume = getSafeNumber(value)
+  if (volume === null || volume <= 0) return ''
+  if (volume >= 1000) {
+    const litres = volume / 1000
+    return `${Number.isInteger(litres) ? litres : Number.parseFloat(litres.toFixed(2))}L`
+  }
+  return `${Number.isInteger(volume) ? volume : Number.parseFloat(volume.toFixed(2))}ml`
+}
+
+const getVariantGroupName = (product) => {
+  const normalizedName = normalizeText(product?.name)
+  if (!normalizedName) return ''
+
+  const tokens = normalizedName
+    .split(' ')
+    .filter((token) => (
+      token &&
+      !VARIANT_TOKEN_BLACKLIST.has(token) &&
+      !/^\d+(\.\d+)?$/.test(token) &&
+      !/^\d+(\.\d+)?(ml|ltr|liter|litre|l)$/.test(token)
+    ))
+
+  return tokens.join(' ')
+}
+
+const normalizeProductForDisplay = (candidateProduct) => ({
+  ...candidateProduct,
+  _id: getProductId(candidateProduct),
+  price: candidateProduct.price ?? candidateProduct.pricePerBox,
+  stock: candidateProduct.stock ?? candidateProduct.stockQuantity ?? 0,
+})
+
+const isVariantAvailable = (candidateProduct) => {
+  const allowedModes = getAllowedPurchaseModes(candidateProduct)
+  const firstAvailableMode = allowedModes.find((mode) => getMaxPurchaseQuantity(candidateProduct, mode) > 0) || getDefaultPurchaseMode(candidateProduct)
+  return getMaxPurchaseQuantity(candidateProduct, firstAvailableMode) > 0
+}
+
+const getVariantCandidateRank = (currentProduct, candidateProduct) => {
+  const currentId = getProductId(currentProduct)
+  const currentCategory = normalizeText(currentProduct?.category)
+  const candidateCategory = normalizeText(candidateProduct?.category)
+  const candidatePrice = getSafeNumber(candidateProduct?.price ?? candidateProduct?.pricePerBox)
+
+  return [
+    getProductId(candidateProduct) === currentId ? 0 : 1,
+    candidateCategory === currentCategory ? 0 : 1,
+    isVariantAvailable(candidateProduct) ? 0 : 1,
+    candidatePrice ?? LARGE_DIFF,
+    normalizeText(candidateProduct?.name),
+    getProductId(candidateProduct),
+  ]
+}
+
+const compareVariantCandidates = (currentProduct, leftProduct, rightProduct) => {
+  const leftRank = getVariantCandidateRank(currentProduct, leftProduct)
+  const rightRank = getVariantCandidateRank(currentProduct, rightProduct)
+
+  for (let index = 0; index < leftRank.length; index += 1) {
+    if (leftRank[index] < rightRank[index]) return -1
+    if (leftRank[index] > rightRank[index]) return 1
+  }
+
+  return 0
+}
+
+const getProductFamily = (product) => {
+  const normalizedName = normalizeText(product?.name)
+  if (!normalizedName) return ''
+
+  const matchedFamily = KNOWN_FAMILY_PATTERNS.find(({ patterns }) => (
+    patterns.some((pattern) => normalizedName.includes(pattern))
+  ))
+  if (matchedFamily) return matchedFamily.key
+
+  const tokens = normalizedName
+    .split(' ')
+    .filter((token) => token && !GENERIC_NAME_TOKENS.has(token))
+
+  if (tokens.length >= 2 && tokens[0] === 'coca' && tokens[1] === 'cola') {
+    return 'coca cola'
+  }
+
+  return tokens[0] || ''
+}
+
+const getRelatedProductScore = (currentProduct, candidateProduct) => {
+  const currentFamily = getProductFamily(currentProduct)
+  const candidateFamily = getProductFamily(candidateProduct)
+  const currentCategory = normalizeText(currentProduct?.category)
+  const candidateCategory = normalizeText(candidateProduct?.category)
+  const familyMatch = Boolean(currentFamily) && currentFamily === candidateFamily
+  const categoryMatch = Boolean(currentCategory) && currentCategory === candidateCategory
+
+  if (!familyMatch && !categoryMatch) return null
+
+  const currentVolume = getSafeNumber(currentProduct?.volume)
+  const candidateVolume = getSafeNumber(candidateProduct?.volume)
+  const currentPrice = getSafeNumber(currentProduct?.price ?? currentProduct?.pricePerBox)
+  const candidatePrice = getSafeNumber(candidateProduct?.price ?? candidateProduct?.pricePerBox)
+
+  return [
+    familyMatch && categoryMatch ? 0 : familyMatch ? 1 : 2,
+    currentVolume !== null && candidateVolume !== null ? Math.abs(currentVolume - candidateVolume) : LARGE_DIFF,
+    currentPrice !== null && candidatePrice !== null ? Math.abs(currentPrice - candidatePrice) : LARGE_DIFF,
+    normalizeText(candidateProduct?.name),
+  ]
+}
+
+const compareRelatedProducts = (currentProduct, leftProduct, rightProduct) => {
+  const leftScore = getRelatedProductScore(currentProduct, leftProduct)
+  const rightScore = getRelatedProductScore(currentProduct, rightProduct)
+
+  if (!leftScore && !rightScore) return 0
+  if (!leftScore) return 1
+  if (!rightScore) return -1
+
+  for (let index = 0; index < leftScore.length; index += 1) {
+    if (leftScore[index] < rightScore[index]) return -1
+    if (leftScore[index] > rightScore[index]) return 1
+  }
+
+  return 0
+}
 
 const ProductDetail = () => {
   const { id } = useParams()
@@ -34,9 +223,13 @@ const ProductDetail = () => {
   const [quantity, setQuantity] = useState(1)
   const [purchaseMode, setPurchaseMode] = useState('full_box')
   const [relatedProducts, setRelatedProducts] = useState([])
+  const [sizeVariants, setSizeVariants] = useState([])
   const [wishlisted, setWishlisted] = useState(false)
+  const [activeImageIndex, setActiveImageIndex] = useState(0)
+  const touchStartX = useRef(0)
+  const touchEndX = useRef(0)
 
-  useEffect(() => { fetchProduct() }, [id])
+  useEffect(() => { fetchProduct(); setActiveImageIndex(0) }, [id])
 
   useEffect(() => {
     if (!product) return
@@ -53,6 +246,10 @@ const ProductDetail = () => {
   const fetchProduct = async () => {
     try {
       setLoading(true)
+      setError(null)
+      setWishlisted(false)
+      setRelatedProducts([])
+      setSizeVariants([])
       let p = null
       try {
         const response = await API.get(`/products/${id}`)
@@ -73,8 +270,8 @@ const ProductDetail = () => {
       // Save to recently viewed
       if (p) saveToRecentlyViewed(p)
 
-      // Fetch related products
-      if (p?.category) fetchRelated(p.category, p._id || p.id)
+      // Fetch related products and size variants
+      if (p) fetchRelated(p)
 
       // Check wishlist
       if (isAuthenticated && (p?._id || p?.id)) {
@@ -105,25 +302,78 @@ const ProductDetail = () => {
     } catch {}
   }
 
-  const fetchRelated = async (category, currentId) => {
+  const fetchRelated = async (currentProduct) => {
     try {
       const response = await API.get('/products')
       const rawData = response.data.products || response.data || []
       const data = Array.isArray(rawData) ? rawData : []
-      const related = data
-        .filter(p => {
-          const pid = p._id || p.id
-          return p.category === category && pid !== currentId
-        })
-        .slice(0, 6)
-        .map(p => ({
-          ...p,
-          _id: p._id || p.id,
-          price: p.price ?? p.pricePerBox,
-          stock: p.stock ?? p.stockQuantity ?? 0,
-        }))
+      const currentProductId = getProductId(currentProduct)
+      const currentVariantGroup = getVariantGroupName(currentProduct)
+      const variantSource = [currentProduct, ...data]
+        .map(normalizeProductForDisplay)
+        .filter((candidateProduct) => candidateProduct._id)
+
+      const uniqueProducts = []
+      const seenProductIds = new Set()
+      for (const candidateProduct of variantSource) {
+        if (seenProductIds.has(candidateProduct._id)) continue
+        seenProductIds.add(candidateProduct._id)
+        uniqueProducts.push(candidateProduct)
+      }
+
+      const matchedVariants = hasValidVolume(currentProduct) && currentVariantGroup
+        ? (() => {
+          const groupedByVolume = new Map()
+
+          uniqueProducts
+          .filter((candidateProduct) => (
+            getVariantGroupName(candidateProduct) === currentVariantGroup &&
+            hasValidVolume(candidateProduct)
+          ))
+          .forEach((candidateProduct) => {
+            const volumeLabel = formatVolumeLabel(candidateProduct?.volume)
+            if (!volumeLabel) return
+            const group = groupedByVolume.get(volumeLabel) || []
+            group.push(candidateProduct)
+            groupedByVolume.set(volumeLabel, group)
+          })
+
+          return Array.from(groupedByVolume.values())
+            .map((volumeGroup) => volumeGroup.sort((leftProduct, rightProduct) => compareVariantCandidates(currentProduct, leftProduct, rightProduct))[0])
+            .sort((leftProduct, rightProduct) => {
+              const volumeDiff = (getSafeNumber(leftProduct?.volume) || 0) - (getSafeNumber(rightProduct?.volume) || 0)
+              if (volumeDiff !== 0) return volumeDiff
+              return compareVariantCandidates(currentProduct, leftProduct, rightProduct)
+            })
+            .map((candidateProduct) => ({
+              ...candidateProduct,
+              isAvailable: isVariantAvailable(candidateProduct),
+            }))
+        })()
+        : []
+
+      setSizeVariants(matchedVariants.length > 1 ? matchedVariants : [])
+
+      const variantIds = new Set((matchedVariants.length > 1 ? matchedVariants : []).map((candidateProduct) => candidateProduct._id))
+      const normalizedProducts = uniqueProducts.filter((candidateProduct) => candidateProduct._id !== currentProductId && !variantIds.has(candidateProduct._id))
+
+      const scoredProducts = normalizedProducts
+        .filter((candidateProduct) => getRelatedProductScore(currentProduct, candidateProduct))
+        .sort((leftProduct, rightProduct) => compareRelatedProducts(currentProduct, leftProduct, rightProduct))
+
+      const related = []
+      const seenRelatedIds = new Set()
+      for (const candidateProduct of scoredProducts) {
+        if (seenRelatedIds.has(candidateProduct._id)) continue
+        seenRelatedIds.add(candidateProduct._id)
+        related.push(candidateProduct)
+        if (related.length === RELATED_PRODUCTS_LIMIT) break
+      }
       setRelatedProducts(related)
-    } catch {}
+    } catch {
+      setRelatedProducts([])
+      setSizeVariants([])
+    }
   }
 
   const handleQuantityChange = (delta) => {
@@ -279,11 +529,11 @@ const ProductDetail = () => {
   const stockStatus = getStockStatus()
   const savings = getSavings()
   const allowedModes = getAllowedPurchaseModes(product)
-  const firstAvailableMode = allowedModes.find((mode) => getMaxPurchaseQuantity(product, mode) > 0) || getDefaultPurchaseMode(product)
   const unitPrice = getUnitPrice(product, purchaseMode)
   const maxQuantity = getMaxPurchaseQuantity(product, purchaseMode)
   const unitMrp = product?.mrp ? getUnitPrice({ ...product, pricePerBox: product.mrp, price: product.mrp }, purchaseMode) : 0
   const isFixedHalfBox = purchaseMode === 'half_box'
+  const currentVolumeLabel = formatVolumeLabel(product?.volume)
 
   return (
     <div className="page-wrapper">
@@ -291,15 +541,67 @@ const ProductDetail = () => {
 
       <div className="container section-padding">
         <div className="product-detail-layout">
-          {/* Product Image */}
-          <div className="product-detail-image-wrapper">
-            <img
-              src={product.image || '/images/placeholder-drink.svg'}
-              alt={product.name}
-              className="product-detail-image"
-              referrerPolicy="no-referrer"
-              onError={(e) => { e.target.src = '/images/placeholder-drink.svg' }}
-            />
+          {/* Product Image Gallery */}
+          <div>
+            <div
+              className="product-detail-image-wrapper"
+              onTouchStart={(e) => { touchStartX.current = e.touches[0].clientX }}
+              onTouchEnd={(e) => {
+                touchEndX.current = e.changedTouches[0].clientX
+                const diff = touchStartX.current - touchEndX.current
+                const imgCount = product.images?.length || 1
+                if (imgCount <= 1) return
+                if (diff > 50) setActiveImageIndex((prev) => Math.min(prev + 1, imgCount - 1))
+                else if (diff < -50) setActiveImageIndex((prev) => Math.max(prev - 1, 0))
+              }}
+            >
+              <img
+                src={(product.images?.[activeImageIndex] || product.images?.[0] || product.image || '/images/placeholder-drink.svg')}
+                alt={product.name}
+                className="product-detail-image"
+                referrerPolicy="no-referrer"
+                onError={(e) => { e.target.src = '/images/placeholder-drink.svg' }}
+                style={{ transition: 'opacity 0.3s ease' }}
+              />
+              {/* Image counter badge */}
+              {product.images?.length > 1 && (
+                <div className="product-detail-img-counter">
+                  {activeImageIndex + 1} / {product.images.length}
+                </div>
+              )}
+            </div>
+            {(product.images?.length > 1) && (
+              <>
+                {/* Dot indicators */}
+                <div className="product-detail-dots">
+                  {product.images.map((_, idx) => (
+                    <button
+                      key={idx}
+                      className={`product-detail-dot${activeImageIndex === idx ? ' active' : ''}`}
+                      onClick={() => setActiveImageIndex(idx)}
+                      aria-label={`Image ${idx + 1}`}
+                    />
+                  ))}
+                </div>
+                {/* Thumbnail strip */}
+                <div className="product-detail-thumbs">
+                  {product.images.map((img, idx) => (
+                    <button
+                      key={idx}
+                      className={`product-detail-thumb${activeImageIndex === idx ? ' active' : ''}`}
+                      onClick={() => setActiveImageIndex(idx)}
+                    >
+                      <img
+                        src={img}
+                        alt={`${product.name} ${idx + 1}`}
+                        referrerPolicy="no-referrer"
+                        onError={(e) => { e.target.src = '/images/placeholder-drink.svg' }}
+                      />
+                    </button>
+                  ))}
+                </div>
+              </>
+            )}
           </div>
 
           {/* Product Info */}
@@ -309,9 +611,39 @@ const ProductDetail = () => {
             )}
             <h1 className="product-detail-name">{product.name}</h1>
 
-            <div className="product-detail-box-info">
-              <BsBoxSeam className="box-icon" />
-              <span>{product.volume ? `${product.volume}ml · ` : ''}{product.bottlesPerBox || product.unitsPerBox || 24} bottles per box</span>
+            <div className="product-detail-meta">
+              <div className="product-detail-box-info">
+                <BsBoxSeam className="box-icon" />
+                <span>{currentVolumeLabel ? `${currentVolumeLabel} · ` : ''}{product.bottlesPerBox || product.unitsPerBox || 24} bottles per box</span>
+              </div>
+
+              {sizeVariants.length > 1 && (
+                <div className="product-detail-variants-inline">
+                  <span className="product-detail-variants-label">Sizes:</span>
+                  <div className="product-detail-variants-grid">
+                    {sizeVariants.map((variantProduct) => {
+                      const variantId = getProductId(variantProduct)
+                      const isSelected = variantId === getProductId(product)
+                      const isDisabled = !variantProduct.isAvailable && !isSelected
+                      return (
+                        <button
+                          key={variantId}
+                          type="button"
+                          className={`product-detail-variant-chip${isSelected ? ' active' : ''}${isDisabled ? ' disabled' : ''}`}
+                          onClick={() => {
+                            if (!isSelected && !isDisabled) navigate(`/product/${variantId}`)
+                          }}
+                          disabled={isDisabled}
+                          aria-pressed={isSelected}
+                          title={isDisabled ? 'Out of stock' : formatVolumeLabel(variantProduct.volume)}
+                        >
+                          <span className="product-detail-variant-volume">{formatVolumeLabel(variantProduct.volume)}</span>
+                        </button>
+                      )
+                    })}
+                  </div>
+                </div>
+              )}
             </div>
 
             <div className="product-detail-price">
@@ -333,6 +665,17 @@ const ProductDetail = () => {
             <div className="delivery-badge">
               <FiClock /> Delivery in 2-3 hours
             </div>
+
+            {/* Offer Banner */}
+            {product.offer?.enabled && product.offer?.label && (
+              <div className="product-detail-offer-banner">
+                <div className="offer-banner-icon">🎁</div>
+                <div className="offer-banner-content">
+                  <span className="offer-banner-tag">Special Offer</span>
+                  <span className="offer-banner-text">{product.offer.label}</span>
+                </div>
+              </div>
+            )}
 
             <div className="quantity-selector">
               <span className="quantity-label">Purchase Type</span>

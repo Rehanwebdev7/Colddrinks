@@ -29,6 +29,7 @@ const Cart = () => {
   const savedAddress = formatAddress(user?.addresses?.[0]) || formatAddress(user?.address) || ''
   const [address, setAddress] = useState(savedAddress)
   const [editingAddress, setEditingAddress] = useState(!savedAddress)
+  const [addressError, setAddressError] = useState('')
   const [paymentMethod, setPaymentMethod] = useState('COD')
   const [placing, setPlacing] = useState(false)
   const [showQRModal, setShowQRModal] = useState(false)
@@ -41,8 +42,37 @@ const Cart = () => {
     if (addr) {
       setAddress(addr)
       setEditingAddress(false)
+      setAddressError('')
+      return
     }
+    setAddress('')
+    setEditingAddress(true)
   }, [user])
+
+  const validateAddress = () => {
+    const trimmedAddress = address.trim()
+    if (!trimmedAddress) {
+      setEditingAddress(true)
+      setAddressError('Delivery address is required')
+      return ''
+    }
+    setAddressError('')
+    return trimmedAddress
+  }
+
+  const handleAddressChange = (value) => {
+    setAddress(value)
+    if (value.trim()) {
+      setAddressError('')
+    }
+  }
+
+  const handleAddressDone = () => {
+    const trimmedAddress = validateAddress()
+    if (!trimmedAddress) return
+    setAddress(trimmedAddress)
+    setEditingAddress(false)
+  }
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -65,16 +95,16 @@ const Cart = () => {
     ? `https://quickchart.io/qr?text=${encodeURIComponent(upiLink)}&size=320`
     : settings?.paymentQr || ''
 
-  const placeOrderAPI = async () => {
+  const placeOrderAPI = async (deliveryAddress) => {
     try {
       setPlacing(true)
-        const orderData = {
-          items: items.map((item) => ({
-            productId: item.productId,
-            quantity: item.quantity,
-            purchaseMode: item.purchaseMode
-          })),
-        deliveryAddress: address.trim(),
+      const orderData = {
+        items: items.map((item) => ({
+          productId: item.productId,
+          quantity: item.quantity,
+          purchaseMode: item.purchaseMode
+        })),
+        deliveryAddress,
         paymentMethod
       }
 
@@ -102,7 +132,8 @@ const Cart = () => {
       return
     }
 
-    if (!address.trim()) {
+    const trimmedAddress = validateAddress()
+    if (!trimmedAddress) {
       toast.error('Please enter a delivery address')
       return
     }
@@ -113,11 +144,13 @@ const Cart = () => {
     }
 
     if (paymentMethod === 'Online') {
+      setAddress(trimmedAddress)
       setShowQRModal(true)
       return
     }
 
-    await placeOrderAPI()
+    setAddress(trimmedAddress)
+    await placeOrderAPI(trimmedAddress)
   }
 
   const handleOpenUpiApp = () => {
@@ -199,7 +232,7 @@ const Cart = () => {
           <div className="cart-items-section">
             <div className="cart-items">
               {items.map((item) => (
-                <div key={item.cartItemId || `${item.productId}-${item.purchaseMode || 'full_box'}`} className="cart-item">
+                <div key={item.cartItemId || `${item.productId}-${item.purchaseMode || 'full_box'}`} className={`cart-item${item.isFreeItem ? ' cart-item-free' : ''}`}>
                   <div className="cart-item-image-wrapper">
                     <img
                       src={item.image || '/images/placeholder-drink.svg'}
@@ -207,65 +240,85 @@ const Cart = () => {
                       className="cart-item-image"
                       onError={(e) => { e.target.src = '/images/placeholder-drink.svg' }}
                     />
+                    {item.isFreeItem && (
+                      <span className="cart-free-badge">FREE</span>
+                    )}
                   </div>
 
                   <div className="cart-item-details">
                     <h3 className="cart-item-name">{item.name}</h3>
-                    <p className="cart-item-price">
-                      {'\u20B9'}{(item.price || 0).toFixed(2)} {getCartItemUnitPriceLabel(item)}
-                    </p>
-                    <p className="cart-item-meta">{getCartItemSummary(item)}</p>
+                    {item.isFreeItem ? (
+                      <>
+                        <p className="cart-item-price" style={{ color: '#22c55e', fontWeight: 700 }}>
+                          FREE
+                        </p>
+                        <p className="cart-item-meta" style={{ color: '#f97316', fontSize: 12 }}>
+                          {item.offerLabel || 'Free with offer'}
+                        </p>
+                      </>
+                    ) : (
+                      <>
+                        <p className="cart-item-price">
+                          {'\u20B9'}{(item.price || 0).toFixed(2)} {getCartItemUnitPriceLabel(item)}
+                        </p>
+                        <p className="cart-item-meta">{getCartItemSummary(item)}</p>
+                      </>
+                    )}
 
-                    <div className="cart-item-controls">
-                      {item.purchaseMode !== 'half_box' ? (
-                        <div className="quantity-controls">
-                          <button
-                            className="qty-btn"
-                            onClick={() => updateQuantity(item.cartItemId, item.quantity - 1)}
-                            disabled={item.quantity <= 1}
-                          >
-                            <FiMinus />
-                          </button>
-                          <input
-                            type="tel"
-                            inputMode="numeric"
-                            pattern="[0-9]*"
-                            className="qty-value qty-input"
-                            value={item.quantity}
-                            min={1}
-                            max={item.maxQuantity || item.stock || 999}
-                            onFocus={(e) => e.target.select()}
-                            onChange={(e) => {
-                              const raw = e.target.value.replace(/\D/g, '')
-                              if (raw === '') return
-                              const val = parseInt(raw)
-                              if (val > 0 && val <= (item.maxQuantity || item.stock || 999)) updateQuantity(item.cartItemId, val)
-                            }}
-                          />
-                          <button
-                            className="qty-btn"
-                            onClick={() => updateQuantity(item.cartItemId, item.quantity + 1)}
-                            disabled={item.quantity >= (item.maxQuantity || item.stock || 99)}
-                          >
-                            <FiPlus />
-                          </button>
-                        </div>
-                      ) : (
-                        <div className="cart-fixed-mode">Half box fixed at 1</div>
-                      )}
+                    {!item.isFreeItem && (
+                      <div className="cart-item-controls">
+                        {item.purchaseMode !== 'half_box' ? (
+                          <div className="quantity-controls">
+                            <button
+                              className="qty-btn"
+                              onClick={() => updateQuantity(item.cartItemId, item.quantity - 1)}
+                              disabled={item.quantity <= 1}
+                            >
+                              <FiMinus />
+                            </button>
+                            <input
+                              type="tel"
+                              inputMode="numeric"
+                              pattern="[0-9]*"
+                              className="qty-value qty-input"
+                              value={item.quantity}
+                              min={1}
+                              max={item.maxQuantity || item.stock || 999}
+                              onFocus={(e) => e.target.select()}
+                              onChange={(e) => {
+                                const raw = e.target.value.replace(/\D/g, '')
+                                if (raw === '') return
+                                const val = parseInt(raw)
+                                if (val > 0 && val <= (item.maxQuantity || item.stock || 999)) updateQuantity(item.cartItemId, val)
+                              }}
+                            />
+                            <button
+                              className="qty-btn"
+                              onClick={() => updateQuantity(item.cartItemId, item.quantity + 1)}
+                              disabled={item.quantity >= (item.maxQuantity || item.stock || 99)}
+                            >
+                              <FiPlus />
+                            </button>
+                          </div>
+                        ) : (
+                          <div className="cart-fixed-mode">Half box fixed at 1</div>
+                        )}
 
-                      <button
-                        className="btn-icon btn-danger"
-                        onClick={() => removeFromCart(item.cartItemId)}
-                        title="Remove item"
-                      >
-                        <FiTrash2 />
-                      </button>
-                    </div>
+                        <button
+                          className="btn-icon btn-danger"
+                          onClick={() => removeFromCart(item.cartItemId)}
+                          title="Remove item"
+                        >
+                          <FiTrash2 />
+                        </button>
+                      </div>
+                    )}
                   </div>
 
                   <div className="cart-item-total">
-                    <span>{'\u20B9'}{((item.price || 0) * item.quantity).toFixed(2)}</span>
+                    <span style={item.isFreeItem ? { color: '#22c55e', fontWeight: 700 } : {}}>
+                      {item.isFreeItem ? 'FREE' : `\u20B9${((item.price || 0) * item.quantity).toFixed(2)}`}
+                    </span>
                   </div>
                 </div>
               ))}
@@ -301,7 +354,10 @@ const Cart = () => {
                   <p className="address-card-text">{address}</p>
                   <button
                     className="address-edit-btn"
-                    onClick={() => setEditingAddress(true)}
+                    onClick={() => {
+                      setEditingAddress(true)
+                      setAddressError('')
+                    }}
                     title="Edit address"
                   >
                     <FiEdit2 />
@@ -310,19 +366,18 @@ const Cart = () => {
               ) : (
                 <div className="address-edit-wrapper">
                   <textarea
-                    className="form-textarea"
+                    className={`form-textarea ${addressError ? 'input-error' : ''}`}
                     placeholder="Enter your full delivery address..."
                     value={address}
-                    onChange={(e) => setAddress(e.target.value)}
+                    onChange={(e) => handleAddressChange(e.target.value)}
                     rows={3}
+                    aria-invalid={Boolean(addressError)}
                   />
+                  {addressError && <span className="field-error">{addressError}</span>}
                   {savedAddress && (
                     <button
                       className="address-save-btn"
-                      onClick={() => {
-                        if (address.trim()) setEditingAddress(false)
-                        else toast.error('Address cannot be empty')
-                      }}
+                      onClick={handleAddressDone}
                       title="Save address"
                     >
                       <FiCheck /> Done
@@ -361,9 +416,17 @@ const Cart = () => {
 
             {/* Place Order */}
             <button
-              className="btn btn-primary btn-lg btn-block"
+              className="btn btn-outline btn-lg btn-block cart-secondary-cta"
+              type="button"
+              onClick={() => navigate('/products')}
+            >
+              <FiShoppingBag /> Add More Products
+            </button>
+
+            <button
+              className="btn btn-primary btn-lg btn-block cart-primary-cta"
               onClick={handlePlaceOrder}
-              disabled={placing || !address.trim()}
+              disabled={placing}
             >
               {placing ? (
                 <>
@@ -437,7 +500,16 @@ const Cart = () => {
 
           <button
             className="btn btn-primary btn-lg btn-block"
-            onClick={placeOrderAPI}
+            onClick={async () => {
+              const trimmedAddress = validateAddress()
+              if (!trimmedAddress) {
+                toast.error('Please enter a delivery address')
+                setShowQRModal(false)
+                return
+              }
+              setAddress(trimmedAddress)
+              await placeOrderAPI(trimmedAddress)
+            }}
             disabled={placing}
           >
             {placing ? (

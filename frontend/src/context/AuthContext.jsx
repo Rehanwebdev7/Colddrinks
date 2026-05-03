@@ -1,29 +1,18 @@
 import { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react'
-import API from '../config/api'
+import API, {
+  AUTH_EVENT_NAME,
+  clearStoredAuth,
+  getStoredAuthState,
+  isAdminPath,
+  isTokenExpired,
+  persistAuthSession,
+  refreshCustomerSession,
+  revokeCustomerSession
+} from '../config/api'
 import toast from 'react-hot-toast'
 import { initializeFCM, cleanupFCM } from '../services/fcmService'
 
 const AuthContext = createContext(null)
-
-const isAdminPath = () => window.location.pathname.startsWith('/admin')
-
-// Decode JWT payload without library
-function decodeToken(token) {
-  try {
-    const base64 = token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')
-    return JSON.parse(atob(base64))
-  } catch {
-    return null
-  }
-}
-
-// Check if token is expired
-function isTokenExpired(token) {
-  const payload = decodeToken(token)
-  if (!payload || !payload.exp) return true
-  // Add 30 second buffer
-  return payload.exp < Math.floor(Date.now() / 1000) + 30
-}
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null)
@@ -31,82 +20,137 @@ export const AuthProvider = ({ children }) => {
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const fcmInitialized = useRef(false)
 
-  // Clear auth for a specific context
-  const clearAuth = useCallback((isAdmin) => {
-    const tokenKey = isAdmin ? 'adminToken' : 'token'
-    const userKey = isAdmin ? 'adminUser' : 'user'
-    localStorage.removeItem(tokenKey)
-    localStorage.removeItem(userKey)
+  const clearAuthState = useCallback((isAdmin) => {
+    clearStoredAuth(isAdmin)
     setUser(null)
     setIsAuthenticated(false)
   }, [])
 
-  // On mount, restore auth from correct localStorage keys based on page
   useEffect(() => {
-    const verifyToken = async () => {
-      const isAdmin = isAdminPath()
-      const tokenKey = isAdmin ? 'adminToken' : 'token'
-      const userKey = isAdmin ? 'adminUser' : 'user'
-      const token = localStorage.getItem(tokenKey)
-      const storedUser = localStorage.getItem(userKey)
+    const handleAuthChange = (event) => {
+      const detail = event.detail || {}
+      if (detail.isAdmin !== isAdminPath()) return
+      setUser(detail.user || null)
+      setIsAuthenticated(Boolean(detail.user))
+      setLoading(false)
+    }
 
-      if (token && storedUser) {
-        // Check token expiry on frontend first
-        if (isTokenExpired(token)) {
-          console.log('Token expired, clearing auth')
-          clearAuth(isAdmin)
-          setLoading(false)
-          return
+    window.addEventListener(AUTH_EVENT_NAME, handleAuthChange)
+    return () => window.removeEventListener(AUTH_EVENT_NAME, handleAuthChange)
+  }, [])
+
+  useEffect(() => {
+    let cancelled = false
+
+    const restoreAdminSession = async () => {
+      const { token, user: storedUser } = getStoredAuthState(true)
+
+      if (!token || !storedUser) {
+        if (!cancelled) setLoading(false)
+        return
+      }
+
+      if (storedUser.role !== 'admin' || isTokenExpired(token, 30)) {
+        clearAuthState(true)
+        if (!cancelled) setLoading(false)
+        return
+      }
+
+      if (cancelled) return
+      setUser(storedUser)
+      setIsAuthenticated(true)
+      setLoading(false)
+
+      try {
+        const response = await API.get('/auth/verify')
+        if (response.data?.user?.role === 'admin' && !cancelled) {
+          persistAuthSession({ token, user: response.data.user }, true)
+          setUser(response.data.user)
+          setIsAuthenticated(true)
         }
-
-        const parsedUser = JSON.parse(storedUser)
-
-        // On admin pages, verify user has admin role
-        if (isAdmin && parsedUser.role !== 'admin') {
-          clearAuth(isAdmin)
-          setLoading(false)
-          return
+      } catch (error) {
+        if (!cancelled && error.response?.status === 401) {
+          clearAuthState(true)
         }
-
-        // On customer pages, admin should NOT be authenticated as customer
-        if (!isAdmin && parsedUser.role === 'admin') {
-          clearAuth(false)
-          setLoading(false)
-          return
-        }
-
-        setUser(parsedUser)
-        setIsAuthenticated(true)
-        setLoading(false)
-
-        // Verify token with backend in background
-        try {
-          const response = await API.get('/auth/verify')
-          if (response.data?.user) {
-            const verifiedUser = response.data.user
-            // Re-check role after verification
-            if (isAdmin && verifiedUser.role !== 'admin') {
-              clearAuth(isAdmin)
-              return
-            }
-            if (!isAdmin && verifiedUser.role === 'admin') {
-              clearAuth(false)
-              return
-            }
-            setUser(verifiedUser)
-            localStorage.setItem(userKey, JSON.stringify(verifiedUser))
-          }
-        } catch (error) {
-          console.error('Token verification failed:', error)
-          clearAuth(isAdmin)
-        }
-      } else {
-        setLoading(false)
       }
     }
 
-    verifyToken()
-  }, [clearAuth])
+    const restoreCustomerSession = async () => {
+      const { token, refreshToken, user: storedUser } = getStoredAuthState(false)
+
+      if (storedUser?.role === 'admin') {
+        clearAuthState(false)
+        if (!cancelled) setLoading(false)
+        return
+      }
+
+      if (!token && !refreshToken && !storedUser) {
+        if (!cancelled) setLoading(false)
+        return
+      }
+
+      if (storedUser) {
+        setUser(storedUser)
+        setIsAuthenticated(true)
+      }
+
+      if (token && storedUser && !isTokenExpired(token, 30)) {
+        if (!cancelled) setLoading(false)
+
+        try {
+          const response = await API.get('/auth/verify')
+          if (response.data?.user && !cancelled) {
+            const verifiedUser = response.data.user
+            if (verifiedUser.role === 'admin') {
+              clearAuthState(false)
+              return
+            }
+            persistAuthSession({ token, refreshToken, user: verifiedUser }, false)
+            setUser(verifiedUser)
+            setIsAuthenticated(true)
+          }
+        } catch (error) {
+          if (!cancelled && error.response?.status === 401) {
+            clearAuthState(false)
+          }
+        }
+        return
+      }
+
+      if (refreshToken) {
+        try {
+          const refreshed = await refreshCustomerSession()
+          if (cancelled) return
+          setUser(refreshed.user)
+          setIsAuthenticated(true)
+        } catch (error) {
+          if (cancelled) return
+
+          if (error.response?.status === 401 || error.response?.status === 403 || error.code === 'REFRESH_TOKEN_MISSING') {
+            clearAuthState(false)
+          } else if (storedUser) {
+            setUser(storedUser)
+            setIsAuthenticated(true)
+          } else {
+            clearAuthState(false)
+          }
+        } finally {
+          if (!cancelled) setLoading(false)
+        }
+        return
+      }
+
+      clearAuthState(false)
+      if (!cancelled) setLoading(false)
+    }
+
+    if (isAdminPath()) restoreAdminSession()
+    else restoreCustomerSession()
+
+    return () => {
+      cancelled = true
+    }
+  }, [clearAuthState])
 
   // Initialize FCM when user is authenticated
   useEffect(() => {
@@ -119,51 +163,67 @@ export const AuthProvider = ({ children }) => {
     }
   }, [isAuthenticated, user])
 
-  // Periodic token expiry check (every 60 seconds)
+  // Periodic token refresh / expiry check
   useEffect(() => {
     const interval = setInterval(() => {
-      const isAdmin = isAdminPath()
-      const tokenKey = isAdmin ? 'adminToken' : 'token'
-      const token = localStorage.getItem(tokenKey)
-      if (token && isTokenExpired(token)) {
-        clearAuth(isAdmin)
-        toast.error('Session expired. Please login again.')
-        const loginPath = isAdmin ? '/admin/login' : '/login'
-        if (window.location.pathname !== loginPath) {
-          window.location.href = loginPath
+      const admin = isAdminPath()
+      const authState = getStoredAuthState(admin)
+
+      if (admin) {
+        if (authState.token && isTokenExpired(authState.token, 30)) {
+          clearAuthState(true)
+          toast.error('Session expired. Please login again.')
+          if (window.location.pathname !== '/admin/login') {
+            window.location.href = '/admin/login'
+          }
         }
+        return
+      }
+
+      const shouldRefresh = (!authState.token && authState.refreshToken) || (authState.token && isTokenExpired(authState.token, 30))
+      if (shouldRefresh) {
+        refreshCustomerSession({ redirectOnFailure: true }).catch(() => {})
       }
     }, 60000)
+
     return () => clearInterval(interval)
-  }, [clearAuth])
+  }, [clearAuthState])
+
+  const checkPhone = async (phone) => {
+    try {
+      const response = await API.post('/auth/check-phone', { phone })
+      return { success: true, exists: response.data.exists }
+    } catch {
+      return { success: false, exists: false }
+    }
+  }
 
   const login = async (identifier, password, isAdmin = false) => {
     try {
-      // Detect phone vs email: if all digits (with optional +) and 10+ chars, treat as phone
       const cleaned = identifier.replace(/[\s\-]/g, '')
       const isPhone = /^\+?\d{10,}$/.test(cleaned)
       const loginPayload = isPhone
         ? { phone: cleaned, password }
         : { email: identifier, password }
       const response = await API.post('/auth/login', loginPayload)
-      const { token, user: userData } = response.data
+      const { token, refreshToken, user: userData } = response.data
 
-      // Prevent admin from logging into customer site
       if (!isAdmin && userData.role === 'admin') {
         toast.error('Admin accounts cannot login on customer site. Use Admin Panel login.')
         return { success: false, message: 'Admin accounts cannot login here' }
       }
 
-      // Prevent customer from logging into admin panel
       if (isAdmin && userData.role !== 'admin') {
         toast.error('You are not authorized as admin')
         return { success: false, message: 'Not authorized' }
       }
 
-      const tokenKey = isAdmin ? 'adminToken' : 'token'
-      const userKey = isAdmin ? 'adminUser' : 'user'
-      localStorage.setItem(tokenKey, token)
-      localStorage.setItem(userKey, JSON.stringify(userData))
+      if (isAdmin) {
+        persistAuthSession({ token, user: userData }, true)
+      } else {
+        persistAuthSession({ token, refreshToken, user: userData }, false)
+      }
+
       setUser(userData)
       setIsAuthenticated(true)
 
@@ -179,10 +239,9 @@ export const AuthProvider = ({ children }) => {
   const register = async (userData) => {
     try {
       const response = await API.post('/auth/register', userData)
-      const { token, user: newUser } = response.data
+      const { token, refreshToken, user: newUser } = response.data
 
-      localStorage.setItem('token', token)
-      localStorage.setItem('user', JSON.stringify(newUser))
+      persistAuthSession({ token, refreshToken, user: newUser }, false)
       setUser(newUser)
       setIsAuthenticated(true)
 
@@ -195,20 +254,19 @@ export const AuthProvider = ({ children }) => {
     }
   }
 
-  const logout = () => {
-    const isAdmin = isAdminPath()
-    // Cleanup FCM — admin keeps token (receives push after logout), customer clears token
-    cleanupFCM(isAdmin).catch(() => {})
-    // Clear both tokens on logout to prevent stale sessions
-    if (isAdmin) {
-      localStorage.removeItem('adminToken')
-      localStorage.removeItem('adminUser')
-    } else {
-      localStorage.removeItem('token')
-      localStorage.removeItem('user')
+  const logout = async () => {
+    const admin = isAdminPath()
+    const { refreshToken } = getStoredAuthState(false)
+
+    try {
+      await cleanupFCM(admin)
+    } catch {}
+
+    if (!admin) {
+      revokeCustomerSession(refreshToken)
     }
-    setUser(null)
-    setIsAuthenticated(false)
+
+    clearAuthState(admin)
     toast.success('Logged out successfully')
   }
 
@@ -216,8 +274,12 @@ export const AuthProvider = ({ children }) => {
     try {
       const response = await API.put('/auth/profile', profileData)
       const updatedUser = response.data.user
-      const userKey = isAdminPath() ? 'adminUser' : 'user'
-      localStorage.setItem(userKey, JSON.stringify(updatedUser))
+      const authState = getStoredAuthState(isAdminPath())
+      persistAuthSession({
+        token: authState.token,
+        refreshToken: authState.refreshToken,
+        user: updatedUser
+      }, isAdminPath())
       setUser(updatedUser)
       toast.success('Profile updated successfully')
       return { success: true, user: updatedUser }
@@ -232,6 +294,7 @@ export const AuthProvider = ({ children }) => {
     user,
     loading,
     isAuthenticated,
+    checkPhone,
     login,
     register,
     logout,

@@ -3,12 +3,24 @@ import ReactCrop from 'react-image-crop'
 import 'react-image-crop/dist/ReactCrop.css'
 import { FaTimes, FaCheck, FaCrop } from 'react-icons/fa'
 
+const MAX_DIMENSION = 800
+
 function getCroppedImg(image, crop) {
   const canvas = document.createElement('canvas')
   const scaleX = image.naturalWidth / image.width
   const scaleY = image.naturalHeight / image.height
-  canvas.width = crop.width * scaleX
-  canvas.height = crop.height * scaleY
+  let outW = crop.width * scaleX
+  let outH = crop.height * scaleY
+
+  // Resize if larger than MAX_DIMENSION
+  if (outW > MAX_DIMENSION || outH > MAX_DIMENSION) {
+    const ratio = Math.min(MAX_DIMENSION / outW, MAX_DIMENSION / outH)
+    outW = Math.round(outW * ratio)
+    outH = Math.round(outH * ratio)
+  }
+
+  canvas.width = outW
+  canvas.height = outH
   const ctx = canvas.getContext('2d')
   ctx.drawImage(
     image,
@@ -18,10 +30,10 @@ function getCroppedImg(image, crop) {
     crop.height * scaleY,
     0,
     0,
-    crop.width * scaleX,
-    crop.height * scaleY
+    outW,
+    outH
   )
-  return canvas.toDataURL('image/jpeg', 0.9)
+  return canvas.toDataURL('image/jpeg', 0.7)
 }
 
 const ImageCropModal = ({ isOpen, onClose, imageSrc, onCropDone, aspect }) => {

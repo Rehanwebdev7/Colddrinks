@@ -113,8 +113,66 @@ function hashResetToken(token) {
   return crypto.createHash('sha256').update(token).digest('hex');
 }
 
+function hashRefreshToken(token) {
+  return crypto.createHash('sha256').update(token).digest('hex');
+}
+
 function createResetToken() {
   return crypto.randomBytes(32).toString('hex');
+}
+
+function createRefreshToken() {
+  return crypto.randomBytes(48).toString('hex');
+}
+
+function createSessionId() {
+  return crypto.randomBytes(16).toString('hex');
+}
+
+function startCustomerSession(user, preserveSession = false) {
+  const now = new Date().toISOString();
+  const refreshToken = createRefreshToken();
+  const previousSession = preserveSession ? user.customerSession : null;
+
+  user.customerSession = {
+    id: previousSession?.id || createSessionId(),
+    refreshTokenHash: hashRefreshToken(refreshToken),
+    createdAt: previousSession?.createdAt || now,
+    lastRotatedAt: now
+  };
+
+  return refreshToken;
+}
+
+function clearCustomerSession(user) {
+  if (!user || !user.customerSession) return;
+  delete user.customerSession;
+}
+
+function createAuthPayload(user) {
+  const payload = { id: user.id, email: user.email, role: user.role };
+  if (user.role === 'customer' && user.customerSession?.id) {
+    payload.sessionId = user.customerSession.id;
+  }
+  return payload;
+}
+
+function buildAuthResponse(user, refreshToken = null) {
+  const response = {
+    token: createJWT(createAuthPayload(user)),
+    user: sanitizeUser(user)
+  };
+  if (refreshToken) response.refreshToken = refreshToken;
+  return response;
+}
+
+function findCustomerByRefreshToken(users, refreshToken) {
+  if (!refreshToken) return { user: null, index: -1 };
+  const refreshTokenHash = hashRefreshToken(refreshToken);
+  const index = users.findIndex(user =>
+    user.role === 'customer' && user.customerSession?.refreshTokenHash === refreshTokenHash
+  );
+  return { user: index >= 0 ? users[index] : null, index };
 }
 
 function roundCurrency(value) {
@@ -603,7 +661,6 @@ function base64UrlDecode(str) {
 
 function createJWT(payload) {
   const header = base64UrlEncode(JSON.stringify({ alg: 'HS256', typ: 'JWT' }));
-  // Admin tokens expire in 8 hours, customer tokens in 24 hours
   const expiry = payload.role === 'admin' ? 86400 : 86400;
   const body = base64UrlEncode(JSON.stringify({ ...payload, iat: Math.floor(Date.now() / 1000), exp: Math.floor(Date.now() / 1000) + expiry }));
   const signature = crypto.createHmac('sha256', JWT_SECRET).update(`${header}.${body}`).digest('base64')
@@ -664,7 +721,14 @@ function getAuthUser(req) {
   const payload = verifyJWT(token);
   if (!payload) return null;
   const users = readDB('users.json');
-  return users.find(u => u.id === payload.id) || null;
+  const user = users.find(u => u.id === payload.id) || null;
+  if (!user) return null;
+  if (payload.role === 'customer') {
+    if (!payload.sessionId || !user.customerSession || user.customerSession.id !== payload.sessionId) {
+      return null;
+    }
+  }
+  return user;
 }
 
 function requireAuth(req, res) {
@@ -694,6 +758,7 @@ function getPathname(req) {
 function sanitizeUser(user) {
   const {
     password,
+    customerSession,
     resetTokenHash,
     resetTokenExpiry,
     resetRequestedAt,
@@ -916,21 +981,53 @@ function addPaymentHistory(userId, type, amount, description, orderId, method) {
 
 // ─── AUTH ────────────────────────────────────────────────────────────────────
 
-async function handleAuthRegister(req, res) {
+async function handleCheckPhone(req, res) {
   const body = await parseBody(req);
-  const { name, email, phone, password } = body;
+  const { phone } = body;
 
-  if (!name || !email || !phone || !password) {
-    return error(res, 'All fields are required: name, email, phone, password');
+  if (!phone) return error(res, 'Phone number is required');
+
+  const normalizePhone = (p) => {
+    if (!p) return ''
+    const digits = p.replace(/[^0-9]/g, '')
+    if (digits.length === 10) return '+91' + digits
+    if (digits.length === 12 && digits.startsWith('91')) return '+' + digits
+    if (digits.length === 13 && digits.startsWith('91')) return '+' + digits
+    return p
   }
 
   const users = readDB('users.json');
+  const normalized = normalizePhone(phone);
+  const exists = users.some(u => normalizePhone(u.phone) === normalized);
 
-  if (users.find(u => u.email === email)) {
-    return error(res, 'Email already registered');
+  return success(res, { exists });
+}
+
+async function handleAuthRegister(req, res) {
+  const body = await parseBody(req);
+  const { phone, password } = body;
+
+  if (!phone || !password) {
+    return error(res, 'Phone and password are required');
   }
-  if (users.find(u => u.phone === phone)) {
+
+  const normalizePhone = (p) => {
+    if (!p) return ''
+    const digits = p.replace(/[^0-9]/g, '')
+    if (digits.length === 10) return '+91' + digits
+    if (digits.length === 12 && digits.startsWith('91')) return '+' + digits
+    if (digits.length === 13 && digits.startsWith('91')) return '+' + digits
+    return p
+  }
+
+  const users = readDB('users.json');
+  const normalized = normalizePhone(phone);
+
+  if (users.find(u => normalizePhone(u.phone) === normalized)) {
     return error(res, 'Phone number already registered');
+  }
+  if (body.email && users.find(u => u.email === body.email)) {
+    return error(res, 'Email already registered');
   }
 
   const maxId = users.reduce((max, u) => {
@@ -940,9 +1037,9 @@ async function handleAuthRegister(req, res) {
 
   const newUser = {
     id: `USR-${String(maxId + 1).padStart(3, '0')}`,
-    name,
-    email,
-    phone,
+    name: body.name || 'Customer',
+    email: body.email || '',
+    phone: normalized,
     password: hashPassword(password),
     role: body.role || 'customer',
     addresses: body.addresses || (body.address ? [body.address] : []),
@@ -955,8 +1052,13 @@ async function handleAuthRegister(req, res) {
   users.push(newUser);
   writeDB('users.json', users);
 
-  const token = createJWT({ id: newUser.id, email: newUser.email, role: newUser.role });
-  return success(res, { token, user: sanitizeUser(newUser) }, 'Registration successful', 201);
+  if (newUser.role === 'customer') {
+    const refreshToken = startCustomerSession(newUser);
+    writeDB('users.json', users);
+    return success(res, buildAuthResponse(newUser, refreshToken), 'Registration successful', 201);
+  }
+
+  return success(res, buildAuthResponse(newUser), 'Registration successful', 201);
 }
 
 async function handleAuthLogin(req, res) {
@@ -986,14 +1088,59 @@ async function handleAuthLogin(req, res) {
   if (!verifyPassword(password, user.password)) return error(res, 'Invalid credentials', 401);
   if (user.status !== 'active') return error(res, 'Account is inactive', 403);
 
-  const token = createJWT({ id: user.id, email: user.email, role: user.role });
-  return success(res, { token, user: sanitizeUser(user) }, 'Login successful');
+  if (user.role === 'customer') {
+    const index = users.findIndex(u => u.id === user.id);
+    const refreshToken = startCustomerSession(users[index]);
+    writeDB('users.json', users);
+    return success(res, buildAuthResponse(users[index], refreshToken), 'Login successful');
+  }
+
+  return success(res, buildAuthResponse(user), 'Login successful');
 }
 
 async function handleAuthVerify(req, res) {
   const user = requireAuth(req, res);
   if (!user) return;
   return success(res, { user: sanitizeUser(user) }, 'Token is valid');
+}
+
+async function handleAuthRefresh(req, res) {
+  const body = await parseBody(req);
+  const { refreshToken } = body;
+
+  if (!refreshToken) return error(res, 'Refresh token is required', 400);
+
+  const users = readDB('users.json');
+  const { user, index } = findCustomerByRefreshToken(users, refreshToken);
+
+  if (!user || index === -1) return error(res, 'Session expired. Please login again.', 401);
+  if (user.status !== 'active') return error(res, 'Account is inactive', 403);
+
+  const nextRefreshToken = startCustomerSession(users[index], true);
+  writeDB('users.json', users);
+
+  return success(res, buildAuthResponse(users[index], nextRefreshToken), 'Session refreshed');
+}
+
+async function handleAuthLogout(req, res) {
+  const body = await parseBody(req);
+  const refreshToken = body.refreshToken || null;
+  const users = readDB('users.json');
+  let index = -1;
+
+  const authUser = getAuthUser(req);
+  if (authUser?.role === 'customer') {
+    index = users.findIndex(user => user.id === authUser.id);
+  } else if (refreshToken) {
+    index = findCustomerByRefreshToken(users, refreshToken).index;
+  }
+
+  if (index >= 0) {
+    clearCustomerSession(users[index]);
+    writeDB('users.json', users);
+  }
+
+  return success(res, null, 'Logged out successfully');
 }
 
 async function handleAuthProfile(req, res) {
@@ -1033,6 +1180,7 @@ async function handleAuthChangePassword(req, res) {
   const users = readDB('users.json');
   const index = users.findIndex(u => u.id === user.id);
   users[index].password = hashPassword(newPassword);
+  if (users[index].role === 'customer') clearCustomerSession(users[index]);
   writeDB('users.json', users);
 
   return success(res, null, 'Password changed successfully');
@@ -1093,6 +1241,8 @@ async function handleForgotPassword(req, res) {
   users[index].resetRequestedAt = new Date().toISOString();
   writeDB('users.json', users);
 
+  const resetLink = `${getFrontendBaseUrl(req)}/reset-password?token=${encodeURIComponent(token)}`;
+
   try {
     await sendPasswordResetEmail({
       req,
@@ -1102,6 +1252,11 @@ async function handleForgotPassword(req, res) {
     });
   } catch (err) {
     console.error('Forgot password mail error:', err.message);
+    const smtpConfigured = !!(process.env.SMTP_USER && process.env.SMTP_PASS && (process.env.SMTP_SERVICE || process.env.SMTP_HOST));
+    if (!smtpConfigured) {
+      console.warn('SMTP not configured — returning reset link directly (dev fallback).');
+      return success(res, { resetLink, devMode: true }, 'Email service not configured. Use the reset link below to continue.');
+    }
     users[index].resetTokenHash = null;
     users[index].resetTokenExpiry = null;
     users[index].resetRequestedAt = null;
@@ -1151,6 +1306,7 @@ async function handleResetPassword(req, res) {
   users[index].resetTokenHash = null;
   users[index].resetTokenExpiry = null;
   users[index].resetRequestedAt = null;
+  if (users[index].role === 'customer') clearCustomerSession(users[index]);
   writeDB('users.json', users);
 
   return success(res, { role: users[index].role }, 'Password reset successfully. You can now login with your new password.');
@@ -1298,7 +1454,8 @@ async function handleProductsAdd(req, res) {
     mrp: body.mrp || 0,
     stockQuantity: body.stockQuantity || body.stock || 0,
     lowStockAlert: body.lowStockAlert || 10,
-    image: body.image || '',
+    images: Array.isArray(body.images) ? body.images : (body.image ? [body.image] : []),
+    image: Array.isArray(body.images) && body.images.length > 0 ? body.images[0] : (body.image || ''),
     rating: body.rating || 0,
     totalReviews: body.totalReviews || 0,
     status: body.status || 'active',
@@ -1307,7 +1464,8 @@ async function handleProductsAdd(req, res) {
     volume: body.volume ? Number(body.volume) : null,
     allowPiecePurchase: body.allowPiecePurchase !== undefined ? Boolean(body.allowPiecePurchase) : undefined,
     allowHalfBox: body.allowHalfBox !== undefined ? Boolean(body.allowHalfBox) : undefined,
-    costPricePerBox: body.costPricePerBox !== undefined ? Number(body.costPricePerBox) : 0
+    costPricePerBox: body.costPricePerBox !== undefined ? Number(body.costPricePerBox) : 0,
+    offer: body.offer || null
   };
 
   products.push(newProduct);
@@ -1943,13 +2101,76 @@ async function handleOfflineSalesCreate(req, res) {
 
 // ─── CART ────────────────────────────────────────────────────────────────────
 
+function normalizeCartQuantity(quantity, purchaseMode) {
+  if (purchaseMode === 'half_box') return 1;
+  const parsedQuantity = parseInt(quantity, 10);
+  return Number.isFinite(parsedQuantity) && parsedQuantity > 0 ? parsedQuantity : 1;
+}
+
+function getCartOffer(product, rawItem) {
+  if (product?.offer?.enabled) return product.offer;
+  return rawItem?.offer?.enabled ? rawItem.offer : null;
+}
+
+function buildCartRecord(rawItem, product) {
+  if (!rawItem?.productId || !product) return null;
+
+  const purchaseMode = normalizePurchaseMode(product, rawItem.purchaseMode);
+  const quantity = normalizeCartQuantity(rawItem.quantity, purchaseMode);
+  const boxEquivalent = roundCurrency(quantity * getUnitBoxEquivalent(product, purchaseMode));
+
+  return {
+    cartItemId: rawItem.cartItemId || `${product.id}:${purchaseMode}`,
+    productId: product.id,
+    name: product.name,
+    image: product.image || rawItem.image || '',
+    category: product.category || rawItem.category || '',
+    quantity,
+    purchaseMode,
+    price: getUnitPrice(product, purchaseMode),
+    pricePerBox: roundCurrency(Number(product.pricePerBox || product.price || rawItem.pricePerBox || rawItem.price || 0)),
+    boxQuantity: getProductBoxQuantity(product),
+    boxEquivalent,
+    stock: roundCurrency(Number(product.stockQuantity ?? product.stock ?? rawItem.stock ?? 0)),
+    maxQuantity: getMaxPurchaseQuantity(product, purchaseMode),
+    deliveryCharge: roundCurrency(Number(product.deliveryCharge ?? rawItem.deliveryCharge ?? 0)),
+    offer: getCartOffer(product, rawItem)
+  };
+}
+
+function normalizeCartItems(items, products) {
+  const productMap = new Map(products.map(product => [product.id, product]));
+  const normalized = new Map();
+
+  for (const rawItem of Array.isArray(items) ? items : []) {
+    const product = productMap.get(rawItem?.productId);
+    const cartRecord = buildCartRecord(rawItem, product);
+    if (!cartRecord) continue;
+    normalized.set(cartRecord.cartItemId, cartRecord);
+  }
+
+  return Array.from(normalized.values());
+}
+
 async function handleCartGet(req, res) {
   const user = requireAuth(req, res);
   if (!user) return;
 
   const carts = readDB('cart.json');
-  const cart = carts.find(c => c.userId === user.id);
-  return success(res, cart || { userId: user.id, items: [] });
+  const products = readDB('products.json');
+  const cartIndex = carts.findIndex(c => c.userId === user.id);
+
+  if (cartIndex === -1) {
+    return success(res, { userId: user.id, items: [] });
+  }
+
+  const normalizedItems = normalizeCartItems(carts[cartIndex].items, products);
+  if (JSON.stringify(carts[cartIndex].items || []) !== JSON.stringify(normalizedItems)) {
+    carts[cartIndex].items = normalizedItems;
+    writeDB('cart.json', carts);
+  }
+
+  return success(res, { ...carts[cartIndex], items: normalizedItems });
 }
 
 async function handleCartAdd(req, res) {
@@ -1973,21 +2194,30 @@ async function handleCartAdd(req, res) {
     cartIndex = carts.length - 1;
   }
 
-  const itemIndex = carts[cartIndex].items.findIndex(i => i.productId === productId);
-  const qty = quantity || 1;
+  const purchaseMode = normalizePurchaseMode(product, body.purchaseMode);
+  const cartItemId = `${productId}:${purchaseMode}`;
+  const itemIndex = carts[cartIndex].items.findIndex(i => (i.cartItemId || `${i.productId}:${i.purchaseMode || getDefaultPurchaseMode(product)}`) === cartItemId);
+  const qty = normalizeCartQuantity(quantity || 1, purchaseMode);
 
   if (itemIndex !== -1) {
-    carts[cartIndex].items[itemIndex].quantity = qty;
-    carts[cartIndex].items[itemIndex].pricePerBox = product.pricePerBox;
+    carts[cartIndex].items[itemIndex] = {
+      ...carts[cartIndex].items[itemIndex],
+      productId,
+      quantity: qty,
+      purchaseMode,
+      offer: getCartOffer(product, body)
+    };
   } else {
     carts[cartIndex].items.push({
-      productId: product.id,
-      name: product.name,
+      cartItemId,
+      productId,
       quantity: qty,
-      pricePerBox: product.pricePerBox,
-      image: product.image
+      purchaseMode,
+      offer: getCartOffer(product, body)
     });
   }
+
+  carts[cartIndex].items = normalizeCartItems(carts[cartIndex].items, products);
 
   writeDB('cart.json', carts);
   return success(res, carts[cartIndex], 'Cart updated');
@@ -2001,13 +2231,15 @@ async function handleCartSync(req, res) {
   const { items } = body;
 
   const carts = readDB('cart.json');
+  const products = readDB('products.json');
   let cartIndex = carts.findIndex(c => c.userId === user.id);
+  const normalizedItems = normalizeCartItems(items || [], products);
 
   if (cartIndex === -1) {
-    carts.push({ userId: user.id, items: items || [] });
+    carts.push({ userId: user.id, items: normalizedItems });
     cartIndex = carts.length - 1;
   } else {
-    carts[cartIndex].items = items || [];
+    carts[cartIndex].items = normalizedItems;
   }
 
   writeDB('cart.json', carts);
@@ -3396,9 +3628,12 @@ const server = http.createServer(async (req, res) => {
 
   try {
     // ─── AUTH routes ───
+    if (pathname === '/api/auth/check-phone' && method === 'POST') return await handleCheckPhone(req, res);
     if (pathname === '/api/auth/register' && method === 'POST') return await handleAuthRegister(req, res);
     if (pathname === '/api/auth/login' && method === 'POST') return await handleAuthLogin(req, res);
     if (pathname === '/api/auth/verify' && method === 'GET') return await handleAuthVerify(req, res);
+    if (pathname === '/api/auth/refresh' && method === 'POST') return await handleAuthRefresh(req, res);
+    if (pathname === '/api/auth/logout' && method === 'POST') return await handleAuthLogout(req, res);
     if (pathname === '/api/auth/profile' && method === 'PUT') return await handleAuthProfile(req, res);
     if (pathname === '/api/auth/change-password' && method === 'PUT') return await handleAuthChangePassword(req, res);
     if (pathname === '/api/auth/forgot-password' && method === 'POST') return await handleForgotPassword(req, res);

@@ -713,10 +713,6 @@ const SideDrawer = ({ isOpen, onClose, user, onLogout, unreadNotifs, outstanding
           {/* Summary cards */}
           <div className="drawer-payment-summary">
             <div className="drawer-payment-stat">
-              <p className="stat-label">Total Paid</p>
-              <p className="stat-value" style={{ color: 'var(--success)' }}>&#8377;{(paymentSummary.totalPaid || 0).toFixed(2)}</p>
-            </div>
-            <div className="drawer-payment-stat">
               <p className="stat-label">Outstanding</p>
               <p className="stat-value" style={{ color: paymentSummary.outstanding > 0 ? 'var(--danger)' : 'var(--success)' }}>
                 &#8377;{(paymentSummary.outstanding || 0).toFixed(2)}
