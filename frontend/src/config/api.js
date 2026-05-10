@@ -1,7 +1,21 @@
 import axios from 'axios'
 
-const API_HOST = typeof window !== 'undefined' ? window.location.hostname : 'localhost'
-const API_BASE_URL = `http://${API_HOST}:8000/api`
+function resolveApiBaseUrl() {
+  const explicitBaseUrl = import.meta.env.VITE_API_BASE_URL?.trim()
+  if (explicitBaseUrl) return explicitBaseUrl.replace(/\/+$/, '')
+
+  if (typeof window === 'undefined') {
+    return 'http://localhost:8000/api'
+  }
+
+  if (import.meta.env.DEV) {
+    return 'http://localhost:8000/api'
+  }
+
+  return `${window.location.origin}/api`
+}
+
+const API_BASE_URL = resolveApiBaseUrl()
 const AUTH_EVENT_NAME = 'app-auth-changed'
 const CUSTOMER_TOKEN_KEY = 'token'
 const CUSTOMER_REFRESH_TOKEN_KEY = 'refreshToken'
