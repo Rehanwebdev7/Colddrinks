@@ -9,6 +9,7 @@ const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
 const nodemailer = require('nodemailer');
+const driveHelper = require('./helpers/drive');
 
 const envPath = path.join(__dirname, '.env');
 if (fs.existsSync(envPath)) {
@@ -40,30 +41,22 @@ admin.initializeApp({
 const fcmAdmin = admin.messaging();
 
 // ─── Firebase Setup ─────────────────────────────────────────────────────────
+// Backend uses firebase-admin (already initialized above for FCM) for Firestore
+// reads/writes. The previous client SDK was unauthenticated and got blocked by
+// Firestore Security Rules, causing silent sync failures.
 
-const { initializeApp: initFirebase } = require('firebase/app');
-const {
-  getFirestore,
-  collection: fsCollection,
-  getDocs,
-  doc: fsDoc,
-  setDoc: fsSetDoc,
-  deleteDoc: fsDeleteDoc,
-  writeBatch,
-  getDoc: fsGetDoc,
-} = require('firebase/firestore');
+const fsDb = admin.firestore();
 
-const firebaseConfig = {
-  apiKey: 'AIzaSyBGT5d8MrNU69i4e3NCzHY7v3cpzR80tME',
-  authDomain: 'noor-coldrinks.firebaseapp.com',
-  projectId: 'noor-coldrinks',
-  storageBucket: 'noor-coldrinks.firebasestorage.app',
-  messagingSenderId: '403777556555',
-  appId: '1:403777556555:web:3957ec5e6723d0db337dce',
-};
-
-const fbApp = initFirebase(firebaseConfig);
-const fsDb = getFirestore(fbApp);
+// Thin shims so existing call sites (fsCollection, getDocs, fsDoc, fsSetDoc,
+// fsDeleteDoc, writeBatch, fsGetDoc) keep working unchanged. firebase-admin
+// uses chained methods; client SDK uses functional calls — same semantics.
+const fsCollection = (db, name) => db.collection(name);
+const getDocs = (q) => q.get();
+const fsDoc = (db, coll, id) => db.collection(coll).doc(id);
+const fsSetDoc = (ref, data, opts) => (opts ? ref.set(data, opts) : ref.set(data));
+const fsDeleteDoc = (ref) => ref.delete();
+const writeBatch = (db) => db.batch();
+const fsGetDoc = (ref) => ref.get();
 
 // ─── Configuration ───────────────────────────────────────────────────────────
 
@@ -578,7 +571,7 @@ async function initFirestore() {
   // Settings (single document)
   try {
     const snap = await fsGetDoc(fsDoc(fsDb, 'settings', 'app'));
-    if (snap.exists()) {
+    if (snap.exists) {
       const data = snap.data();
       // Exclude driveRefreshToken from app settings cache
       const { driveRefreshToken, ...appSettings } = normalizeData(data);
@@ -1399,9 +1392,18 @@ async function handleProductById(req, res, productId) {
 
     const body = await parseBody(req);
     const index = products.findIndex(p => p.id === productId);
+    const oldProduct = products[index];
     const { id, _id, ...updates } = body;
-    products[index] = { ...products[index], ...updates };
+    products[index] = { ...oldProduct, ...updates };
     writeDB('products.json', products);
+
+    // Drive cleanup: any old image URL not in the new payload is now orphaned.
+    const removedUrls = diffRemovedImageUrls(
+      [...(oldProduct.images || []), oldProduct.image],
+      [...(products[index].images || []), products[index].image]
+    );
+    await deleteDriveFilesFromUrls(removedUrls);
+
     return success(res, products[index], 'Product updated successfully');
   }
 
@@ -1413,6 +1415,10 @@ async function handleProductById(req, res, productId) {
     const index = products.findIndex(p => p.id === productId);
     const removed = products.splice(index, 1)[0];
     writeDB('products.json', products);
+
+    // Drive cleanup: every image attached to this product is now orphaned.
+    await deleteDriveFilesFromUrls([...(removed.images || []), removed.image]);
+
     return success(res, removed, 'Product deleted successfully');
   }
 }
@@ -1484,9 +1490,17 @@ async function handleProductsUpdate(req, res) {
   const index = products.findIndex(p => p.id === body.id);
   if (index === -1) return error(res, 'Product not found', 404);
 
+  const oldProduct = products[index];
   const { id, ...updates } = body;
-  products[index] = { ...products[index], ...updates };
+  products[index] = { ...oldProduct, ...updates };
   writeDB('products.json', products);
+
+  const removedUrls = diffRemovedImageUrls(
+    [...(oldProduct.images || []), oldProduct.image],
+    [...(products[index].images || []), products[index].image]
+  );
+  await deleteDriveFilesFromUrls(removedUrls);
+
   return success(res, products[index], 'Product updated successfully');
 }
 
@@ -1506,6 +1520,9 @@ async function handleProductsDelete(req, res) {
 
   const removed = products.splice(index, 1)[0];
   writeDB('products.json', products);
+
+  await deleteDriveFilesFromUrls([...(removed.images || []), removed.image]);
+
   return success(res, removed, 'Product deleted successfully');
 }
 
@@ -3080,9 +3097,14 @@ async function handleSliderUpdate(req, res, sliderId) {
   const index = sliders.findIndex(s => s.id === sliderId);
   if (index === -1) return error(res, 'Slider not found', 404);
 
+  const oldSlider = sliders[index];
   const { id, ...updates } = body;
-  sliders[index] = { ...sliders[index], ...updates };
+  sliders[index] = { ...oldSlider, ...updates };
   writeDB('sliders.json', sliders);
+
+  const removedUrls = diffRemovedImageUrls(oldSlider.image, sliders[index].image);
+  await deleteDriveFilesFromUrls(removedUrls);
+
   return success(res, sliders[index], 'Slider updated');
 }
 
@@ -3096,6 +3118,9 @@ async function handleSliderDelete(req, res, sliderId) {
 
   const removed = sliders.splice(index, 1)[0];
   writeDB('sliders.json', sliders);
+
+  await deleteDriveFilesFromUrls(removed.image);
+
   return success(res, removed, 'Slider deleted');
 }
 
@@ -3129,6 +3154,14 @@ async function handleSettingsUpdate(req, res) {
 
   const merged = deepMerge(current, body);
   writeSettings(merged);
+
+  // Drive cleanup: image fields (logo, paymentQr) replaced or cleared.
+  const replaced = [];
+  for (const field of ['logo', 'paymentQr']) {
+    if (current[field] && current[field] !== merged[field]) replaced.push(current[field]);
+  }
+  if (replaced.length > 0) await deleteDriveFilesFromUrls(replaced);
+
   return success(res, merged, 'Settings updated');
 }
 
@@ -3610,6 +3643,101 @@ async function handleOrderRate(req, res, orderId) {
   return success(res, orders[index], 'Order rated successfully');
 }
 
+// ─── DRIVE HANDLERS (service-account uploads) ──────────────────────────────
+
+const ALLOWED_DRIVE_FOLDERS = new Set(['products', 'sliders', 'logos', 'suppliers', 'theme', 'misc']);
+const MAX_DRIVE_B64_LEN = 14 * 1024 * 1024; // ≈ 10 MB binary after base64 decode
+
+// Parse Drive file ID from the public lh3 URL we generate at upload time.
+// Returns null for any URL we don't recognize (external URLs, blank, etc.).
+function extractDriveFileId(url) {
+  if (!url || typeof url !== 'string') return null;
+  const m = url.match(/lh3\.googleusercontent\.com\/d\/([A-Za-z0-9_\-]+)/);
+  return m ? m[1] : null;
+}
+
+// Best-effort cleanup. Logs and swallows individual failures so a Drive
+// hiccup never blocks the Firestore mutation that already succeeded.
+async function deleteDriveFilesFromUrls(urls) {
+  const list = Array.isArray(urls) ? urls : (urls ? [urls] : []);
+  const ids = list.map(extractDriveFileId).filter(Boolean);
+  if (ids.length === 0) return;
+  await Promise.all(ids.map(async (id) => {
+    try {
+      await driveHelper.deleteFile(id);
+    } catch (err) {
+      console.warn(`[drive] cleanup failed for ${id}:`, err && err.message);
+    }
+  }));
+}
+
+// Returns URLs that appear in oldImages but not in newImages (i.e. were
+// removed/replaced and need Drive cleanup). Accepts arrays or single strings.
+function diffRemovedImageUrls(oldImages, newImages) {
+  const toArr = (v) => (Array.isArray(v) ? v : (v ? [v] : [])).filter(Boolean);
+  const oldArr = toArr(oldImages);
+  const newSet = new Set(toArr(newImages));
+  return oldArr.filter((u) => !newSet.has(u));
+}
+
+async function handleDriveHealth(req, res) {
+  const user = requireAdmin(req, res);
+  if (!user) return;
+  try {
+    const result = await driveHelper.health();
+    return success(res, result, result.ok ? 'Drive ready' : 'Drive not reachable');
+  } catch (err) {
+    console.error('Drive health error:', err.message);
+    return error(res, err.message || 'Drive health check failed', 500);
+  }
+}
+
+async function handleDriveUpload(req, res) {
+  const user = requireAdmin(req, res);
+  if (!user) return;
+
+  const body = await parseBody(req);
+  const { filename, mimeType, dataB64, folder } = body || {};
+
+  if (!filename || typeof filename !== 'string') return error(res, 'filename is required', 400);
+  if (!mimeType || typeof mimeType !== 'string' || !mimeType.startsWith('image/')) {
+    return error(res, 'mimeType must be image/*', 400);
+  }
+  if (!dataB64 || typeof dataB64 !== 'string') return error(res, 'dataB64 is required', 400);
+  if (dataB64.length > MAX_DRIVE_B64_LEN) return error(res, 'File too large (max ~10 MB)', 413);
+
+  const folderName = (typeof folder === 'string' && ALLOWED_DRIVE_FOLDERS.has(folder)) ? folder : 'misc';
+
+  let buffer;
+  try {
+    buffer = Buffer.from(dataB64, 'base64');
+  } catch (e) {
+    return error(res, 'Invalid base64 payload', 400);
+  }
+  if (!buffer || buffer.length === 0) return error(res, 'Empty file payload', 400);
+
+  try {
+    const { id } = await driveHelper.uploadBuffer({ buffer, mimeType, filename, folderName });
+    const url = `https://lh3.googleusercontent.com/d/${id}`;
+    return success(res, { id, url }, 'Uploaded');
+  } catch (err) {
+    console.error('Drive upload error:', err.message);
+    return error(res, err.message || 'Drive upload failed', 500);
+  }
+}
+
+async function handleDriveDelete(req, res, fileId) {
+  const user = requireAdmin(req, res);
+  if (!user) return;
+  try {
+    const result = await driveHelper.deleteFile(fileId);
+    return success(res, result, 'Deleted');
+  } catch (err) {
+    console.error('Drive delete error:', err.message);
+    return error(res, err.message || 'Drive delete failed', 500);
+  }
+}
+
 // ─── DYNAMIC ROUTER ─────────────────────────────────────────────────────────
 
 const server = http.createServer(async (req, res) => {
@@ -3769,6 +3897,12 @@ const server = http.createServer(async (req, res) => {
     const supPayMatch = pathname.match(/^\/api\/suppliers\/(SUP-\d+)\/payments$/);
     if (supPayMatch && method === 'GET') return await handleSupplierPaymentsGet(req, res, supPayMatch[1]);
     if (supPayMatch && method === 'POST') return await handleSupplierPaymentAdd(req, res, supPayMatch[1]);
+
+    // ─── DRIVE routes (service-account uploads) ───
+    if (pathname === '/api/drive/health' && method === 'GET') return await handleDriveHealth(req, res);
+    if (pathname === '/api/drive/upload' && method === 'POST') return await handleDriveUpload(req, res);
+    const driveDelMatch = pathname.match(/^\/api\/drive\/files\/([A-Za-z0-9_\-]+)$/);
+    if (driveDelMatch && method === 'DELETE') return await handleDriveDelete(req, res, driveDelMatch[1]);
 
     // ─── COUPONS routes ───
     if (pathname === '/api/coupons' && method === 'GET') return await handleCouponsList(req, res);

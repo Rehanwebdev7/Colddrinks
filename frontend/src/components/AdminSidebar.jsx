@@ -19,33 +19,45 @@ import {
   FaChevronLeft,
   FaChevronRight,
   FaHistory,
+  FaCreditCard,
+  FaHandHoldingUsd,
+  FaExchangeAlt,
 } from 'react-icons/fa'
 import { useAuth } from '../context/AuthContext'
-import { useTheme } from '../context/ThemeContext'
 import { useSettings } from '../context/SettingsContext'
-import { getColors } from '../admin/themeColors'
+import { useAdminTheme } from '../admin/useAdminTheme'
 
 const menuItems = [
+  { type: 'group', label: 'Operations' },
   { path: '/admin', icon: FaTachometerAlt, label: 'Dashboard' },
-  { path: '/admin/products', icon: FaBox, label: 'Products' },
+  { path: '/admin/offline-sales', icon: FaCashRegister, label: 'Offline Sales' },
   { path: '/admin/orders', icon: FaShoppingBag, label: 'Orders' },
   { path: '/admin/bills', icon: FaFileInvoice, label: 'Bills' },
-  { path: '/admin/payments', icon: FaMoneyBill, label: 'Payments' },
+
+  { type: 'group', label: 'Finance' },
+  { path: '/admin/online-payments', icon: FaCreditCard, label: 'Online Payments' },
+  { path: '/admin/outstanding', icon: FaHandHoldingUsd, label: 'Outstanding (Udhaar)' },
+  { path: '/admin/transactions', icon: FaExchangeAlt, label: 'All Transactions' },
+  { path: '/admin/offline-sales-history', icon: FaHistory, label: 'Offline Sales History' },
+
+  { type: 'group', label: 'People' },
   { path: '/admin/customers', icon: FaUsers, label: 'Customers' },
   { path: '/admin/suppliers', icon: FaTruck, label: 'Suppliers' },
-  { path: '/admin/sliders', icon: FaImages, label: 'Sliders' },
+
+  { type: 'group', label: 'Catalog' },
   { path: '/admin/notifications', icon: FaBell, label: 'Notifications' },
   { path: '/admin/categories', icon: FaTags, label: 'Categories' },
-  { path: '/admin/offline-sales', icon: FaCashRegister, label: 'Offline Sales' },
-  { path: '/admin/offline-sales-history', icon: FaHistory, label: 'Sales History' },
+  { path: '/admin/products', icon: FaBox, label: 'Products' },
+  { path: '/admin/sliders', icon: FaImages, label: 'Sliders' },
   { path: '/admin/coupons', icon: FaTags, label: 'Coupons' },
+
+  { type: 'group', label: 'System' },
   { path: '/admin/theme', icon: FaPalette, label: 'Theme Config' },
   { path: '/admin/profile', icon: FaUserCog, label: 'Profile' },
 ]
 
 const AdminSidebar = ({ isOpen, onClose, collapsed, onToggleCollapse, isMobile }) => {
-  const { darkMode } = useTheme()
-  const c = getColors(darkMode)
+  const c = useAdminTheme()
   const { logout } = useAuth()
   const { settings } = useSettings()
   const navigate = useNavigate()
@@ -134,9 +146,10 @@ const AdminSidebar = ({ isOpen, onClose, collapsed, onToggleCollapse, isMobile }
           display: 'flex',
           alignItems: 'center',
           justifyContent: !showLabels ? 'center' : 'space-between',
-          padding: !showLabels ? '16px 0' : '18px 16px',
+          padding: !showLabels ? '0' : '0 16px',
           borderBottom: `1px solid ${c.sidebarBorder}`,
-          minHeight: '64px',
+          height: '64px',
+          boxSizing: 'border-box',
           flexShrink: 0,
         }}>
           {!showLabels ? (
@@ -148,7 +161,8 @@ const AdminSidebar = ({ isOpen, onClose, collapsed, onToggleCollapse, isMobile }
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px', overflow: 'hidden', minWidth: 0 }}>
                 {logoImg('36px')}
                 <span style={{
-                  color: '#38bdf8', fontSize: '18px', fontWeight: '700',
+                  color: c.accent, fontSize: '18px', fontWeight: '700',
+                  letterSpacing: '-0.01em',
                   whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
                 }}>{settings?.siteName || 'Royal'} Admin</span>
               </div>
@@ -171,43 +185,84 @@ const AdminSidebar = ({ isOpen, onClose, collapsed, onToggleCollapse, isMobile }
         </div>
 
         {/* ── Navigation ── */}
-        <nav style={{
+        <nav className="admin-sidebar-nav" style={{
           flex: 1,
-          padding: !showLabels ? '8px 0' : '10px 8px',
-          display: 'flex', flexDirection: 'column', gap: '2px',
+          minHeight: 0,
+          padding: !showLabels ? '10px 0' : '12px 10px',
+          display: 'flex', flexDirection: 'column', gap: '4px',
           overflowY: 'auto', overflowX: 'hidden',
         }}>
-          {menuItems.map(({ path, icon: Icon, label }) => (
-            <NavLink
-              key={path}
-              to={path}
-              end={path === '/admin'}
-              onClick={handleNavClick}
-              title={!showLabels ? label : undefined}
-              className="admin-sidebar-link"
-              style={({ isActive }) => ({
-                display: 'flex',
-                alignItems: 'center',
-                gap: '12px',
-                padding: !showLabels ? '12px 0' : '11px 14px',
-                justifyContent: !showLabels ? 'center' : 'flex-start',
-                borderRadius: !showLabels ? '0' : '10px',
-                color: isActive ? '#38bdf8' : c.textSecondary,
-                textDecoration: 'none',
-                fontSize: '14px',
-                fontWeight: isActive ? '600' : '500',
-                transition: 'all 0.15s',
-                background: isActive ? 'rgba(14, 165, 233, 0.15)' : 'transparent',
-                borderLeft: isActive ? '3px solid #0ea5e9' : '3px solid transparent',
-                whiteSpace: 'nowrap',
-                overflow: 'hidden',
-                position: 'relative',
-              })}
-            >
-              <Icon style={{ fontSize: '16px', width: '20px', flexShrink: 0 }} />
-              {showLabels && <span>{label}</span>}
-            </NavLink>
-          ))}
+          {menuItems.map((item, idx) => {
+            // Group separator: shows as label when expanded, as a thin divider when collapsed
+            if (item.type === 'group') {
+              const isFirst = idx === 0
+              if (!showLabels) {
+                // Collapsed: skip the very first divider (top of nav looks cleaner)
+                if (isFirst) return null
+                return (
+                  <div
+                    key={`grp-${idx}`}
+                    style={{
+                      height: '1px',
+                      background: c.sidebarBorder,
+                      margin: '8px 12px',
+                      flexShrink: 0,
+                    }}
+                  />
+                )
+              }
+              return (
+                <div
+                  key={`grp-${idx}`}
+                  style={{
+                    fontSize: '11px',
+                    fontWeight: '600',
+                    color: c.textSecondary,
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.8px',
+                    padding: isFirst ? '4px 14px 4px' : '12px 14px 4px',
+                    opacity: 0.6,
+                    flexShrink: 0,
+                  }}
+                >
+                  {item.label}
+                </div>
+              )
+            }
+
+            const { path, icon: Icon, label } = item
+            return (
+              <NavLink
+                key={path}
+                to={path}
+                end={path === '/admin'}
+                onClick={handleNavClick}
+                title={!showLabels ? label : undefined}
+                className="admin-sidebar-link"
+                style={({ isActive }) => ({
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '12px',
+                  padding: !showLabels ? '12px 0' : '12px 14px',
+                  justifyContent: !showLabels ? 'center' : 'flex-start',
+                  borderRadius: !showLabels ? '0' : '10px',
+                  color: isActive ? c.accent : c.textSecondary,
+                  textDecoration: 'none',
+                  fontSize: '14px',
+                  fontWeight: isActive ? '600' : '500',
+                  transition: 'background 0.18s ease, color 0.18s ease, border-color 0.18s ease',
+                  background: isActive ? c.navActive : 'transparent',
+                  borderLeft: isActive ? `3px solid ${c.accent}` : '3px solid transparent',
+                  whiteSpace: 'nowrap',
+                  overflow: 'hidden',
+                  position: 'relative',
+                })}
+              >
+                <Icon style={{ fontSize: '16px', width: '20px', flexShrink: 0 }} />
+                {showLabels && <span>{label}</span>}
+              </NavLink>
+            )
+          })}
         </nav>
 
         {/* ── Bottom Section ── */}
@@ -217,30 +272,6 @@ const AdminSidebar = ({ isOpen, onClose, collapsed, onToggleCollapse, isMobile }
           display: 'flex', flexDirection: 'column', gap: '4px',
           flexShrink: 0,
         }}>
-          {/* Collapse toggle - desktop only */}
-          {!isMobile && (
-            <button
-              onClick={onToggleCollapse}
-              title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-              style={{
-                display: 'flex', alignItems: 'center', gap: '12px',
-                padding: collapsed ? '10px 0' : '10px 14px',
-                justifyContent: collapsed ? 'center' : 'flex-start',
-                borderRadius: collapsed ? '0' : '10px',
-                color: c.textSecondary, background: 'transparent',
-                border: 'none', fontSize: '14px', fontWeight: '500',
-                cursor: 'pointer', width: '100%',
-                transition: 'all 0.15s', whiteSpace: 'nowrap', overflow: 'hidden',
-              }}
-            >
-              {collapsed
-                ? <FaChevronRight style={{ fontSize: '14px', width: '20px', flexShrink: 0 }} />
-                : <FaChevronLeft style={{ fontSize: '14px', width: '20px', flexShrink: 0 }} />
-              }
-              {!collapsed && <span>Collapse</span>}
-            </button>
-          )}
-
           {/* Logout */}
           <button
             onClick={handleLogout}
@@ -263,6 +294,20 @@ const AdminSidebar = ({ isOpen, onClose, collapsed, onToggleCollapse, isMobile }
           </button>
         </div>
       </aside>
+
+      {/* Sidebar nav scrollbar styling */}
+      <style>{`
+        .admin-sidebar-nav::-webkit-scrollbar { width: 6px; }
+        .admin-sidebar-nav::-webkit-scrollbar-track { background: transparent; }
+        .admin-sidebar-nav::-webkit-scrollbar-thumb {
+          background: rgba(148, 163, 184, 0.2);
+          border-radius: 3px;
+        }
+        .admin-sidebar-nav:hover::-webkit-scrollbar-thumb {
+          background: rgba(148, 163, 184, 0.4);
+        }
+        .admin-sidebar-nav { scrollbar-width: thin; scrollbar-color: rgba(148,163,184,0.25) transparent; }
+      `}</style>
 
       {/* Tooltip CSS for desktop collapsed state */}
       {collapsed && !isMobile && (

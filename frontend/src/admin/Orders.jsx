@@ -520,14 +520,17 @@ const Orders = () => {
     const isLoading = actionLoading === (order.id || order.orderNumber)
     const awaitingConfirmation = !!order.deliveryConfirmationRequestedAt && !order.customerDeliveryConfirmed && (order.orderStatus || '').toLowerCase() === 'shipped'
     const btnBase = {
-      display: 'flex', alignItems: 'center', gap: '6px',
+      display: 'inline-flex', alignItems: 'center', gap: '6px',
       border: 'none', borderRadius: '8px',
-      padding: compact ? '6px 12px' : '8px 16px',
+      padding: compact ? '0 12px' : '8px 16px',
+      height: compact ? '28px' : 'auto',
       fontSize: compact ? '12px' : '13px',
       fontWeight: '600', cursor: isLoading ? 'not-allowed' : 'pointer',
       opacity: isLoading ? 0.6 : 1,
-      transition: 'all 0.2s ease',
+      transition: 'all 0.18s ease',
       whiteSpace: 'nowrap',
+      flexShrink: 0,
+      lineHeight: 1,
     }
 
     const buttons = []
@@ -615,7 +618,7 @@ const Orders = () => {
     }
 
     return buttons.length > 0 ? (
-      <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>{buttons}</div>
+      <div style={{ display: 'flex', gap: '6px', flexWrap: compact ? 'nowrap' : 'wrap', alignItems: 'center' }}>{buttons}</div>
     ) : null
   }
 
@@ -717,6 +720,7 @@ const Orders = () => {
               <table style={s.table}>
                 <thead>
                   <tr>
+                    <th className="admin-actions-col" style={s.th}>Actions</th>
                     <th style={s.th}>Order #</th>
                     <th style={s.th}>Customer</th>
                     <th style={s.th}>Items</th>
@@ -724,8 +728,6 @@ const Orders = () => {
                     <th style={s.th}>Status</th>
                     <th style={s.th}>Payment</th>
                     <th style={s.th}>Date</th>
-                    <th style={s.th}>Actions</th>
-                    <th style={{ ...s.th, width: '40px' }}></th>
                   </tr>
                 </thead>
                 <tbody>
@@ -736,6 +738,18 @@ const Orders = () => {
                       onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(14, 165, 233, 0.04)'}
                       onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
                     >
+                      <td className="admin-actions-col" style={{ ...s.td, width: 'auto' }}>
+                        <div className="admin-actions" style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'nowrap' }}>
+                          <button
+                            onClick={(e) => { e.stopPropagation(); openDetail(order) }}
+                            style={s.viewBtn}
+                            title="View Details"
+                          >
+                            <FaEye size={13} />
+                          </button>
+                          {renderActionButtons(order, true)}
+                        </div>
+                      </td>
                       <td style={{ ...s.td, fontWeight: '700', color: '#38bdf8' }}>
                         #{order.orderNumber}
                       </td>
@@ -752,14 +766,45 @@ const Orders = () => {
                         </div>
                       </td>
                       <td style={s.td}>
-                        <div style={{ color: c.text, fontSize: '13px', fontWeight: '600' }}>
-                          {getOrderItemsSummary(order)}
-                        </div>
-                        {order.items?.length > 1 && (
-                          <div style={{ color: c.textSecondary, fontSize: '11px', marginTop: '2px' }}>
-                            {order.items.length} line items
-                          </div>
-                        )}
+                        {(() => {
+                          const items = Array.isArray(order.items) ? order.items : []
+                          if (items.length === 0) {
+                            return <div style={{ color: c.textSecondary, fontSize: '13px' }}>No items</div>
+                          }
+                          const VISIBLE = 2
+                          const visible = items.slice(0, VISIBLE)
+                          const hidden = items.length - visible.length
+                          const fullList = items.map(it => `${it?.name || 'Item'} — ${getCartItemSummary(it)}`).join('\n')
+                          return (
+                            <div title={fullList} style={{ display: 'flex', flexDirection: 'column', gap: '3px', maxWidth: '260px' }}>
+                              {visible.map((it, i) => (
+                                <div key={i} style={{ display: 'flex', alignItems: 'baseline', gap: '6px', minWidth: 0 }}>
+                                  <span style={{ color: c.text, fontSize: '13px', fontWeight: '600', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                    {it?.name || 'Item'}
+                                  </span>
+                                  <span style={{ color: c.textSecondary, fontSize: '12px', whiteSpace: 'nowrap', flexShrink: 0 }}>
+                                    × {getCartItemSummary(it)}
+                                  </span>
+                                </div>
+                              ))}
+                              {hidden > 0 && (
+                                <button
+                                  type="button"
+                                  onClick={(e) => { e.stopPropagation(); openDetail(order) }}
+                                  style={{
+                                    alignSelf: 'flex-start', marginTop: '2px', padding: '2px 8px',
+                                    background: 'rgba(14, 165, 233, 0.12)', color: c.accent || '#38bdf8',
+                                    border: '1px solid rgba(14, 165, 233, 0.25)', borderRadius: '999px',
+                                    fontSize: '11px', fontWeight: '600', cursor: 'pointer', lineHeight: 1.4,
+                                  }}
+                                  title="View all items"
+                                >
+                                  +{hidden} more {hidden === 1 ? 'item' : 'items'}
+                                </button>
+                              )}
+                            </div>
+                          )
+                        })()}
                       </td>
                       <td style={{ ...s.td, fontWeight: '700', color: c.text, fontSize: '14px' }}>
                         {formatCurrency(order.total)}
@@ -771,19 +816,7 @@ const Orders = () => {
                         <PaymentBadge status={order.paymentStatus} />
                       </td>
                       <td style={{ ...s.td, color: c.textSecondary, fontSize: '13px', whiteSpace: 'nowrap' }}>
-                        {formatDate(order.orderDate)}
-                      </td>
-                      <td style={s.td}>
-                        {renderActionButtons(order, true)}
-                      </td>
-                      <td style={s.td}>
-                        <button
-                          onClick={() => openDetail(order)}
-                          style={s.viewBtn}
-                          title="View Details"
-                        >
-                          <FaEye size={14} />
-                        </button>
+                        {formatDateTime(order.orderDate)}
                       </td>
                     </tr>
                   ))}
@@ -835,7 +868,18 @@ const Orders = () => {
         )}
 
         {/* Detail Modal */}
-        <Modal isOpen={showModal} onClose={closeModal} title={`Order #${selectedOrder?.orderNumber || ''}`}>
+        <Modal
+          isOpen={showModal}
+          onClose={closeModal}
+          title={`Order #${selectedOrder?.orderNumber || ''}`}
+          footer={selectedOrder ? (
+            renderActionButtons(selectedOrder, false) || (
+              <p style={{ color: c.textSecondary, fontSize: '13px', margin: '4px 0', textAlign: 'center' }}>
+                No actions available for this status
+              </p>
+            )
+          ) : null}
+        >
           {selectedOrder && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
               {/* Status + Payment Row */}
@@ -954,14 +998,6 @@ const Orders = () => {
                 </div>
               )}
 
-              {/* Action Buttons in Modal */}
-              <div style={{ paddingTop: '8px', borderTop: `1px solid ${c.border}` }}>
-                {renderActionButtons(selectedOrder, false) || (
-                  <p style={{ color: c.textSecondary, fontSize: '13px', margin: '4px 0', textAlign: 'center' }}>
-                    No actions available for this status
-                  </p>
-                )}
-              </div>
             </div>
           )}
         </Modal>
@@ -1200,16 +1236,18 @@ const getStyles = (c) => ({
     verticalAlign: 'middle',
   },
   viewBtn: {
-    background: 'rgba(14, 165, 233, 0.1)',
-    border: '1px solid rgba(14, 165, 233, 0.25)',
+    background: 'rgba(14, 165, 233, 0.12)',
+    border: '1px solid rgba(14, 165, 233, 0.3)',
     borderRadius: '8px',
-    padding: '8px 10px',
+    padding: '6px 10px',
+    height: '28px',
     color: '#38bdf8',
     cursor: 'pointer',
-    display: 'flex',
+    display: 'inline-flex',
     alignItems: 'center',
     justifyContent: 'center',
-    transition: 'all 0.2s',
+    transition: 'all 0.18s ease',
+    flexShrink: 0,
   },
   section: {
     padding: '14px',

@@ -14,6 +14,7 @@ import {
 } from 'react-icons/fa6'
 import API from '../config/api'
 import AdminLayout from '../components/AdminLayout'
+import Modal from '../components/Modal'
 import { useTheme } from '../context/ThemeContext'
 import { getColors } from './themeColors'
 import {
@@ -109,6 +110,7 @@ const OfflineSales = () => {
   const [paymentMethod, setPaymentMethod] = useState('Cash')
   const [discount, setDiscount] = useState('')
   const [note, setNote] = useState('')
+  const [showCheckoutModal, setShowCheckoutModal] = useState(false)
 
   useEffect(() => {
     fetchData()
@@ -173,13 +175,18 @@ const OfflineSales = () => {
       )
     }
 
-    if (!query) return nextProducts.slice(0, 18)
+    if (query) {
+      nextProducts = nextProducts.filter((product) =>
+        [product.name, product.category, product.id]
+          .filter(Boolean)
+          .some((value) => String(value).toLowerCase().includes(query))
+      )
+    }
 
-    return nextProducts.filter((product) =>
-      [product.name, product.category, product.id]
-        .filter(Boolean)
-        .some((value) => String(value).toLowerCase().includes(query))
-    ).slice(0, 18)
+    // When a filter is active (category or search), show ALL matches.
+    // Otherwise cap the default catalog view for visual hygiene.
+    const hasFilter = categoryFilter !== 'all' || !!query
+    return hasFilter ? nextProducts : nextProducts.slice(0, 24)
   }, [products, catalogQuery, categoryFilter])
 
   const categoryOptions = useMemo(() => {
@@ -225,6 +232,74 @@ const OfflineSales = () => {
     setPaymentMethod('Cash')
     setDiscount('')
     setNote('')
+  }
+
+  const quickAddItem = (product, mode, qty = 1) => {
+    if (!product) return
+    const useMode = mode || getDefaultPurchaseMode(product)
+    const useQty = useMode === 'half_box' ? 1 : Math.max(1, Number(qty) || 1)
+    const maxQuantity = getMaxPurchaseQuantity(product, useMode)
+    if (useQty > maxQuantity) {
+      toast.error(`Max ${maxQuantity} ${getModeShortLabel(useMode)} stock available`)
+      return
+    }
+
+    const existingIndex = saleItems.findIndex(
+      (item) => item.productId === product.id && item.purchaseMode === useMode
+    )
+    const unitBox = getUnitBoxEquivalent(product, useMode)
+
+    if (existingIndex >= 0) {
+      const merged = useMode === 'half_box' ? 1 : saleItems[existingIndex].quantity + useQty
+      if (merged > maxQuantity) {
+        toast.error('Stock se zyada nahi add ho sakta')
+        return
+      }
+      setSaleItems((prev) => prev.map((it, i) => i === existingIndex ? {
+        ...it,
+        quantity: merged,
+        boxEquivalent: Number((unitBox * merged).toFixed(2)),
+      } : it))
+    } else {
+      setSaleItems((prev) => [...prev, {
+        productId: product.id,
+        name: product.name,
+        image: product.image || '',
+        quantity: useQty,
+        purchaseMode: useMode,
+        price: getUnitPrice(product, useMode),
+        boxQuantity: Number(product.boxQuantity || product.bottlesPerBox || product.unitsPerBox || 24),
+        boxEquivalent: Number((unitBox * useQty).toFixed(2)),
+        stock: Number(product.stock ?? product.stockQuantity ?? 0),
+        maxQuantity,
+      }])
+    }
+  }
+
+  const inCartCount = (productId, mode) => {
+    const found = saleItems.find((it) => it.productId === productId && it.purchaseMode === mode)
+    return found?.quantity || 0
+  }
+
+  const updateQuantityById = (productId, mode, nextQty) => {
+    setSaleItems((prev) => {
+      const idx = prev.findIndex((it) => it.productId === productId && it.purchaseMode === mode)
+      if (idx === -1) return prev
+      const target = prev[idx]
+      if (nextQty <= 0) return prev.filter((_, i) => i !== idx)
+      if (target.purchaseMode === 'half_box') return prev
+      const max = target.maxQuantity || 1
+      const safe = Math.min(Math.max(1, nextQty), max)
+      return prev.map((it, i) => i === idx ? {
+        ...it,
+        quantity: safe,
+        boxEquivalent: Number((safe * getUnitBoxEquivalent({ ...it, boxQuantity: it.boxQuantity }, it.purchaseMode)).toFixed(2)),
+      } : it)
+    })
+  }
+
+  const removeByProductMode = (productId, mode) => {
+    setSaleItems((prev) => prev.filter((it) => !(it.productId === productId && it.purchaseMode === mode)))
   }
 
   const addDraftItem = () => {
@@ -340,6 +415,15 @@ const OfflineSales = () => {
       ...prev,
       [getSaleItemKey(item)]: sanitizedValue,
     }))
+    // Live: if a valid number is entered, push it to saleItems immediately
+    // so line total & grand total recalculate without needing blur.
+    if (sanitizedValue !== '') {
+      const parsed = Number.parseInt(sanitizedValue, 10)
+      if (!Number.isNaN(parsed) && parsed >= 1) {
+        const idx = saleItems.findIndex((it) => getSaleItemKey(it) === getSaleItemKey(item))
+        if (idx !== -1) updateItemQuantity(idx, parsed)
+      }
+    }
   }
 
   const commitItemQuantity = (index) => {
@@ -452,12 +536,21 @@ const OfflineSales = () => {
         setTimeout(() => printBill(createdSale), 300)
       }
       resetForm()
+      setShowCheckoutModal(false)
       await fetchData()
     } catch (error) {
       toast.error(error.response?.data?.message || 'Offline sale save nahi hui')
     } finally {
       setSaving(false)
     }
+  }
+
+  const openCheckout = () => {
+    if (saleItems.length === 0) {
+      toast.error('Pehle koi product add karo')
+      return
+    }
+    setShowCheckoutModal(true)
   }
 
   if (loading) {
@@ -492,6 +585,22 @@ const OfflineSales = () => {
             cursor: not-allowed;
             opacity: 0.72;
           }
+          /* Search bar: no inner focus rectangle — wrapper handles all visual feedback */
+          .offline-sales-search-input,
+          .offline-sales-search-input:focus {
+            outline: none !important;
+            box-shadow: none !important;
+            border: none !important;
+          }
+          .offline-sales-search-wrap {
+            transition: border-color 0.18s ease, background 0.18s ease;
+          }
+          .offline-sales-search-wrap:hover {
+            border-color: ${c.accent || '#0ea5e9'};
+          }
+          .offline-sales-search-wrap:focus-within {
+            border-color: ${c.accent || '#0ea5e9'};
+          }
           @media (max-width: 1100px) {
             .offline-sales-grid { grid-template-columns: 1fr !important; }
             .offline-sales-hero { grid-template-columns: 1fr !important; }
@@ -504,34 +613,31 @@ const OfflineSales = () => {
             }
           }
         `}</style>
-        <section className="offline-sales-hero" style={styles.hero}>
-          <div style={styles.heroCopy}>
-            <span style={styles.heroBadge}>Shared stock. Fast counter billing.</span>
-            <h1 style={styles.heroTitle}>Offline Sales Counter</h1>
-            <p style={styles.heroText}>
-              Direct sale, direct stock minus, direct udhar recovery. Screen ko counter use ke hisaab se compact rakha gaya hai.
-            </p>
+        <section className="offline-sales-hero" style={styles.heroCompact}>
+          <div style={styles.heroCompactLeft}>
+            <span style={styles.heroBadgeCompact}><FaBolt /> Counter Mode</span>
+            <h1 style={styles.heroTitleCompact}>Offline Sales</h1>
           </div>
-          <div style={styles.heroStats}>
-            <div style={styles.statCard}>
-              <span style={styles.statIcon}><FaReceipt /></span>
-              <div>
-                <div style={styles.statValue}>{todaySales.length}</div>
-                <div style={styles.statLabel}>Aaj ki offline sales</div>
+          <div style={styles.heroCompactStats}>
+            <div style={styles.statPill}>
+              <FaReceipt style={{ color: '#0ea5e9', fontSize: 14 }} />
+              <div style={styles.statPillBody}>
+                <div style={styles.statPillValue}>{todaySales.length}</div>
+                <div style={styles.statPillLabel}>Aaj sales</div>
               </div>
             </div>
-            <div style={styles.statCard}>
-              <span style={styles.statIcon}><FaCashRegister /></span>
-              <div>
-                <div style={styles.statValue}>{formatCurrency(todayRevenue)}</div>
-                <div style={styles.statLabel}>Aaj counter revenue</div>
+            <div style={styles.statPill}>
+              <FaCashRegister style={{ color: '#22c55e', fontSize: 14 }} />
+              <div style={styles.statPillBody}>
+                <div style={styles.statPillValue}>{formatCurrency(todayRevenue)}</div>
+                <div style={styles.statPillLabel}>Revenue</div>
               </div>
             </div>
-            <div style={styles.statCard}>
-              <span style={styles.statIcon}><FaArrowTrendDown /></span>
-              <div>
-                <div style={styles.statValue}>{formatCurrency(todayUdhar)}</div>
-                <div style={styles.statLabel}>Aaj ka udhar</div>
+            <div style={styles.statPill}>
+              <FaArrowTrendDown style={{ color: '#f97316', fontSize: 14 }} />
+              <div style={styles.statPillBody}>
+                <div style={styles.statPillValue}>{formatCurrency(todayUdhar)}</div>
+                <div style={styles.statPillLabel}>Udhar</div>
               </div>
             </div>
           </div>
@@ -553,245 +659,80 @@ const OfflineSales = () => {
             <div style={styles.sectionBlock}>
               <div style={styles.sectionTitleRow}>
                 <h3 style={styles.sectionTitle}>1. Product picker</h3>
-                <span style={styles.sectionHint}>Stock waale products hi dikh rahe hain</span>
+                <span style={styles.sectionHint}>{filteredProducts.length} of {products.length} products • Stock waale only</span>
               </div>
 
-              <div className="offline-sales-form-grid" style={styles.formGrid}>
-                <div style={styles.field}>
-                  <label style={styles.label}>Quick search</label>
-                  <input
-                    className="offline-sales-input"
-                    value={catalogQuery}
-                    onChange={(e) => setCatalogQuery(e.target.value)}
-                    placeholder="Name, category ya product id"
-                    style={styles.input}
-                  />
-                </div>
-                <div style={styles.field}>
-                  <label style={styles.label}>Category list</label>
-                  <select
-                    className="offline-sales-input"
-                    value={categoryFilter}
-                    onChange={(e) => setCategoryFilter(e.target.value)}
-                    style={styles.input}
+              {/* Live search bar */}
+              <div className="offline-sales-search-wrap" style={styles.searchBar}>
+                <FaCashRegister style={{ color: c.textSecondary, fontSize: 14, flexShrink: 0 }} />
+                <input
+                  className="offline-sales-search-input"
+                  value={catalogQuery}
+                  onChange={(e) => setCatalogQuery(e.target.value)}
+                  placeholder="Type to search by name, category or product id..."
+                  style={styles.searchInputInline}
+                  autoFocus
+                />
+                {catalogQuery && (
+                  <button type="button" onClick={() => setCatalogQuery('')} style={styles.clearBtn} aria-label="Clear search">×</button>
+                )}
+              </div>
+
+              {/* Category chips */}
+              {categoryOptions.length > 0 && (
+                <div style={styles.chipsRow}>
+                  <button
+                    type="button"
+                    onClick={() => setCategoryFilter('all')}
+                    style={{ ...styles.chip, ...(categoryFilter === 'all' ? styles.chipActive : {}) }}
                   >
-                    <option value="all">All categories</option>
-                    {categoryOptions.map((category) => (
-                      <option key={category} value={category}>
-                        {category}
-                      </option>
-                    ))}
-                  </select>
+                    All
+                  </button>
+                  {categoryOptions.map((category) => (
+                    <button
+                      key={category}
+                      type="button"
+                      onClick={() => setCategoryFilter(category)}
+                      style={{ ...styles.chip, ...(categoryFilter === category ? styles.chipActive : {}) }}
+                    >
+                      {category}
+                    </button>
+                  ))}
                 </div>
-              </div>
+              )}
 
-              <div className="offline-sales-form-grid" style={styles.formGrid}>
-                <div style={styles.field}>
-                  <label style={styles.label}>Product</label>
-                  <select
-                    className="offline-sales-input"
-                    value={draft.productId}
-                    onChange={(e) => {
-                      const product = products.find((item) => item.id === e.target.value)
-                      setDraft({
-                        productId: e.target.value,
-                        quantity: 1,
-                        purchaseMode: product ? getDefaultPurchaseMode(product) : 'full_box',
-                      })
-                      setDraftQuantityInput('1')
-                    }}
-                    style={styles.input}
-                  >
-                    <option value="">Product select karo</option>
-                    {filteredProducts.map((product) => (
-                      <option key={product.id} value={product.id}>
-                        {product.name} • {product.category || 'General'} • {Number(product.stock ?? product.stockQuantity ?? 0)} box eq
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-
-              {products.length === 0 && (
+              {/* Product grid */}
+              {products.length === 0 ? (
                 <div style={styles.warningBox}>
                   <strong>No sellable products loaded.</strong>
-                  <span style={styles.warningText}>
-                    Backend se product list empty aa rahi hai ya sab products ka stock `0` hai. Isliye select box empty dikh raha hai.
-                  </span>
+                  <span style={styles.warningText}>Backend se product list empty hai ya sab ka stock 0 hai.</span>
+                </div>
+              ) : filteredProducts.length === 0 ? (
+                <div style={styles.emptyGrid}>
+                  <FaCashRegister style={{ fontSize: 28, color: c.textSecondary, opacity: 0.6 }} />
+                  <strong style={{ marginTop: 8 }}>
+                    {catalogQuery ? `No match for "${catalogQuery}"` : `No products in ${categoryFilter}`}
+                  </strong>
+                  <span style={styles.warningText}>Filter clear karo ya alag spelling try karo.</span>
+                </div>
+              ) : (
+                <div className="offline-sales-product-grid" style={styles.productGrid}>
+                  {filteredProducts.map((product) => (
+                    <ProductPickRow
+                      key={product.id}
+                      product={product}
+                      c={c}
+                      onAdd={quickAddItem}
+                      onUpdateQty={updateQuantityById}
+                      onRemove={removeByProductMode}
+                      formatCurrency={formatCurrency}
+                      inCartCount={inCartCount}
+                    />
+                  ))}
                 </div>
               )}
-
-              {products.length > 0 && filteredProducts.length === 0 && catalogQuery.trim() && (
-                <div style={styles.warningBox}>
-                  <strong>No match for "{catalogQuery}".</strong>
-                  <span style={styles.warningText}>
-                    Search clear karo ya check karo ki product ka stock available hai.
-                  </span>
-                </div>
-              )}
-
-              {selectedProduct && (
-                <div style={styles.productHighlight}>
-                  <div>
-                    <div style={styles.productName}>{selectedProduct.name}</div>
-                    <div style={styles.productMeta}>
-                      {selectedProduct.category || 'General'} • Stock {Number(selectedProduct.stock ?? selectedProduct.stockQuantity ?? 0)} box eq
-                    </div>
-                  </div>
-                  <div style={styles.productPrice}>{formatCurrency(getUnitPrice(selectedProduct, draft.purchaseMode))} {getCartItemUnitPriceLabel({ purchaseMode: draft.purchaseMode })}</div>
-                </div>
-              )}
-
-              <div className="offline-sales-compact-grid" style={styles.compactGrid}>
-                <div style={styles.field}>
-                  <label style={styles.label}>Mode</label>
-                  <div style={styles.segmentRow}>
-                    {availableModes.map((mode) => (
-                      <button
-                        key={mode}
-                        type="button"
-                        onClick={() => {
-                          setDraft((prev) => ({ ...prev, purchaseMode: mode, quantity: mode === 'half_box' ? 1 : prev.quantity || 1 }))
-                          setDraftQuantityInput(mode === 'half_box' ? '1' : (draftQuantityInput || '1'))
-                        }}
-                        style={{
-                          ...styles.segmentBtn,
-                          ...(draft.purchaseMode === mode ? styles.segmentBtnActive : {}),
-                        }}
-                      >
-                        {getModeShortLabel(mode)}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-                <div style={styles.field}>
-                  <label style={styles.label}>Quantity</label>
-                  <input
-                    className="offline-sales-qty-input"
-                    type="text"
-                    inputMode="numeric"
-                    pattern="[0-9]*"
-                    value={draft.purchaseMode === 'half_box' ? '1' : draftQuantityInput}
-                    onChange={(e) => handleDraftQuantityChange(e.target.value)}
-                    onBlur={commitDraftQuantity}
-                    onWheel={preventAccidentalQuantityScroll}
-                    onKeyDown={(e) => {
-                      preventStepperKeys(e)
-                      if (e.key === 'Enter') e.currentTarget.blur()
-                    }}
-                    onFocus={(e) => e.target.select()}
-                    disabled={draft.purchaseMode === 'half_box'}
-                    style={styles.input}
-                  />
-                </div>
-                <div style={styles.field}>
-                  <label style={styles.label}>Action</label>
-                  <button type="button" onClick={addDraftItem} style={styles.addBtn}>
-                    <FaPlus />
-                    Add to sale
-                  </button>
-                </div>
-              </div>
             </div>
 
-            <div style={styles.sectionBlock}>
-              <div style={styles.sectionTitleRow}>
-                <h3 style={styles.sectionTitle}>2. Customer and payment</h3>
-                <span style={styles.sectionHint}>Udhar ke liye linked customer required</span>
-              </div>
-
-              <div className="offline-sales-form-grid" style={styles.formGrid}>
-                <div style={styles.field}>
-                  <label style={styles.label}>Existing customer</label>
-                  <select
-                    className="offline-sales-input"
-                    value={selectedCustomerId}
-                    onChange={(e) => setSelectedCustomerId(e.target.value)}
-                    style={styles.input}
-                  >
-                    <option value="">Walk-in customer</option>
-                    {customers.map((customer) => (
-                      <option key={customer.id} value={customer.id}>
-                        {customer.name} • {customer.phone}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <div style={styles.field}>
-                  <label style={styles.label}>Discount</label>
-                  <input
-                    className="offline-sales-input"
-                    type="number"
-                    min={0}
-                    value={discount}
-                    onChange={(e) => setDiscount(e.target.value)}
-                    placeholder="0"
-                    style={styles.input}
-                  />
-                </div>
-              </div>
-
-              {!linkedCustomer && (
-                <div className="offline-sales-form-grid" style={styles.formGrid}>
-                  <div style={styles.field}>
-                    <label style={styles.label}>Walk-in name</label>
-                    <input className="offline-sales-input" value={walkInName} onChange={(e) => setWalkInName(e.target.value)} placeholder="Optional" style={styles.input} />
-                  </div>
-                  <div style={styles.field}>
-                    <label style={styles.label}>Phone</label>
-                    <input className="offline-sales-input" value={walkInPhone} onChange={(e) => setWalkInPhone(e.target.value)} placeholder="Optional" style={styles.input} />
-                  </div>
-                </div>
-              )}
-
-              {!linkedCustomer && (
-                <div style={styles.field}>
-                  <label style={styles.label}>Address / note for bill</label>
-                  <input className="offline-sales-input" value={walkInAddress} onChange={(e) => setWalkInAddress(e.target.value)} placeholder="Optional" style={styles.input} />
-                </div>
-              )}
-
-              {linkedCustomer && (
-                <div style={styles.customerCard}>
-                  <div style={styles.customerHeader}>
-                    <FaUser />
-                    Linked customer account
-                  </div>
-                  <div style={styles.customerName}>{linkedCustomer.name}</div>
-                  <div style={styles.customerMeta}>{linkedCustomer.phone || 'No phone'} • Outstanding {formatCurrency(linkedCustomer.outstanding || 0)}</div>
-                </div>
-              )}
-
-              <div className="offline-sales-payment-grid" style={styles.paymentGrid}>
-                {PAYMENT_OPTIONS.map((option) => (
-                  <button
-                    key={option.value}
-                    type="button"
-                    onClick={() => setPaymentMethod(option.value)}
-                    style={{
-                      ...styles.paymentCard,
-                      borderColor: paymentMethod === option.value ? option.tone : c.border,
-                      boxShadow: paymentMethod === option.value ? `0 0 0 1px ${option.tone}` : 'none',
-                    }}
-                  >
-                    <div style={{ ...styles.paymentDot, background: option.tone }} />
-                    <div style={styles.paymentLabel}>{option.label}</div>
-                    <div style={styles.paymentHelp}>{option.help}</div>
-                  </button>
-                ))}
-              </div>
-
-              <div style={styles.field}>
-                <label style={styles.label}>Internal note</label>
-                <textarea
-                  className="offline-sales-textarea"
-                  value={note}
-                  onChange={(e) => setNote(e.target.value)}
-                  placeholder="Example: shop counter sale, quick dispatch, partial carton request"
-                  style={styles.textarea}
-                />
-              </div>
-            </div>
           </section>
 
           <aside style={styles.summaryPanel}>
@@ -816,17 +757,43 @@ const OfflineSales = () => {
                 )}
 
                 {saleItems.map((item, index) => (
-                  <div key={`${item.productId}-${item.purchaseMode}`} style={styles.itemCard}>
-                    <div style={styles.itemTop}>
-                      <div>
-                        <div style={styles.itemName}>{item.name}</div>
-                        <div style={styles.itemMeta}>{getCartItemSummary(item)} • {formatCurrency(item.price)} {getCartItemUnitPriceLabel(item)}</div>
+                  <div key={`${item.productId}-${item.purchaseMode}`} style={{
+                    display: 'flex', alignItems: 'center', gap: 10,
+                    padding: '10px 12px',
+                    background: c.inputBg,
+                    border: `1px solid ${c.border}`,
+                    borderRadius: 10,
+                  }}>
+                    {/* Name + meta */}
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontWeight: 700, fontSize: 13, color: c.text, lineHeight: 1.3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {item.name}
                       </div>
-                      <button type="button" onClick={() => removeItem(index)} style={styles.iconBtn}>
-                        <FaTrash />
-                      </button>
+                      <div style={{ fontSize: 11, color: c.textSecondary, marginTop: 2 }}>
+                        {formatCurrency(item.price)} {getCartItemUnitPriceLabel(item)} · {getModeShortLabel(item.purchaseMode)}
+                      </div>
                     </div>
-                    <div style={styles.itemFooter}>
+
+                    {/* Qty stepper */}
+                    <div style={{
+                      display: 'flex', alignItems: 'center', gap: 2, flexShrink: 0,
+                      background: 'rgba(14,165,233,0.10)',
+                      border: `1px solid ${c.accent || '#0ea5e9'}`,
+                      borderRadius: 8, padding: 3,
+                    }}>
+                      <button
+                        type="button"
+                        onClick={() => item.purchaseMode === 'half_box' ? removeItem(index) : updateItemQuantity(index, item.quantity - 1)}
+                        style={{
+                          width: 24, height: 24, borderRadius: 5, border: 'none',
+                          background: 'rgba(239,68,68,0.18)', color: '#ef4444',
+                          cursor: 'pointer', fontSize: 14, fontWeight: 800, lineHeight: 1,
+                          display: 'grid', placeItems: 'center',
+                        }}
+                        title={item.quantity === 1 ? 'Remove' : 'Decrease'}
+                      >
+                        {item.quantity === 1 ? <FaTrash style={{ fontSize: 9 }} /> : '−'}
+                      </button>
                       <input
                         className="offline-sales-qty-input"
                         type="text"
@@ -836,16 +803,58 @@ const OfflineSales = () => {
                         value={item.purchaseMode === 'half_box' ? '1' : (itemQuantityInputs[getSaleItemKey(item)] ?? String(item.quantity))}
                         onChange={(e) => handleItemQuantityChange(item, e.target.value)}
                         onBlur={() => commitItemQuantity(index)}
-                        onWheel={preventAccidentalQuantityScroll}
+                        onWheel={(e) => e.currentTarget.blur()}
                         onKeyDown={(e) => {
                           preventStepperKeys(e)
                           if (e.key === 'Enter') e.currentTarget.blur()
                         }}
                         onFocus={(e) => e.target.select()}
-                        style={styles.qtyInput}
+                        style={{
+                          width: 36, textAlign: 'center', padding: '0 2px',
+                          border: 'none', background: 'transparent',
+                          color: c.text, fontWeight: 800, fontSize: 13,
+                          outline: 'none', MozAppearance: 'textfield',
+                        }}
                       />
-                      <span style={styles.itemValue}>{formatCurrency(item.price * item.quantity)}</span>
+                      <button
+                        type="button"
+                        onClick={() => updateItemQuantity(index, item.quantity + 1)}
+                        disabled={item.purchaseMode === 'half_box' || item.quantity >= (item.maxQuantity || 1)}
+                        style={{
+                          width: 24, height: 24, borderRadius: 5, border: 'none',
+                          background: (item.purchaseMode === 'half_box' || item.quantity >= (item.maxQuantity || 1)) ? c.border : 'linear-gradient(135deg, #22c55e, #16a34a)',
+                          color: (item.purchaseMode === 'half_box' || item.quantity >= (item.maxQuantity || 1)) ? c.textSecondary : '#fff',
+                          cursor: (item.purchaseMode === 'half_box' || item.quantity >= (item.maxQuantity || 1)) ? 'not-allowed' : 'pointer',
+                          fontSize: 14, fontWeight: 800, lineHeight: 1,
+                          display: 'grid', placeItems: 'center',
+                        }}
+                        title="Increase"
+                      >+</button>
                     </div>
+
+                    {/* Line total */}
+                    <div style={{ flexShrink: 0, fontWeight: 800, fontSize: 14, color: c.accent || '#0ea5e9', minWidth: 70, textAlign: 'right' }}>
+                      {formatCurrency(item.price * item.quantity)}
+                    </div>
+
+                    {/* Explicit delete icon */}
+                    <button
+                      type="button"
+                      onClick={() => removeItem(index)}
+                      title="Remove from sale"
+                      style={{
+                        flexShrink: 0,
+                        width: 28, height: 28, borderRadius: 6, border: 'none',
+                        background: 'rgba(239,68,68,0.14)', color: '#ef4444',
+                        cursor: 'pointer', fontSize: 12,
+                        display: 'grid', placeItems: 'center',
+                        transition: 'background 0.15s',
+                      }}
+                      onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(239,68,68,0.28)' }}
+                      onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(239,68,68,0.14)' }}
+                    >
+                      <FaTrash />
+                    </button>
                   </div>
                 ))}
               </div>
@@ -858,9 +867,9 @@ const OfflineSales = () => {
                 <div style={{ ...styles.totalRow, ...styles.totalGrand }}><span>Grand total</span><strong>{formatCurrency(grandTotal)}</strong></div>
               </div>
 
-              <button type="button" onClick={submitSale} disabled={saving} style={styles.primaryBtn}>
+              <button type="button" onClick={openCheckout} disabled={saving || saleItems.length === 0} style={styles.primaryBtn}>
                 <FaReceipt />
-                {saving ? 'Saving sale...' : paymentMethod === 'Udhar' ? 'Create Udhar Sale' : 'Save Sale & Generate Bill'}
+                Checkout & Generate Bill
               </button>
               <button type="button" onClick={resetForm} style={styles.secondaryBtn}>
                 Clear Draft
@@ -893,7 +902,288 @@ const OfflineSales = () => {
         </div>
 
       </div>
+
+      {/* Checkout Modal: customer + payment + confirm */}
+      {showCheckoutModal && (
+        <Modal
+          isOpen={showCheckoutModal}
+          onClose={() => setShowCheckoutModal(false)}
+          maxWidth="640px"
+          title={`Checkout · ${formatCurrency(grandTotal)} · ${saleItems.length} item${saleItems.length !== 1 ? 's' : ''}`}
+          footer={(
+            <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', flexWrap: 'wrap' }}>
+              <button
+                type="button"
+                onClick={() => setShowCheckoutModal(false)}
+                disabled={saving}
+                style={{
+                  padding: '10px 18px', borderRadius: 10, border: `1px solid ${c.border}`,
+                  background: 'transparent', color: c.text, fontWeight: 600, cursor: 'pointer', fontSize: 13,
+                }}
+              >
+                ← Back to Items
+              </button>
+              <button
+                type="button"
+                onClick={submitSale}
+                disabled={saving}
+                style={{
+                  padding: '10px 22px', borderRadius: 10, border: 'none',
+                  background: paymentMethod === 'Udhar'
+                    ? 'linear-gradient(135deg, #f97316, #ea580c)'
+                    : 'linear-gradient(135deg, #22c55e, #16a34a)',
+                  color: '#fff', fontWeight: 700, cursor: saving ? 'not-allowed' : 'pointer', fontSize: 13,
+                  display: 'inline-flex', alignItems: 'center', gap: 8,
+                  opacity: saving ? 0.6 : 1,
+                }}
+              >
+                <FaReceipt />
+                {saving ? 'Saving sale...' : paymentMethod === 'Udhar' ? 'Confirm Udhar Sale' : 'Confirm & Generate Bill'}
+              </button>
+            </div>
+          )}
+        >
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+            {/* Order summary strip */}
+            <div style={{
+              display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8,
+              padding: '10px 14px', background: c.inputBg, border: `1px solid ${c.border}`, borderRadius: 10,
+            }}>
+              <div style={{ display: 'flex', gap: 14, fontSize: 12, color: c.textSecondary }}>
+                <span>{totalUnits} units</span>
+                <span>{Number(totalBoxEquivalent.toFixed(2))} box eq</span>
+                <span>Subtotal {formatCurrency(subtotal)}</span>
+                {discountValue > 0 && <span>− {formatCurrency(discountValue)} off</span>}
+              </div>
+              <div style={{ fontWeight: 800, fontSize: 16, color: c.accent || '#0ea5e9' }}>{formatCurrency(grandTotal)}</div>
+            </div>
+
+            {/* Customer + discount */}
+            <div className="offline-sales-form-grid" style={styles.formGrid}>
+              <div style={styles.field}>
+                <label style={styles.label}>Existing customer</label>
+                <select
+                  value={selectedCustomerId}
+                  onChange={(e) => setSelectedCustomerId(e.target.value)}
+                  style={styles.input}
+                >
+                  <option value="">Walk-in customer</option>
+                  {customers.map((customer) => (
+                    <option key={customer.id} value={customer.id}>
+                      {customer.name} • {customer.phone}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div style={styles.field}>
+                <label style={styles.label}>Discount</label>
+                <input
+                  type="number"
+                  min={0}
+                  value={discount}
+                  onChange={(e) => setDiscount(e.target.value)}
+                  onWheel={(e) => e.currentTarget.blur()}
+                  placeholder="0"
+                  style={styles.input}
+                />
+              </div>
+            </div>
+
+            {!linkedCustomer && (
+              <div className="offline-sales-form-grid" style={styles.formGrid}>
+                <div style={styles.field}>
+                  <label style={styles.label}>Walk-in name</label>
+                  <input value={walkInName} onChange={(e) => setWalkInName(e.target.value)} placeholder="Optional" style={styles.input} />
+                </div>
+                <div style={styles.field}>
+                  <label style={styles.label}>Phone</label>
+                  <input value={walkInPhone} onChange={(e) => setWalkInPhone(e.target.value)} placeholder="Optional" style={styles.input} />
+                </div>
+              </div>
+            )}
+
+            {!linkedCustomer && (
+              <div style={styles.field}>
+                <label style={styles.label}>Address / note for bill</label>
+                <input value={walkInAddress} onChange={(e) => setWalkInAddress(e.target.value)} placeholder="Optional" style={styles.input} />
+              </div>
+            )}
+
+            {linkedCustomer && (
+              <div style={styles.customerCard}>
+                <div style={styles.customerHeader}>
+                  <FaUser />
+                  Linked customer account
+                </div>
+                <div style={styles.customerName}>{linkedCustomer.name}</div>
+                <div style={styles.customerMeta}>{linkedCustomer.phone || 'No phone'} • Outstanding {formatCurrency(linkedCustomer.outstanding || 0)}</div>
+              </div>
+            )}
+
+            <div>
+              <div style={{ ...styles.label, marginBottom: 8 }}>Payment method</div>
+              <div className="offline-sales-payment-grid" style={styles.paymentGrid}>
+                {PAYMENT_OPTIONS.map((option) => (
+                  <button
+                    key={option.value}
+                    type="button"
+                    onClick={() => setPaymentMethod(option.value)}
+                    style={{
+                      ...styles.paymentCard,
+                      borderColor: paymentMethod === option.value ? option.tone : c.border,
+                      boxShadow: paymentMethod === option.value ? `0 0 0 1px ${option.tone}` : 'none',
+                    }}
+                  >
+                    <div style={{ ...styles.paymentDot, background: option.tone }} />
+                    <div style={styles.paymentLabel}>{option.label}</div>
+                    <div style={styles.paymentHelp}>{option.help}</div>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div style={styles.field}>
+              <label style={styles.label}>Internal note</label>
+              <textarea
+                value={note}
+                onChange={(e) => setNote(e.target.value)}
+                placeholder="Example: shop counter sale, quick dispatch, partial carton request"
+                style={styles.textarea}
+              />
+            </div>
+          </div>
+        </Modal>
+      )}
     </AdminLayout>
+  )
+}
+
+const ProductPickRow = ({ product, c, onAdd, onUpdateQty, onRemove, formatCurrency, inCartCount }) => {
+  const modes = getAllowedPurchaseModes(product)
+  const defaultMode = getDefaultPurchaseMode(product)
+  const [mode, setMode] = useState(defaultMode)
+  const stock = Number(product.stock ?? product.stockQuantity ?? 0)
+  const max = getMaxPurchaseQuantity(product, mode)
+  const price = getUnitPrice(product, mode)
+  const inCart = inCartCount(product.id, mode)
+  const outOfStock = max < 1
+  const lowStock = stock < 5
+  const isHalfBox = mode === 'half_box'
+
+  // Local draft so user can briefly empty the input via backspace.
+  // Sync back from canonical state whenever cart count changes externally.
+  const [qtyDraft, setQtyDraft] = useState(String(inCart || ''))
+  useEffect(() => { setQtyDraft(String(inCart || '')) }, [inCart])
+
+  return (
+    <div style={{
+      display: 'flex', alignItems: 'center', gap: 12,
+      padding: '10px 14px',
+      background: c.inputBg,
+      border: `1px solid ${inCart > 0 ? (c.accent || '#0ea5e9') : c.border}`,
+      borderRadius: 12,
+      transition: 'border-color 0.18s ease, background 0.18s ease',
+      opacity: outOfStock ? 0.55 : 1,
+    }}
+      onMouseEnter={(e) => { if (!outOfStock && inCart === 0) e.currentTarget.style.borderColor = c.accent || '#0ea5e9' }}
+      onMouseLeave={(e) => { if (inCart === 0) e.currentTarget.style.borderColor = c.border }}
+    >
+      {/* Image / Initial */}
+      {product.image ? (
+        <img src={product.image} alt={product.name}
+          style={{ width: 48, height: 48, borderRadius: 10, objectFit: 'cover', flexShrink: 0, background: c.surface }}
+          onError={(e) => { e.currentTarget.style.display = 'none' }}
+        />
+      ) : (
+        <div style={{ width: 48, height: 48, borderRadius: 10, background: 'rgba(14,165,233,0.14)', display: 'grid', placeItems: 'center', flexShrink: 0, color: c.accent || '#0ea5e9', fontSize: 20, fontWeight: 800 }}>
+          {String(product.name || '?').charAt(0).toUpperCase()}
+        </div>
+      )}
+
+      {/* Name + Category + Stock */}
+      <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 3 }}>
+        <div style={{ fontWeight: 700, fontSize: 14, color: c.text, lineHeight: 1.3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+          {product.name}
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+          <span style={{ fontSize: 11, color: c.textSecondary }}>{product.category || 'General'}</span>
+          <span style={{
+            fontSize: 10, fontWeight: 700, padding: '1px 7px', borderRadius: 999,
+            background: outOfStock ? 'rgba(239,68,68,0.14)' : lowStock ? 'rgba(245,158,11,0.14)' : 'rgba(34,197,94,0.14)',
+            color: outOfStock ? '#ef4444' : lowStock ? '#f59e0b' : '#22c55e',
+          }}>
+            {outOfStock ? 'OUT' : lowStock ? `LOW · ${stock}` : `${stock} box eq`}
+          </span>
+        </div>
+      </div>
+
+      {/* Mode chips (only if multiple modes) */}
+      {modes.length > 1 && (
+        <div style={{ display: 'flex', gap: 4, flexShrink: 0 }}>
+          {modes.map((m) => (
+            <button
+              key={m}
+              type="button"
+              onClick={() => setMode(m)}
+              style={{
+                padding: '5px 10px', fontSize: 11, fontWeight: 700, borderRadius: 7, cursor: 'pointer',
+                background: mode === m ? 'linear-gradient(135deg, #0ea5e9, #2563eb)' : 'transparent',
+                color: mode === m ? '#fff' : c.textSecondary,
+                border: `1px solid ${mode === m ? '#0ea5e9' : c.border}`,
+                transition: 'all 0.15s', whiteSpace: 'nowrap',
+              }}
+            >
+              {getModeShortLabel(m)}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {/* Price */}
+      <div style={{ flexShrink: 0, textAlign: 'right', minWidth: 84 }}>
+        <div style={{ fontWeight: 800, fontSize: 15, color: c.accent || '#0ea5e9', lineHeight: 1 }}>
+          {formatCurrency(price)}
+        </div>
+        <div style={{ fontSize: 10, color: c.textSecondary, fontWeight: 600, marginTop: 2 }}>
+          /{mode === 'piece' ? 'pc' : mode === 'half_box' ? 'half' : 'box'}
+        </div>
+      </div>
+
+      {/* Action: Add button OR "Added" indicator (qty managed in cart panel) */}
+      <div style={{ flexShrink: 0, minWidth: 130 }}>
+        {inCart === 0 ? (
+          <button
+            type="button"
+            onClick={() => onAdd(product, mode, 1)}
+            disabled={outOfStock}
+            style={{
+              width: '100%', padding: '8px 14px', borderRadius: 8, border: 'none',
+              background: outOfStock ? c.border : 'linear-gradient(135deg, #0f766e 0%, #0ea5e9 100%)',
+              color: outOfStock ? c.textSecondary : '#fff',
+              fontWeight: 700, fontSize: 12, cursor: outOfStock ? 'not-allowed' : 'pointer',
+              display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+              transition: 'all 0.18s ease', whiteSpace: 'nowrap',
+            }}
+          >
+            <FaPlus style={{ fontSize: 10 }} /> {outOfStock ? 'Out' : 'Add to sale'}
+          </button>
+        ) : (
+          <div style={{
+            width: '100%', padding: '8px 14px', borderRadius: 8,
+            background: 'linear-gradient(135deg, rgba(34,197,94,0.18), rgba(22,163,74,0.12))',
+            border: `1px solid rgba(34,197,94,0.4)`,
+            color: '#22c55e',
+            fontWeight: 700, fontSize: 12,
+            display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+            whiteSpace: 'nowrap',
+          }}
+            title="Manage quantity in cart panel →"
+          >
+            ✓ Added · {inCart}
+          </div>
+        )}
+      </div>
+    </div>
   )
 }
 
@@ -931,6 +1221,155 @@ const getStyles = (c) => ({
     background: darkGradient(c),
     border: `1px solid ${c.border}`,
     overflow: 'hidden',
+  },
+  heroCompact: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: '14px',
+    padding: '12px 18px',
+    borderRadius: '14px',
+    background: darkGradient(c),
+    border: `1px solid ${c.border}`,
+    flexWrap: 'wrap',
+  },
+  heroCompactLeft: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '4px',
+    minWidth: 0,
+  },
+  heroBadgeCompact: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: 6,
+    alignSelf: 'flex-start',
+    padding: '4px 10px',
+    borderRadius: 999,
+    background: 'rgba(255,255,255,0.14)',
+    color: '#fff',
+    fontSize: 11,
+    fontWeight: 700,
+    letterSpacing: '0.04em',
+    textTransform: 'uppercase',
+  },
+  heroTitleCompact: {
+    margin: 0,
+    fontSize: '22px',
+    color: '#fff',
+    fontWeight: 800,
+    letterSpacing: '-0.01em',
+  },
+  heroCompactStats: {
+    display: 'flex',
+    gap: '12px',
+    flexWrap: 'wrap',
+    flex: 1,
+    justifyContent: 'flex-end',
+  },
+  statPill: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '12px',
+    padding: '12px 20px',
+    minWidth: 150,
+    borderRadius: 14,
+    background: 'rgba(15, 23, 42, 0.38)',
+    border: '1px solid rgba(255,255,255,0.14)',
+    flex: '1 1 auto',
+  },
+  statPillBody: {
+    display: 'flex',
+    flexDirection: 'column',
+    lineHeight: 1.15,
+    minWidth: 0,
+  },
+  statPillValue: {
+    fontSize: 18,
+    fontWeight: 800,
+    color: '#fff',
+    letterSpacing: '-0.01em',
+  },
+  statPillLabel: {
+    fontSize: 11,
+    color: 'rgba(255,255,255,0.78)',
+    textTransform: 'uppercase',
+    letterSpacing: '0.06em',
+    fontWeight: 600,
+    marginTop: 2,
+  },
+  searchBar: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 10,
+    padding: '4px 14px',
+    background: c.inputBg,
+    border: `1px solid ${c.border}`,
+    borderRadius: 12,
+    marginBottom: 12,
+    transition: 'border-color 0.18s ease, box-shadow 0.18s ease',
+  },
+  searchInputInline: {
+    flex: 1,
+    border: 'none',
+    background: 'transparent',
+    color: c.text,
+    padding: '10px 0',
+    fontSize: 14,
+    outline: 'none',
+    minWidth: 0,
+  },
+  clearBtn: {
+    background: 'transparent',
+    border: 'none',
+    color: c.textSecondary,
+    fontSize: 18,
+    fontWeight: 800,
+    cursor: 'pointer',
+    padding: '0 4px',
+    lineHeight: 1,
+  },
+  chipsRow: {
+    display: 'flex',
+    flexWrap: 'wrap',
+    gap: 6,
+    marginBottom: 14,
+  },
+  chip: {
+    padding: '6px 12px',
+    borderRadius: 999,
+    border: `1px solid ${c.border}`,
+    background: c.inputBg,
+    color: c.textSecondary,
+    fontSize: 12,
+    fontWeight: 600,
+    cursor: 'pointer',
+    transition: 'all 0.15s',
+  },
+  chipActive: {
+    background: 'linear-gradient(135deg, #0ea5e9, #2563eb)',
+    color: '#fff',
+    borderColor: '#0ea5e9',
+  },
+  productGrid: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: 8,
+    maxHeight: 560,
+    overflowY: 'auto',
+    paddingRight: 4,
+  },
+  emptyGrid: {
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    padding: '40px 20px',
+    background: c.inputBg,
+    border: `1px dashed ${c.border}`,
+    borderRadius: 12,
+    textAlign: 'center',
   },
   heroCopy: {
     display: 'flex',
@@ -1015,13 +1454,16 @@ const getStyles = (c) => ({
   },
   panelTitle: {
     margin: 0,
-    fontSize: 22,
+    fontSize: 20,
+    color: c.text,
+    fontWeight: 700,
+    letterSpacing: '-0.01em',
   },
   panelSubtext: {
     margin: '6px 0 0',
     fontSize: 13,
     color: c.textSecondary,
-    lineHeight: 1.6,
+    lineHeight: 1.5,
   },
   modeChip: {
     display: 'inline-flex',
@@ -1052,6 +1494,8 @@ const getStyles = (c) => ({
   sectionTitle: {
     margin: 0,
     fontSize: 15,
+    color: c.text,
+    fontWeight: 700,
   },
   sectionHint: {
     color: c.textSecondary,

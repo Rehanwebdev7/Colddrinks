@@ -1,62 +1,23 @@
-import { useState, useEffect, useRef } from 'react';
-import {
-  initGoogleAuth,
-  authorizeAndGetRefreshToken,
-  silentAuth,
-  isReady,
-} from './googleDrive';
-import { getDriveToken, saveDriveToken } from './firestore';
-
 /**
- * Hook to manage Google Drive authentication state.
- * Stores refresh token in Firestore (settings/app).
+ * Silent Drive hook — backend handles uploads transparently via the
+ * service-account / OAuth refresh token credentials in
+ * backend/drive-credentials.json. The frontend never makes auth decisions.
+ *
+ * Hook signature is preserved (driveReady, needsSetup, driveLoading,
+ * setupDrive, isReady) so existing imports keep working without changes.
+ * Everything is a no-op that reports "ready".
+ *
+ * If a backend upload fails, the actual error surfaces through the
+ * uploadImage() promise rejection — UI shows that real error rather
+ * than a misleading "Drive not connected" message.
  */
-const useDrive = () => {
-  const [driveReady, setDriveReady] = useState(false);
-  const [needsSetup, setNeedsSetup] = useState(false);
-  const [driveLoading, setDriveLoading] = useState(true);
-  const initialized = useRef(false);
 
-  useEffect(() => {
-    if (initialized.current) return;
-    initialized.current = true;
-
-    const init = async () => {
-      try {
-        const refreshToken = await getDriveToken();
-
-        if (refreshToken) {
-          await silentAuth(refreshToken);
-          setDriveReady(true);
-        } else {
-          await initGoogleAuth();
-          setNeedsSetup(true);
-        }
-      } catch (err) {
-        console.warn('Drive init failed:', err.message);
-        setNeedsSetup(true);
-        try { await initGoogleAuth(); } catch {}
-      } finally {
-        setDriveLoading(false);
-      }
-    };
-    init();
-  }, []);
-
-  const setupDrive = async () => {
-    try {
-      const refreshToken = await authorizeAndGetRefreshToken();
-      await saveDriveToken(refreshToken);
-      setDriveReady(true);
-      setNeedsSetup(false);
-      return true;
-    } catch (err) {
-      console.error('Drive setup failed:', err);
-      throw err;
-    }
-  };
-
-  return { driveReady, needsSetup, driveLoading, setupDrive, isReady };
-};
+const useDrive = () => ({
+  driveReady: true,
+  needsSetup: false,
+  driveLoading: false,
+  setupDrive: async () => true,
+  isReady: () => true,
+});
 
 export default useDrive;

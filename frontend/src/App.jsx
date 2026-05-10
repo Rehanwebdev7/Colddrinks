@@ -27,6 +27,9 @@ import AdminProducts from './admin/Products'
 import AdminOrders from './admin/Orders'
 import AdminBills from './admin/Bills'
 import AdminPayments from './admin/Payments'
+import AdminOnlinePayments from './admin/OnlinePayments'
+import AdminOutstanding from './admin/Outstanding'
+import AdminAllTransactions from './admin/AllTransactions'
 import AdminCustomers from './admin/Customers'
 import AdminSuppliers from './admin/Suppliers'
 import AdminNotifications from './admin/Notifications'
@@ -192,6 +195,30 @@ const AppRoutes = () => {
         element={
           <AdminRoute>
             <AdminPayments />
+          </AdminRoute>
+        }
+      />
+      <Route
+        path="/admin/online-payments"
+        element={
+          <AdminRoute>
+            <AdminOnlinePayments />
+          </AdminRoute>
+        }
+      />
+      <Route
+        path="/admin/outstanding"
+        element={
+          <AdminRoute>
+            <AdminOutstanding />
+          </AdminRoute>
+        }
+      />
+      <Route
+        path="/admin/transactions"
+        element={
+          <AdminRoute>
+            <AdminAllTransactions />
           </AdminRoute>
         }
       />

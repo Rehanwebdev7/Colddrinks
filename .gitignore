@@ -12,6 +12,9 @@ build/
 
 # Sensitive credentials
 service-account.json
+drive-token.json
+drive-credentials.json
+oauth-client.json
 *.key
 *.pem
 

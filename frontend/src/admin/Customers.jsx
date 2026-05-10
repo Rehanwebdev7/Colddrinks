@@ -208,13 +208,13 @@ const Customers = () => {
             <table style={styles.table}>
               <thead>
                 <tr>
+                  <th className="admin-actions-col" style={styles.th}>Actions</th>
                   <th style={styles.th}>Name</th>
                   <th style={styles.th}>Phone</th>
                   <th style={styles.th}>Email</th>
                   <th style={styles.th}>Orders</th>
                   <th style={styles.th}>Total Spent</th>
                   <th style={styles.th}>Status</th>
-                  <th style={styles.th}>Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -227,6 +227,23 @@ const Customers = () => {
                     const isBlocked = customer.isBlocked || customer.status === 'blocked'
                     return (
                       <tr key={customer._id} style={styles.tr}>
+                        <td className="admin-actions-col" style={styles.td}>
+                          <div className="admin-actions" style={styles.actionButtons}>
+                            <button style={styles.viewBtn} onClick={() => viewDetails(customer)} title="View Details">
+                              <FaEye />
+                            </button>
+                            <button
+                              style={isBlocked ? styles.unblockBtn : styles.blockBtn}
+                              onClick={() => toggleBlock(customer)}
+                              title={isBlocked ? 'Unblock' : 'Block'}
+                            >
+                              {isBlocked ? <FaCheckCircle /> : <FaBan />}
+                            </button>
+                            <button style={styles.notifyBtn} onClick={() => sendNotification(customer)} title="Send Notification">
+                              <FaBell />
+                            </button>
+                          </div>
+                        </td>
                         <td style={{ ...styles.td, fontWeight: '500', color: c.text }}>
                           <div style={styles.nameCell}>
                             <div style={styles.avatar}>
@@ -247,23 +264,6 @@ const Customers = () => {
                           }}>
                             {isBlocked ? 'Blocked' : 'Active'}
                           </span>
-                        </td>
-                        <td style={styles.td}>
-                          <div style={styles.actionButtons}>
-                            <button style={styles.viewBtn} onClick={() => viewDetails(customer)} title="View Details">
-                              <FaEye />
-                            </button>
-                            <button
-                              style={isBlocked ? styles.unblockBtn : styles.blockBtn}
-                              onClick={() => toggleBlock(customer)}
-                              title={isBlocked ? 'Unblock' : 'Block'}
-                            >
-                              {isBlocked ? <FaCheckCircle /> : <FaBan />}
-                            </button>
-                            <button style={styles.notifyBtn} onClick={() => sendNotification(customer)} title="Send Notification">
-                              <FaBell />
-                            </button>
-                          </div>
                         </td>
                       </tr>
                     )

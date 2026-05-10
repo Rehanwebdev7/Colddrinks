@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm start *)",
+      "Bash(npm run *)",
+      "Bash(curl -s -o /dev/null -w \"online-payments=%{http_code} \" \"http://localhost:3000/admin/online-payments\")",
+      "Bash(curl -s -o /dev/null -w \"outstanding=%{http_code} \" \"http://localhost:3000/admin/outstanding\")",
+      "Bash(curl -s -o /dev/null -w \"transactions=%{http_code} \" \"http://localhost:3000/admin/transactions\")",
+      "Bash(curl -s -o /dev/null -w \"Payments-module=%{http_code} \" \"http://localhost:3000/src/admin/Payments.jsx\")",
+      "PowerShell(Get-NetTCPConnection *)",
+      "Bash(curl -s -o /tmp/r -w \"OfflineSales=%{http_code}\\\\n\" \"http://localhost:3000/src/admin/OfflineSales.jsx\")",
+      "Read(//tmp/**)",
+      "Bash(curl -s -o /tmp/r -w \"%{http_code}\\\\n\" \"http://localhost:3000/src/admin/OfflineSales.jsx\")"
+    ]
+  }
+}

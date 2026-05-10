@@ -2,301 +2,211 @@
   {
     "id": "NOTIF-001",
     "type": "order",
-    "title": "Offline Sale Recorded",
-    "message": "SALE-5001 recorded for Walk-in Customer worth ₹450.00.",
+    "title": "New Order Received",
+    "message": "Customer placed order ORD-1001 for ₹18.75 (COD).",
     "image": "",
     "targetUserId": null,
     "isRead": false,
-    "createdAt": "2026-04-05T06:58:21.904Z"
+    "createdAt": "2026-05-09T18:50:05.065Z"
   },
   {
     "id": "NOTIF-002",
     "type": "order",
-    "title": "Offline Sale Recorded",
-    "message": "SALE-5002 recorded for REHAN worth ₹200.00.",
+    "title": "Order Placed",
+    "message": "Your order ORD-1001 has been placed successfully.",
     "image": "",
-    "targetUserId": null,
-    "isRead": false,
-    "createdAt": "2026-04-05T06:59:01.647Z"
+    "targetUserId": "USR-002",
+    "isRead": true,
+    "createdAt": "2026-05-09T18:50:05.067Z"
   },
   {
     "id": "NOTIF-003",
     "type": "order",
     "title": "Offline Sale Recorded",
-    "message": "SALE-5003 recorded for YEEER worth ₹650.00.",
+    "message": "SALE-5001 recorded for Walk-in Customer worth ₹18.75.",
     "image": "",
     "targetUserId": null,
     "isRead": false,
-    "createdAt": "2026-04-05T07:05:13.190Z"
+    "createdAt": "2026-05-09T18:58:30.358Z"
   },
   {
     "id": "NOTIF-004",
     "type": "order",
-    "title": "Offline Sale Recorded",
-    "message": "SALE-5004 recorded for Parvez  worth ₹45720.00.",
+    "title": "Order Update",
+    "message": "Aapke order ORD-1001 ka status ab \"confirmed\" ho gaya hai.",
     "image": "",
-    "targetUserId": null,
-    "isRead": false,
-    "createdAt": "2026-04-05T08:25:30.195Z"
+    "targetUserId": "USR-002",
+    "isRead": true,
+    "createdAt": "2026-05-09T19:05:00.418Z"
   },
   {
     "id": "NOTIF-005",
     "type": "order",
-    "title": "Offline Sale Recorded",
-    "message": "SALE-5005 recorded for SHARUKH worth ₹4500.00.",
+    "title": "Order Update",
+    "message": "Aapke order ORD-1001 ka status ab \"processing\" ho gaya hai.",
     "image": "",
-    "targetUserId": null,
-    "isRead": false,
-    "createdAt": "2026-04-13T03:54:54.053Z"
+    "targetUserId": "USR-002",
+    "isRead": true,
+    "createdAt": "2026-05-09T19:06:17.994Z"
   },
   {
     "id": "NOTIF-006",
-    "type": "general",
-    "title": "Notification from Cool Drinks Shop",
-    "message": "Thank you for being our valued customer!",
+    "type": "order",
+    "title": "Order Update",
+    "message": "Aapke order ORD-1001 ka status ab \"shipped\" ho gaya hai.",
     "image": "",
-    "targetUserId": "USR-016",
-    "isRead": false,
-    "createdAt": "2026-05-03T07:33:02.816Z"
+    "targetUserId": "USR-002",
+    "isRead": true,
+    "createdAt": "2026-05-09T19:07:42.685Z"
   },
   {
     "id": "NOTIF-007",
     "type": "order",
-    "title": "sasas",
-    "message": "sasasasa",
+    "title": "Delivery Confirm Karo",
+    "message": "Order ORD-1001 ka saman milne ke baad delivery confirm kar dijiye.",
     "image": "",
     "targetUserId": "USR-002",
-    "isRead": false,
-    "createdAt": "2026-05-03T07:33:41.516Z"
+    "isRead": true,
+    "createdAt": "2026-05-09T19:08:20.556Z"
   },
   {
     "id": "NOTIF-008",
-    "type": "order",
-    "title": "New Order Received",
-    "message": "Samer  placed order ORD-1066 for ₹945.00 (COD).",
+    "type": "payment",
+    "title": "Baaki Rakam Update",
+    "message": "Order ORD-1001 (COD) ke liye ₹18.75 aapke baaki mein add ho gaya hai.",
     "image": "",
-    "targetUserId": null,
+    "targetUserId": "USR-002",
     "isRead": false,
-    "createdAt": "2026-05-03T07:51:34.975Z"
+    "createdAt": "2026-05-09T19:09:21.124Z"
   },
   {
     "id": "NOTIF-009",
     "type": "order",
-    "title": "Order Placed",
-    "message": "Your order ORD-1066 has been placed successfully.",
+    "title": "Delivery Confirm Hua",
+    "message": "Customer ne order ORD-1001 ki delivery confirm kar di.",
     "image": "",
-    "targetUserId": "USR-010",
+    "targetUserId": null,
     "isRead": false,
-    "createdAt": "2026-05-03T07:51:34.977Z"
+    "createdAt": "2026-05-09T19:09:21.137Z"
   },
   {
     "id": "NOTIF-010",
     "type": "order",
-    "title": "Order Update",
-    "message": "Aapke order ORD-1066 ka status ab \"confirmed\" ho gaya hai.",
+    "title": "Delivery Confirm Hua",
+    "message": "Aapne order ORD-1001 ki delivery confirm kar di hai.",
     "image": "",
-    "targetUserId": "USR-010",
+    "targetUserId": "USR-002",
     "isRead": false,
-    "createdAt": "2026-05-03T07:52:42.952Z"
+    "createdAt": "2026-05-09T19:09:21.141Z"
   },
   {
     "id": "NOTIF-011",
-    "type": "order",
-    "title": "New Order Received",
-    "message": "Samer  placed order ORD-1067 for ₹328.00 (COD).",
+    "type": "payment",
+    "title": "Payment Reminder",
+    "message": "You have an outstanding balance of ₹18.75. Please make the payment at the earliest.",
     "image": "",
-    "targetUserId": null,
+    "targetUserId": "USR-002",
     "isRead": false,
-    "createdAt": "2026-05-03T07:58:53.652Z"
+    "createdAt": "2026-05-09T19:10:02.264Z"
   },
   {
     "id": "NOTIF-012",
     "type": "order",
-    "title": "Order Placed",
-    "message": "Your order ORD-1067 has been placed successfully.",
+    "title": "Offline Sale Recorded",
+    "message": "SALE-5002 recorded for Customer worth ₹18.75.",
     "image": "",
-    "targetUserId": "USR-010",
+    "targetUserId": null,
     "isRead": false,
-    "createdAt": "2026-05-03T07:58:53.653Z"
+    "createdAt": "2026-05-09T19:23:26.645Z"
   },
   {
     "id": "NOTIF-013",
     "type": "order",
-    "title": "Order Update",
-    "message": "Aapke order ORD-1066 ka status ab \"processing\" ho gaya hai.",
+    "title": "Offline Sale Recorded",
+    "message": "SALE-5003 recorded for Walk-in Customer worth ₹37.50.",
     "image": "",
-    "targetUserId": "USR-010",
+    "targetUserId": null,
     "isRead": false,
-    "createdAt": "2026-05-03T08:00:29.171Z"
+    "createdAt": "2026-05-09T19:28:34.690Z"
   },
   {
     "id": "NOTIF-014",
     "type": "order",
-    "title": "Order Update",
-    "message": "Aapke order ORD-1066 ka status ab \"shipped\" ho gaya hai.",
-    "image": "",
-    "targetUserId": "USR-010",
-    "isRead": false,
-    "createdAt": "2026-05-03T08:00:32.217Z"
-  },
-  {
-    "id": "NOTIF-015",
-    "type": "order",
-    "title": "Delivery Confirm Karo",
-    "message": "Order ORD-1066 ka saman milne ke baad delivery confirm kar dijiye.",
-    "image": "",
-    "targetUserId": "USR-010",
-    "isRead": true,
-    "createdAt": "2026-05-03T08:00:48.540Z"
-  },
-  {
-    "id": "NOTIF-016",
-    "type": "payment",
-    "title": "Baaki Rakam Update",
-    "message": "Order ORD-1066 (COD) ke liye ₹945.00 aapke baaki mein add ho gaya hai.",
-    "image": "",
-    "targetUserId": "USR-010",
-    "isRead": false,
-    "createdAt": "2026-05-03T08:05:05.669Z"
-  },
-  {
-    "id": "NOTIF-017",
-    "type": "order",
-    "title": "Delivery Confirm Hua",
-    "message": "Customer ne order ORD-1066 ki delivery confirm kar di.",
+    "title": "Offline Sale Recorded",
+    "message": "SALE-5004 recorded for Walk-in Customer worth ₹18.75.",
     "image": "",
     "targetUserId": null,
     "isRead": false,
-    "createdAt": "2026-05-03T08:05:05.678Z"
+    "createdAt": "2026-05-09T19:29:38.884Z"
+  },
+  {
+    "id": "NOTIF-015",
+    "type": "payment",
+    "title": "Payment Verification Required",
+    "message": "Customer placed order ORD-1002 with an online payment of ₹18.75. Verification is pending.",
+    "image": "",
+    "targetUserId": null,
+    "isRead": false,
+    "createdAt": "2026-05-09T19:32:22.458Z"
+  },
+  {
+    "id": "NOTIF-016",
+    "type": "order",
+    "title": "Order Placed",
+    "message": "Your order ORD-1002 has been placed successfully. Online payment verification is in progress.",
+    "image": "",
+    "targetUserId": "USR-002",
+    "isRead": false,
+    "createdAt": "2026-05-09T19:32:22.460Z"
+  },
+  {
+    "id": "NOTIF-017",
+    "type": "payment",
+    "title": "Payment Verified",
+    "message": "Your online payment of ₹18.75 for order ORD-1002 has been verified successfully.",
+    "image": "",
+    "targetUserId": "USR-002",
+    "isRead": false,
+    "createdAt": "2026-05-09T19:33:03.922Z"
   },
   {
     "id": "NOTIF-018",
-    "type": "order",
-    "title": "Delivery Confirm Hua",
-    "message": "Aapne order ORD-1066 ki delivery confirm kar di hai.",
+    "type": "payment",
+    "title": "Payment Clearance Request",
+    "message": "Customer requested payment clearance for ₹7.50.",
     "image": "",
-    "targetUserId": "USR-010",
+    "targetUserId": null,
     "isRead": false,
-    "createdAt": "2026-05-03T08:05:05.680Z"
+    "createdAt": "2026-05-09T19:40:22.732Z"
   },
   {
     "id": "NOTIF-019",
     "type": "payment",
-    "title": "Payment Clearance Request",
-    "message": "Samer  requested payment clearance for ₹3277.50.",
+    "title": "Payment Clear Hua",
+    "message": "Aapki ₹7.50 ki payment clearance approve ho gayi hai.",
     "image": "",
-    "targetUserId": null,
+    "targetUserId": "USR-002",
     "isRead": false,
-    "createdAt": "2026-05-03T08:06:33.318Z"
+    "createdAt": "2026-05-09T19:40:36.489Z"
   },
   {
     "id": "NOTIF-020",
-    "type": "payment",
-    "title": "Payment Recorded",
-    "message": "A payment of ₹1000.00 has been recorded successfully.",
+    "type": "order",
+    "title": "Offline Sale Recorded",
+    "message": "SALE-5005 recorded for Walk-in Customer worth ₹18.75.",
     "image": "",
-    "targetUserId": "USR-010",
+    "targetUserId": null,
     "isRead": false,
-    "createdAt": "2026-05-03T08:10:32.155Z"
+    "createdAt": "2026-05-09T21:12:34.252Z"
   },
   {
     "id": "NOTIF-021",
     "type": "order",
     "title": "Offline Sale Recorded",
-    "message": "SALE-5006 recorded for Walk-in Customer worth ₹240.00.",
+    "message": "SALE-5006 recorded for Customer worth ₹468.75.",
     "image": "",
     "targetUserId": null,
     "isRead": false,
-    "createdAt": "2026-05-03T08:49:51.933Z"
-  },
-  {
-    "id": "NOTIF-022",
-    "type": "order",
-    "title": "New Order Received",
-    "message": "Customer placed order ORD-1068 for ₹450.00 (COD).",
-    "image": "",
-    "targetUserId": null,
-    "isRead": false,
-    "createdAt": "2026-05-03T10:24:27.612Z"
-  },
-  {
-    "id": "NOTIF-023",
-    "type": "order",
-    "title": "Order Placed",
-    "message": "Your order ORD-1068 has been placed successfully.",
-    "image": "",
-    "targetUserId": "USR-018",
-    "isRead": true,
-    "createdAt": "2026-05-03T10:24:27.616Z"
-  },
-  {
-    "id": "NOTIF-024",
-    "type": "order",
-    "title": "New Order Received",
-    "message": "Customer placed order ORD-1069 for ₹500.00 (COD).",
-    "image": "",
-    "targetUserId": null,
-    "isRead": false,
-    "createdAt": "2026-05-03T10:27:28.736Z"
-  },
-  {
-    "id": "NOTIF-025",
-    "type": "order",
-    "title": "Order Placed",
-    "message": "Your order ORD-1069 has been placed successfully.",
-    "image": "",
-    "targetUserId": "USR-018",
-    "isRead": true,
-    "createdAt": "2026-05-03T10:27:28.737Z"
-  },
-  {
-    "id": "NOTIF-026",
-    "type": "order",
-    "title": "Order Cancelled",
-    "message": "Customer cancelled order ORD-1068.",
-    "image": "",
-    "targetUserId": null,
-    "isRead": false,
-    "createdAt": "2026-05-03T10:27:32.729Z"
-  },
-  {
-    "id": "NOTIF-027",
-    "type": "order",
-    "title": "Order Cancelled",
-    "message": "Your order ORD-1068 has been cancelled successfully.",
-    "image": "",
-    "targetUserId": "USR-018",
-    "isRead": true,
-    "createdAt": "2026-05-03T10:27:32.735Z"
-  },
-  {
-    "id": "NOTIF-028",
-    "type": "order",
-    "title": "Order Cancelled",
-    "message": "Customer cancelled order ORD-1069.",
-    "image": "",
-    "targetUserId": null,
-    "isRead": false,
-    "createdAt": "2026-05-03T10:27:34.276Z"
-  },
-  {
-    "id": "NOTIF-029",
-    "type": "order",
-    "title": "Order Cancelled",
-    "message": "Your order ORD-1069 has been cancelled successfully.",
-    "image": "",
-    "targetUserId": "USR-018",
-    "isRead": true,
-    "createdAt": "2026-05-03T10:27:34.277Z"
-  },
-  {
-    "id": "NOTIF-030",
-    "type": "payment",
-    "title": "Payment Clearance Request",
-    "message": "Samer  requested payment clearance for ₹1000.00.",
-    "image": "",
-    "targetUserId": null,
-    "isRead": false,
-    "createdAt": "2026-05-03T11:45:03.252Z"
+    "createdAt": "2026-05-09T21:17:31.266Z"
   }
 ]

@@ -1,0 +1,23 @@
+
+🔥 Connecting to Firestore (noor-coldrinks)...
+  ✓ users: 1 docs
+  - products: empty
+  - orders: empty
+  - cart: empty
+  - bills: empty
+  ✓ categories: 3 docs
+  - coupons: empty
+  - paymentHistory: empty
+  - paymentRequests: empty
+  - sliders: empty
+  - wishlist: empty
+  - offlineSales: empty
+  - inventoryMovements: empty
+  - suppliers: empty
+  - supplierPurchases: empty
+  - supplierPayments: empty
+  ✓ settings/app: loaded
+🔥 Firestore ready!
+
+Cold Drinks Shop API Server running on http://localhost:8000
+Database: Firestore (noor-coldrinks) | Cache: in-memory

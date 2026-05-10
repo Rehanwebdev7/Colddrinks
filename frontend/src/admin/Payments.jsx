@@ -12,7 +12,15 @@ import {
 import { useTheme } from '../context/ThemeContext'
 import { getColors } from './themeColors'
 
-const Payments = () => {
+const VIEWS = {
+  full:        { title: 'Payments',              cards: ['today', 'pending', 'offlinePending', 'monthly'], tabs: ['outstanding', 'online', 'clearance', 'onlineHistory', 'allHistory'], defaultTab: 'outstanding' },
+  online:      { title: 'Online Payments',       cards: ['today', 'monthly'],                              tabs: ['online', 'onlineHistory'],                                          defaultTab: 'online' },
+  outstanding: { title: 'Outstanding (Udhaar)',  cards: ['pending', 'offlinePending'],                     tabs: ['outstanding', 'clearance'],                                         defaultTab: 'outstanding' },
+  all:         { title: 'All Transactions',      cards: [],                                                tabs: ['allHistory'],                                                       defaultTab: 'allHistory' },
+}
+
+const Payments = ({ view = 'full' }) => {
+  const cfg = VIEWS[view] || VIEWS.full
   const { user } = useAuth()
   const location = useLocation()
   const navigate = useNavigate()
@@ -34,7 +42,7 @@ const Payments = () => {
   const [paymentMethod, setPaymentMethod] = useState('cash')
   const [paymentHistory, setPaymentHistory] = useState([])
   const [recording, setRecording] = useState(false)
-  const [activeTab, setActiveTab] = useState('outstanding')
+  const [activeTab, setActiveTab] = useState(cfg.defaultTab)
   const [clearanceRequests, setClearanceRequests] = useState([])
   const [processingRequest, setProcessingRequest] = useState(null)
   const [onlinePaymentOrders, setOnlinePaymentOrders] = useState([])
@@ -43,6 +51,10 @@ const Payments = () => {
   const [onlineHistoryFilter, setOnlineHistoryFilter] = useState('all')
   const [allHistory, setAllHistory] = useState([])
   const [allHistoryFilter, setAllHistoryFilter] = useState('all')
+  const [allSourceFilter, setAllSourceFilter] = useState('all')
+  const [allDateFrom, setAllDateFrom] = useState('')
+  const [allDateTo, setAllDateTo] = useState('')
+  const [allCustomerSearch, setAllCustomerSearch] = useState('')
   const [offlineSales, setOfflineSales] = useState([])
   const [offlinePending, setOfflinePending] = useState(0)
 
@@ -82,7 +94,7 @@ const Payments = () => {
     const action = params.get('action')
     const tab = params.get('tab')
 
-    if (tab) {
+    if (tab && cfg.tabs.includes(tab)) {
       setActiveTab(tab)
     }
 
@@ -91,12 +103,12 @@ const Payments = () => {
     const match = outstandingBalances.find((customer) => customer._id === customerId)
     if (!match) return
 
-    setActiveTab('outstanding')
+    if (cfg.tabs.includes('outstanding')) setActiveTab('outstanding')
     setSearchQuery(match.phone || match.name || '')
 
     if (action === 'collect') {
       openPaymentModal(match)
-      navigate('/admin/payments', { replace: true })
+      navigate(location.pathname, { replace: true })
     }
   }, [location.search, outstandingBalances])
 
@@ -307,7 +319,14 @@ const Payments = () => {
     setSelectedCustomer(customer)
     try {
       const response = await API.get(`/payments/history/${customer._id}`)
-      setPaymentHistory(response.data.payments || response.data || [])
+      const raw = response.data.payments || response.data || []
+      // Dedupe: when both an "order" entry and a "credit" entry exist for the same orderId,
+      // keep only the credit entry (it's the actual recorded payment with correct method/timestamp).
+      const creditOrderIds = new Set(
+        raw.filter(p => p.type === 'credit' && p.orderId).map(p => p.orderId)
+      )
+      const deduped = raw.filter(p => !(p.type === 'order' && creditOrderIds.has(p.orderId)))
+      setPaymentHistory(deduped)
     } catch {
       setPaymentHistory([])
     }
@@ -318,36 +337,13 @@ const Payments = () => {
     return new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR' }).format(amount || 0)
   }
 
-  const statCards = [
-    {
-      label: "Today's Collections",
-      value: formatCurrency(todayCollection),
-      icon: <FaRupeeSign />,
-      color: '#22c55e',
-      bg: 'rgba(34, 197, 94, 0.1)'
-    },
-    {
-      label: 'Pending Collections',
-      value: formatCurrency(pendingCollection),
-      icon: <FaClock />,
-      color: '#f59e0b',
-      bg: 'rgba(245, 158, 11, 0.1)'
-    },
-    {
-      label: 'Offline Pending (Udhar)',
-      value: formatCurrency(offlinePending),
-      icon: <FaMoneyBillWave />,
-      color: '#fc8019',
-      bg: 'rgba(252, 128, 25, 0.1)'
-    },
-    {
-      label: 'Monthly Total',
-      value: formatCurrency(monthlyTotal),
-      icon: <FaCalendarAlt />,
-      color: '#0ea5e9',
-      bg: 'rgba(14, 165, 233, 0.1)'
-    }
+  const allStatCards = [
+    { key: 'today',          label: "Today's Collections",       value: formatCurrency(todayCollection),   icon: <FaRupeeSign />,     color: '#22c55e', bg: 'rgba(34, 197, 94, 0.1)' },
+    { key: 'pending',        label: 'Pending Collections',       value: formatCurrency(pendingCollection), icon: <FaClock />,         color: '#f59e0b', bg: 'rgba(245, 158, 11, 0.1)' },
+    { key: 'offlinePending', label: 'Offline Pending (Udhar)',   value: formatCurrency(offlinePending),    icon: <FaMoneyBillWave />, color: '#fc8019', bg: 'rgba(252, 128, 25, 0.1)' },
+    { key: 'monthly',        label: 'Monthly Total',             value: formatCurrency(monthlyTotal),      icon: <FaCalendarAlt />,   color: '#0ea5e9', bg: 'rgba(14, 165, 233, 0.1)' },
   ]
+  const statCards = allStatCards.filter(card => cfg.cards.includes(card.key))
 
   if (loading) {
     return (
@@ -363,56 +359,55 @@ const Payments = () => {
   return (
     <AdminLayout>
       <div style={styles.page}>
-        <h1 style={styles.title}>Payments</h1>
+        <h1 style={styles.title}>{cfg.title}</h1>
 
         {/* Stat Cards */}
-        <div style={styles.statsGrid}>
-          {statCards.map((card, index) => (
-            <div key={index} style={{ ...styles.statCard, borderLeft: `4px solid ${card.color}` }}>
-              <div style={{ ...styles.statIcon, background: card.bg, color: card.color }}>
-                {card.icon}
+        {statCards.length > 0 && (
+          <div style={styles.statsGrid}>
+            {statCards.map((card, index) => (
+              <div key={index} style={{ ...styles.statCard, borderLeft: `4px solid ${card.color}` }}>
+                <div style={{ ...styles.statIcon, background: card.bg, color: card.color }}>
+                  {card.icon}
+                </div>
+                <div>
+                  <div style={styles.statValue}>{card.value}</div>
+                  <div style={styles.statLabel}>{card.label}</div>
+                </div>
               </div>
-              <div>
-                <div style={styles.statValue}>{card.value}</div>
-                <div style={styles.statLabel}>{card.label}</div>
-              </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
 
-        {/* Tabs */}
-        <div style={{ display: 'flex', gap: '8px', marginBottom: '16px' }}>
-          <button
-            style={{ ...styles.tabBtn, ...(activeTab === 'outstanding' ? styles.tabBtnActive : {}) }}
-            onClick={() => setActiveTab('outstanding')}
-          >
-            Outstanding Balances
-          </button>
-          <button
-            style={{ ...styles.tabBtn, ...(activeTab === 'online' ? styles.tabBtnActive : {}) }}
-            onClick={() => setActiveTab('online')}
-          >
-            Online Payments {onlinePaymentOrders.length > 0 && `(${onlinePaymentOrders.length})`}
-          </button>
-          <button
-            style={{ ...styles.tabBtn, ...(activeTab === 'clearance' ? styles.tabBtnActive : {}) }}
-            onClick={() => setActiveTab('clearance')}
-          >
-            Clearance Requests {clearanceRequests.filter(r => r.status === 'pending').length > 0 && `(${clearanceRequests.filter(r => r.status === 'pending').length})`}
-          </button>
-          <button
-            style={{ ...styles.tabBtn, ...(activeTab === 'onlineHistory' ? styles.tabBtnActive : {}) }}
-            onClick={() => setActiveTab('onlineHistory')}
-          >
-            Online History {onlinePaymentHistory.length > 0 && `(${onlinePaymentHistory.length})`}
-          </button>
-          <button
-            style={{ ...styles.tabBtn, ...(activeTab === 'allHistory' ? styles.tabBtnActive : {}) }}
-            onClick={() => setActiveTab('allHistory')}
-          >
-            All History {allHistory.length > 0 && `(${allHistory.length})`}
-          </button>
-        </div>
+        {/* Tabs (only show when more than one is allowed in this view) */}
+        {cfg.tabs.length > 1 && (
+          <div style={{ display: 'flex', gap: '8px', marginBottom: '16px', flexWrap: 'wrap' }}>
+            {cfg.tabs.includes('outstanding') && (
+              <button style={{ ...styles.tabBtn, ...(activeTab === 'outstanding' ? styles.tabBtnActive : {}) }} onClick={() => setActiveTab('outstanding')}>
+                Outstanding Balances
+              </button>
+            )}
+            {cfg.tabs.includes('online') && (
+              <button style={{ ...styles.tabBtn, ...(activeTab === 'online' ? styles.tabBtnActive : {}) }} onClick={() => setActiveTab('online')}>
+                Online Payments {onlinePaymentOrders.length > 0 && `(${onlinePaymentOrders.length})`}
+              </button>
+            )}
+            {cfg.tabs.includes('clearance') && (
+              <button style={{ ...styles.tabBtn, ...(activeTab === 'clearance' ? styles.tabBtnActive : {}) }} onClick={() => setActiveTab('clearance')}>
+                Clearance Requests {clearanceRequests.filter(r => r.status === 'pending').length > 0 && `(${clearanceRequests.filter(r => r.status === 'pending').length})`}
+              </button>
+            )}
+            {cfg.tabs.includes('onlineHistory') && (
+              <button style={{ ...styles.tabBtn, ...(activeTab === 'onlineHistory' ? styles.tabBtnActive : {}) }} onClick={() => setActiveTab('onlineHistory')}>
+                Online History {onlinePaymentHistory.length > 0 && `(${onlinePaymentHistory.length})`}
+              </button>
+            )}
+            {cfg.tabs.includes('allHistory') && (
+              <button style={{ ...styles.tabBtn, ...(activeTab === 'allHistory' ? styles.tabBtnActive : {}) }} onClick={() => setActiveTab('allHistory')}>
+                All History {allHistory.length > 0 && `(${allHistory.length})`}
+              </button>
+            )}
+          </div>
+        )}
 
         {/* Clearance Requests */}
         {activeTab === 'clearance' && (
@@ -606,20 +601,92 @@ const Payments = () => {
         )}
 
         {/* All Payment History */}
-        {activeTab === 'allHistory' && (
+        {activeTab === 'allHistory' && (() => {
+          const detectSource = (h) => {
+            const ref = `${h.orderId || ''} ${h.description || ''}`.toLowerCase()
+            if (/sale-|offline/.test(ref)) return 'offline'
+            if (/ord-|order/.test(ref) || h.orderNumber) return 'online'
+            return 'offline'
+          }
+          const filtered = allHistory.filter(h => {
+            if (allHistoryFilter !== 'all' && h.type !== allHistoryFilter) return false
+            if (allSourceFilter !== 'all' && detectSource(h) !== allSourceFilter) return false
+            if (allDateFrom) {
+              const from = new Date(allDateFrom); from.setHours(0, 0, 0, 0)
+              if (new Date(h.createdAt) < from) return false
+            }
+            if (allDateTo) {
+              const to = new Date(allDateTo); to.setHours(23, 59, 59, 999)
+              if (new Date(h.createdAt) > to) return false
+            }
+            if (allCustomerSearch) {
+              const q = allCustomerSearch.toLowerCase()
+              if (!`${h.customerName || ''} ${h.customerPhone || ''}`.toLowerCase().includes(q)) return false
+            }
+            return true
+          })
+          // Aggregate totals for the filtered view
+          const totalCredit = filtered.filter(h => h.type === 'credit').reduce((s, h) => s + (Number(h.amount) || 0), 0)
+          const totalDebit = filtered.filter(h => h.type === 'debit').reduce((s, h) => s + (Number(h.amount) || 0), 0)
+
+          return (
           <div style={styles.sectionCard}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '8px' }}>
-              <h3 style={styles.sectionTitle}>All Payment History</h3>
-              <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
-                {['all', 'credit', 'debit', 'rejected'].map(f => (
-                  <button key={f} onClick={() => setAllHistoryFilter(f)}
-                    style={{ ...styles.filterBtn, ...(allHistoryFilter === f ? styles.filterBtnActive : {}) }}>
-                    {f === 'all' ? 'All' : f === 'credit' ? 'Paid' : f === 'debit' ? 'Outstanding Added' : 'Rejected'}
-                  </button>
-                ))}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', flexWrap: 'wrap', gap: '8px' }}>
+              <h3 style={styles.sectionTitle}>All Transactions</h3>
+              <div style={{ display: 'flex', gap: '14px', flexWrap: 'wrap', fontSize: '13px' }}>
+                <span style={{ color: c.textSecondary }}>Showing <strong style={{ color: c.text }}>{filtered.length}</strong> of {allHistory.length}</span>
+                <span style={{ color: '#22c55e', fontWeight: 600 }}>+ {formatCurrency(totalCredit)}</span>
+                <span style={{ color: '#ef4444', fontWeight: 600 }}>− {formatCurrency(totalDebit)}</span>
               </div>
             </div>
-            {allHistory.filter(h => allHistoryFilter === 'all' || h.type === allHistoryFilter).length === 0 ? (
+
+            {/* Filters */}
+            <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', marginBottom: '14px', padding: '12px', background: c.bg, borderRadius: '10px', border: `1px solid ${c.border}` }}>
+              <input
+                type="text" placeholder="Search customer name / phone..."
+                value={allCustomerSearch}
+                onChange={(e) => setAllCustomerSearch(e.target.value)}
+                style={{ flex: '1 1 220px', padding: '8px 12px', border: `1px solid ${c.border}`, borderRadius: '8px', background: c.surface, color: c.text, fontSize: '13px', outline: 'none' }}
+              />
+              <input
+                type="date" value={allDateFrom} onChange={(e) => setAllDateFrom(e.target.value)}
+                style={{ padding: '8px 12px', border: `1px solid ${c.border}`, borderRadius: '8px', background: c.surface, color: c.text, fontSize: '13px', outline: 'none' }}
+                title="From date"
+              />
+              <input
+                type="date" value={allDateTo} onChange={(e) => setAllDateTo(e.target.value)}
+                style={{ padding: '8px 12px', border: `1px solid ${c.border}`, borderRadius: '8px', background: c.surface, color: c.text, fontSize: '13px', outline: 'none' }}
+                title="To date"
+              />
+              <select
+                value={allSourceFilter} onChange={(e) => setAllSourceFilter(e.target.value)}
+                style={{ padding: '8px 12px', border: `1px solid ${c.border}`, borderRadius: '8px', background: c.surface, color: c.text, fontSize: '13px', outline: 'none', cursor: 'pointer' }}
+              >
+                <option value="all">All Sources</option>
+                <option value="online">Online</option>
+                <option value="offline">Offline</option>
+              </select>
+              {(allHistoryFilter !== 'all' || allSourceFilter !== 'all' || allDateFrom || allDateTo || allCustomerSearch) && (
+                <button
+                  onClick={() => { setAllHistoryFilter('all'); setAllSourceFilter('all'); setAllDateFrom(''); setAllDateTo(''); setAllCustomerSearch('') }}
+                  style={{ padding: '8px 14px', border: `1px solid ${c.border}`, borderRadius: '8px', background: 'transparent', color: c.textSecondary, fontSize: '13px', cursor: 'pointer' }}
+                >
+                  Clear Filters
+                </button>
+              )}
+            </div>
+
+            {/* Type filter chips */}
+            <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginBottom: '14px' }}>
+              {['all', 'credit', 'debit', 'rejected'].map(f => (
+                <button key={f} onClick={() => setAllHistoryFilter(f)}
+                  style={{ ...styles.filterBtn, ...(allHistoryFilter === f ? styles.filterBtnActive : {}) }}>
+                  {f === 'all' ? 'All Types' : f === 'credit' ? 'Paid' : f === 'debit' ? 'Outstanding Added' : 'Rejected'}
+                </button>
+              ))}
+            </div>
+
+            {filtered.length === 0 ? (
               <p style={styles.emptyText}>No payment records found</p>
             ) : (
               <div style={{ overflowX: 'auto' }}>
@@ -628,6 +695,7 @@ const Payments = () => {
                     <tr>
                       <th style={styles.th}>DATE</th>
                       <th style={styles.th}>CUSTOMER</th>
+                      <th style={styles.th}>SOURCE</th>
                       <th style={styles.th}>TYPE</th>
                       <th style={styles.th}>METHOD</th>
                       <th style={styles.th}>AMOUNT</th>
@@ -635,12 +703,23 @@ const Payments = () => {
                     </tr>
                   </thead>
                   <tbody>
-                    {allHistory.filter(h => allHistoryFilter === 'all' || h.type === allHistoryFilter).map((h) => (
+                    {filtered.map((h) => {
+                      const src = detectSource(h)
+                      return (
                       <tr key={h.id} style={styles.tr}>
                         <td style={styles.td}>{new Date(h.createdAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}</td>
                         <td style={styles.td}>
                           <div style={{ fontWeight: 600 }}>{h.customerName}</div>
                           <div style={{ fontSize: '12px', color: c.textMuted }}>{h.customerPhone}</div>
+                        </td>
+                        <td style={styles.td}>
+                          <span style={{
+                            padding: '3px 8px', borderRadius: '4px', fontSize: '10px', fontWeight: 700,
+                            background: src === 'offline' ? 'rgba(252,128,25,0.15)' : 'rgba(59,130,246,0.15)',
+                            color: src === 'offline' ? '#fc8019' : '#3b82f6'
+                          }}>
+                            {src.toUpperCase()}
+                          </span>
                         </td>
                         <td style={styles.td}>
                           <span style={{
@@ -662,13 +741,13 @@ const Payments = () => {
                           {h.orderNumber && <span style={{ marginLeft: '4px', color: c.primary }}>({h.orderNumber})</span>}
                         </td>
                       </tr>
-                    ))}
+                    )})}
                   </tbody>
                 </table>
               </div>
             )}
           </div>
-        )}
+        )})()}
 
         {/* Outstanding Balances */}
         {activeTab === 'outstanding' && (
@@ -691,13 +770,13 @@ const Payments = () => {
             <table style={styles.table}>
               <thead>
                 <tr>
+                  <th className="admin-actions-col" style={styles.th}>Actions</th>
                   <th style={styles.th}>Customer</th>
                   <th style={styles.th}>Phone</th>
                   <th style={styles.th}>Orders</th>
                   <th style={styles.th}>Total Amount</th>
                   <th style={styles.th}>Paid</th>
                   <th style={styles.th}>Pending</th>
-                  <th style={styles.th}>Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -708,20 +787,8 @@ const Payments = () => {
                 ) : (
                   filteredBalances.map((customer) => (
                     <tr key={customer._id} style={styles.tr}>
-                      <td style={{ ...styles.td, fontWeight: '500', color: c.text }}>
-                        {customer.name}
-                      </td>
-                      <td style={styles.td}>{customer.phone || 'N/A'}</td>
-                      <td style={styles.td}>{customer.totalOrders}</td>
-                      <td style={styles.td}>{formatCurrency(customer.totalAmount)}</td>
-                      <td style={{ ...styles.td, color: '#22c55e' }}>
-                        {formatCurrency(customer.paid)}
-                      </td>
-                      <td style={{ ...styles.td, color: '#ef4444', fontWeight: '600' }}>
-                        {formatCurrency(customer.pending)}
-                      </td>
-                      <td style={styles.td}>
-                        <div style={styles.actionButtons}>
+                      <td className="admin-actions-col" style={styles.td}>
+                        <div className="admin-actions" style={styles.actionButtons}>
                           <button
                             style={styles.recordBtn}
                             onClick={() => openPaymentModal(customer)}
@@ -744,6 +811,18 @@ const Payments = () => {
                             <FaHistory />
                           </button>
                         </div>
+                      </td>
+                      <td style={{ ...styles.td, fontWeight: '500', color: c.text }}>
+                        {customer.name}
+                      </td>
+                      <td style={styles.td}>{customer.phone || 'N/A'}</td>
+                      <td style={styles.td}>{customer.totalOrders}</td>
+                      <td style={styles.td}>{formatCurrency(customer.totalAmount)}</td>
+                      <td style={{ ...styles.td, color: '#22c55e' }}>
+                        {formatCurrency(customer.paid)}
+                      </td>
+                      <td style={{ ...styles.td, color: '#ef4444', fontWeight: '600' }}>
+                        {formatCurrency(customer.pending)}
                       </td>
                     </tr>
                   ))

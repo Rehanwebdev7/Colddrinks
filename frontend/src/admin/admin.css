@@ -1,0 +1,283 @@
+/* ─────────────────────────────────────────────────────────────
+   Cold Drinks Admin Panel — Global Design System
+   Single source of truth for typography, motion, focus, hover,
+   scrollbars, and shared component polish.
+   Loaded once via AdminLayout.jsx.
+   ───────────────────────────────────────────────────────────── */
+
+/* ── CSS variables — overridden at runtime by useAdminTheme ── */
+:root {
+  --admin-accent: #0ea5e9;
+  --admin-accent-glow: rgba(14, 165, 233, 0.18);
+  --admin-accent-soft: rgba(14, 165, 233, 0.10);
+  --admin-primary: #e23744;
+  --admin-primary-light: #fce4e6;
+  --admin-primary-glow: rgba(226, 55, 68, 0.18);
+  --admin-border-strong: rgba(148, 163, 184, 0.35);
+  --admin-hover: rgba(148, 163, 184, 0.10);
+  --admin-font: 'Inter', 'Poppins', system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --admin-radius-sm: 8px;
+  --admin-radius-md: 12px;
+  --admin-radius-lg: 16px;
+  --admin-shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.06), 0 1px 3px rgba(15, 23, 42, 0.04);
+  --admin-shadow-md: 0 4px 12px rgba(15, 23, 42, 0.08);
+  --admin-shadow-lg: 0 12px 28px rgba(15, 23, 42, 0.12);
+  --admin-ease: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ── Typography baseline ── */
+.admin-root,
+.admin-root * {
+  font-family: var(--admin-font);
+}
+.admin-root {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11', 'ss01';
+  text-rendering: optimizeLegibility;
+}
+
+.admin-root h1, .admin-root h2, .admin-root h3, .admin-root h4 {
+  letter-spacing: -0.011em;
+  line-height: 1.22;
+  font-weight: 700;
+}
+.admin-root h2, .admin-root h3 { font-weight: 600; }
+.admin-root h4 { font-weight: 600; line-height: 1.3; }
+.admin-root p, .admin-root span, .admin-root td, .admin-root th, .admin-root li {
+  letter-spacing: -0.002em;
+}
+.admin-root label {
+  letter-spacing: 0.01em;
+  font-weight: 600;
+}
+
+/* ── Keyframes (single source of truth) ── */
+@keyframes admin-fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+@keyframes admin-slideUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes admin-slideInRight {
+  from { opacity: 0; transform: translateX(16px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+@keyframes admin-pop {
+  0%   { transform: scale(0.92); opacity: 0; }
+  60%  { transform: scale(1.02); opacity: 1; }
+  100% { transform: scale(1); opacity: 1; }
+}
+@keyframes admin-shimmer {
+  0%   { background-position: -400px 0; }
+  100% { background-position: 400px 0; }
+}
+@keyframes admin-pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%      { opacity: 0.7; transform: scale(0.97); }
+}
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+/* Aliases used by Modal.jsx (animation: 'fadeIn …' / 'slideUp …') */
+@keyframes fadeIn   { from { opacity: 0; } to { opacity: 1; } }
+@keyframes slideUp  { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+
+/* ── Page-enter animation ── */
+.admin-root .admin-content > * {
+  animation: admin-fadeIn 0.28s var(--admin-ease) both;
+}
+.admin-page {
+  animation: admin-slideUp 0.32s var(--admin-ease) both;
+}
+
+/* ── Buttons: universal hover/focus polish ──
+   Targets every <button> inside the admin shell, so all 15 pages
+   benefit without per-page edits. */
+.admin-root button {
+  transition: transform 0.18s var(--admin-ease),
+              box-shadow 0.18s var(--admin-ease),
+              filter 0.18s var(--admin-ease),
+              background 0.18s var(--admin-ease),
+              color 0.18s var(--admin-ease),
+              border-color 0.18s var(--admin-ease);
+  -webkit-tap-highlight-color: transparent;
+}
+.admin-root button:not(:disabled):hover {
+  transform: translateY(-1px);
+  filter: brightness(1.06);
+  box-shadow: var(--admin-shadow-md);
+}
+.admin-root button:not(:disabled):active {
+  transform: translateY(0) scale(0.98);
+  filter: brightness(0.96);
+  box-shadow: var(--admin-shadow-sm);
+}
+.admin-root button:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px var(--admin-accent-glow);
+}
+.admin-root button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+/* Links inside admin keep clean focus */
+.admin-root a:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px var(--admin-accent-glow);
+  border-radius: 6px;
+}
+
+/* ── Inputs: focus rings + smooth transitions ── */
+.admin-root input,
+.admin-root select,
+.admin-root textarea {
+  transition: border-color 0.18s var(--admin-ease),
+              box-shadow 0.18s var(--admin-ease),
+              background 0.18s var(--admin-ease);
+}
+.admin-root input:focus,
+.admin-root select:focus,
+.admin-root textarea:focus {
+  outline: none;
+  border-color: var(--admin-accent) !important;
+  box-shadow: 0 0 0 3px var(--admin-accent-glow);
+}
+
+/* Number input: hide spinners + neutralise wheel-scroll change-of-value */
+.admin-root input[type="number"] {
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+.admin-root input[type="number"]::-webkit-outer-spin-button,
+.admin-root input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+/* ── Cards: subtle hover lift (opt-in via .admin-card class) ── */
+.admin-card {
+  transition: transform 0.22s var(--admin-ease),
+              box-shadow 0.22s var(--admin-ease);
+}
+.admin-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--admin-shadow-lg);
+}
+
+/* ── Tables: row hover, sticky-friendly, wider first column for actions ── */
+.admin-root table {
+  border-collapse: separate;
+  border-spacing: 0;
+}
+.admin-root table tbody tr {
+  transition: background 0.15s var(--admin-ease);
+}
+.admin-root table tbody tr:hover {
+  background: var(--admin-hover);
+}
+.admin-root table th {
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  font-size: 11px;
+}
+
+/* Action column (now first) — give it breathing room */
+.admin-root .admin-actions-col {
+  width: 1%;
+  white-space: nowrap;
+}
+.admin-root .admin-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.admin-root .admin-actions button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ── Badges polish ── */
+.admin-root .admin-badge,
+.admin-root [data-admin-badge] {
+  transition: filter 0.15s var(--admin-ease), transform 0.15s var(--admin-ease);
+}
+.admin-root .admin-badge:hover,
+.admin-root [data-admin-badge]:hover {
+  filter: brightness(1.06);
+}
+
+/* ── Custom scrollbars (admin shell only) ── */
+.admin-root *::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+.admin-root *::-webkit-scrollbar-track {
+  background: transparent;
+}
+.admin-root *::-webkit-scrollbar-thumb {
+  background: var(--admin-border-strong);
+  border-radius: 999px;
+}
+.admin-root *::-webkit-scrollbar-thumb:hover {
+  background: var(--admin-accent);
+}
+.admin-root {
+  scrollbar-width: thin;
+  scrollbar-color: var(--admin-border-strong) transparent;
+}
+
+/* ── Skeleton / shimmer placeholder ── */
+.admin-skeleton {
+  background: linear-gradient(
+    90deg,
+    rgba(148, 163, 184, 0.08) 0%,
+    rgba(148, 163, 184, 0.18) 50%,
+    rgba(148, 163, 184, 0.08) 100%
+  );
+  background-size: 800px 100%;
+  animation: admin-shimmer 1.4s linear infinite;
+  border-radius: 8px;
+}
+
+/* ── Toast (react-hot-toast) — subtle radius/shadow upgrade ── */
+.admin-root [class*="react-hot-toast"] > div {
+  border-radius: var(--admin-radius-md) !important;
+  box-shadow: var(--admin-shadow-lg) !important;
+  font-family: var(--admin-font) !important;
+}
+
+/* ── Loading spinner (canonical) ── */
+.admin-spinner {
+  width: 18px;
+  height: 18px;
+  border: 2px solid var(--admin-border-strong);
+  border-top-color: var(--admin-accent);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  display: inline-block;
+}
+
+/* ── Focus visible for cards/clickable rows ── */
+.admin-root [role="button"]:focus-visible,
+.admin-root .admin-card:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px var(--admin-accent-glow);
+}
+
+/* ── Reduced motion ── */
+@media (prefers-reduced-motion: reduce) {
+  .admin-root *,
+  .admin-root *::before,
+  .admin-root *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}

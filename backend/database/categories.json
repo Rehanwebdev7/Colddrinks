@@ -1,26 +1,20 @@
 [
   {
     "id": "CAT-001",
-    "name": "Soft Drinks",
-    "createdAt": "2026-03-23T06:22:48.137Z",
-    "status": "active"
+    "name": "Water",
+    "status": "active",
+    "createdAt": "2026-05-08T11:44:36.861Z"
   },
   {
     "id": "CAT-002",
-    "name": "Juices",
-    "createdAt": "2026-03-23T06:22:48.223Z",
-    "status": "active"
-  },
-  {
-    "name": "Water & Soda",
+    "name": "Soft Drink",
     "status": "active",
-    "createdAt": "2026-03-23T06:22:48.285Z",
-    "id": "CAT-003"
+    "createdAt": "2026-05-08T11:54:55.019Z"
   },
   {
-    "id": "CAT-004",
-    "name": "CAN",
-    "createdAt": "2026-03-29T06:43:59.302Z",
-    "status": "active"
+    "id": "CAT-003",
+    "name": "Soda",
+    "status": "active",
+    "createdAt": "2026-05-08T11:57:09.897Z"
   }
 ]

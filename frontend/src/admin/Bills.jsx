@@ -26,6 +26,8 @@ const Bills = () => {
   const [showInvoiceModal, setShowInvoiceModal] = useState(false)
   const [selectedBill, setSelectedBill] = useState(null)
   const [pendingOrders, setPendingOrders] = useState([])
+  const [currentPage, setCurrentPage] = useState(1)
+  const ITEMS_PER_PAGE = 10
 
   useEffect(() => {
     fetchBills()
@@ -34,6 +36,23 @@ const Bills = () => {
   useEffect(() => {
     applyFilters()
   }, [bills, searchQuery, paymentFilter])
+
+  // Reset to first page whenever the filtered set changes
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [searchQuery, paymentFilter])
+
+  // Guard against landing on an empty page after data updates
+  useEffect(() => {
+    const totalPages = Math.max(1, Math.ceil(filteredBills.length / ITEMS_PER_PAGE))
+    if (currentPage > totalPages) setCurrentPage(totalPages)
+  }, [filteredBills.length, currentPage])
+
+  const totalPages = Math.max(1, Math.ceil(filteredBills.length / ITEMS_PER_PAGE))
+  const paginatedBills = filteredBills.slice(
+    (currentPage - 1) * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE
+  )
 
   const fetchBills = async () => {
     try {
@@ -389,7 +408,7 @@ const Bills = () => {
                 <div key={order._id || order.id} style={styles.pendingItem}>
                   <span style={styles.pendingOrderNum}>#{order.orderNumber || order._id?.slice(-6) || order.id?.slice(-6)}</span>
                   <span style={styles.pendingCustomer}>{order.customer?.name || order.customerName || 'N/A'}</span>
-                  <span>{formatCurrency(order.totalAmount || order.total)}</span>
+                  <span style={styles.pendingAmount}>{formatCurrency(order.totalAmount || order.total)}</span>
                   <button style={styles.generateBtn} onClick={() => generateBill(order._id || order.id)}>
                     Generate Bill
                   </button>
@@ -405,39 +424,25 @@ const Bills = () => {
             <table style={styles.table}>
               <thead>
                 <tr>
+                  <th className="admin-actions-col" style={styles.th}>Actions</th>
                   <th style={styles.th}>Bill #</th>
                   <th style={styles.th}>Order #</th>
                   <th style={styles.th}>Customer</th>
                   <th style={styles.th}>Date</th>
                   <th style={styles.th}>Total</th>
                   <th style={styles.th}>Payment</th>
-                  <th style={styles.th}>Actions</th>
                 </tr>
               </thead>
               <tbody>
-                {filteredBills.length === 0 ? (
+                {paginatedBills.length === 0 ? (
                   <tr>
                     <td colSpan={7} style={styles.emptyCell}>No bills found</td>
                   </tr>
                 ) : (
-                  filteredBills.map((bill) => (
+                  paginatedBills.map((bill) => (
                     <tr key={bill._id} style={styles.tr}>
-                      <td style={{ ...styles.td, fontWeight: '600', color: '#0ea5e9' }}>
-                        {bill.billNumber || bill._id?.slice(-6)}
-                      </td>
-                      <td style={styles.td}>#{bill.orderNumber || bill.order?.orderNumber || bill.orderId || 'N/A'}</td>
-                      <td style={styles.td}>{bill.customer?.name || bill.customerName || 'N/A'}</td>
-                      <td style={styles.td}>
-                        {formatDate(bill)}
-                      </td>
-                      <td style={{ ...styles.td, fontWeight: '600' }}>
-                        {formatCurrency(bill.totalAmount || bill.total)}
-                      </td>
-                      <td style={styles.td}>
-                        <StatusBadge status={bill.paymentStatus || 'unpaid'} />
-                      </td>
-                      <td style={styles.td}>
-                        <div style={styles.actionButtons}>
+                      <td className="admin-actions-col" style={styles.td}>
+                        <div className="admin-actions" style={styles.actionButtons}>
                           <button style={styles.viewBtn} onClick={() => viewInvoice(bill)} title="View">
                             <FaEye />
                           </button>
@@ -452,12 +457,78 @@ const Bills = () => {
                           </button>
                         </div>
                       </td>
+                      <td style={{ ...styles.td, fontWeight: '600', color: '#0ea5e9' }}>
+                        {bill.billNumber || bill._id?.slice(-6)}
+                      </td>
+                      <td style={styles.td}>#{bill.orderNumber || bill.order?.orderNumber || bill.orderId || 'N/A'}</td>
+                      <td style={styles.td}>{bill.customer?.name || bill.customerName || 'N/A'}</td>
+                      <td style={styles.td}>
+                        {formatDate(bill)}
+                      </td>
+                      <td style={{ ...styles.td, fontWeight: '600' }}>
+                        {formatCurrency(bill.totalAmount || bill.total)}
+                      </td>
+                      <td style={styles.td}>
+                        <StatusBadge status={bill.paymentStatus || 'unpaid'} />
+                      </td>
                     </tr>
                   ))
                 )}
               </tbody>
             </table>
           </div>
+
+          {/* Pagination */}
+          {filteredBills.length > 0 && (
+            <div style={styles.paginationBar}>
+              <span style={styles.paginationInfo}>
+                Showing {(currentPage - 1) * ITEMS_PER_PAGE + 1}–
+                {Math.min(currentPage * ITEMS_PER_PAGE, filteredBills.length)} of {filteredBills.length}
+              </span>
+              <div style={styles.paginationControls}>
+                <button
+                  style={{
+                    ...styles.pageBtn,
+                    opacity: currentPage === 1 ? 0.4 : 1,
+                    cursor: currentPage === 1 ? 'not-allowed' : 'pointer',
+                  }}
+                  onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                  disabled={currentPage === 1}
+                >
+                  Prev
+                </button>
+                {Array.from({ length: totalPages }, (_, i) => i + 1)
+                  .filter(p => p === 1 || p === totalPages || Math.abs(p - currentPage) <= 1)
+                  .reduce((acc, p, idx, arr) => {
+                    if (idx > 0 && p - arr[idx - 1] > 1) acc.push('…')
+                    acc.push(p)
+                    return acc
+                  }, [])
+                  .map((p, idx) => p === '…' ? (
+                    <span key={`gap-${idx}`} style={styles.pageGap}>…</span>
+                  ) : (
+                    <button
+                      key={p}
+                      style={p === currentPage ? styles.pageBtnActive : styles.pageBtn}
+                      onClick={() => setCurrentPage(p)}
+                    >
+                      {p}
+                    </button>
+                  ))}
+                <button
+                  style={{
+                    ...styles.pageBtn,
+                    opacity: currentPage === totalPages ? 0.4 : 1,
+                    cursor: currentPage === totalPages ? 'not-allowed' : 'pointer',
+                  }}
+                  onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                  disabled={currentPage === totalPages}
+                >
+                  Next
+                </button>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Invoice Preview Modal */}
@@ -681,6 +752,13 @@ const getStyles = (c) => ({
     color: c.text,
     fontSize: '14px',
     flex: 1
+  },
+  pendingAmount: {
+    color: c.text,
+    fontSize: '14px',
+    fontWeight: '600',
+    minWidth: '90px',
+    textAlign: 'right'
   },
   generateBtn: {
     background: 'linear-gradient(135deg, #f59e0b, #d97706)',
@@ -938,6 +1016,56 @@ const getStyles = (c) => ({
     fontSize: '14px',
     fontWeight: '600',
     cursor: 'pointer'
+  },
+  paginationBar: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: '14px 16px',
+    borderTop: `1px solid ${c.border}`,
+    background: c.surface,
+    flexWrap: 'wrap',
+    gap: '12px'
+  },
+  paginationInfo: {
+    color: c.textSecondary,
+    fontSize: '13px'
+  },
+  paginationControls: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '4px',
+    flexWrap: 'wrap'
+  },
+  pageBtn: {
+    minWidth: '34px',
+    height: '34px',
+    padding: '0 10px',
+    border: `1px solid ${c.border}`,
+    borderRadius: '6px',
+    background: c.bg,
+    color: c.text,
+    fontSize: '13px',
+    fontWeight: '500',
+    cursor: 'pointer',
+    transition: 'all 0.15s'
+  },
+  pageBtnActive: {
+    minWidth: '34px',
+    height: '34px',
+    padding: '0 10px',
+    border: '1px solid #0ea5e9',
+    borderRadius: '6px',
+    background: '#0ea5e9',
+    color: '#fff',
+    fontSize: '13px',
+    fontWeight: '600',
+    cursor: 'pointer'
+  },
+  pageGap: {
+    color: c.textSecondary,
+    padding: '0 4px',
+    fontSize: '13px'
   }
 })
 

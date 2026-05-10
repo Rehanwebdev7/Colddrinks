@@ -250,7 +250,11 @@ const Dashboard = () => {
         {/* Stats Cards */}
         <div className="admin-stats-grid" style={styles.statsGrid}>
           {kpiCards.map((card, index) => (
-            <div key={index} style={styles.statCard}>
+            <div
+              key={index}
+              className="dash-stat-card dash-fade"
+              style={{ ...styles.statCard, animationDelay: `${index * 50}ms` }}
+            >
               <div style={styles.statTop}>
                 <div style={{ ...styles.statIcon, background: card.bg, color: card.color }}>
                   {card.icon}
@@ -266,7 +270,7 @@ const Dashboard = () => {
         {/* Charts Section */}
         <div className="admin-charts-row" style={styles.chartsRow}>
           {/* Weekly Orders Bar Chart */}
-          <div style={styles.chartCard}>
+          <div className="dash-chart-card dash-fade" style={{ ...styles.chartCard, animationDelay: '100ms' }}>
             <h3 style={styles.chartTitle}>Weekly Orders</h3>
             <ResponsiveContainer width="100%" height={300}>
               <BarChart data={chartData.weeklyOrders}>
@@ -283,7 +287,7 @@ const Dashboard = () => {
           </div>
 
           {/* Revenue by Category Pie Chart */}
-          <div style={styles.chartCard}>
+          <div className="dash-chart-card dash-fade" style={{ ...styles.chartCard, animationDelay: '160ms' }}>
             <h3 style={styles.chartTitle}>Revenue by Category</h3>
             <ResponsiveContainer width="100%" height={300}>
               <PieChart>
@@ -313,7 +317,7 @@ const Dashboard = () => {
         </div>
 
         {/* Order Status Distribution */}
-        <div style={styles.chartCardFull}>
+        <div className="dash-section-card dash-fade" style={{ ...styles.chartCardFull, animationDelay: '220ms' }}>
           <h3 style={styles.chartTitle}>Order Status Distribution</h3>
           <div style={styles.statusGrid}>
             {(chartData.orderStatusDistribution || []).map((item, index) => (
@@ -340,20 +344,20 @@ const Dashboard = () => {
         </div>
 
         {/* Recent Orders Table */}
-        <div style={styles.sectionCard}>
+        <div className="dash-section-card dash-fade" style={{ ...styles.sectionCard, animationDelay: '280ms' }}>
           <div style={styles.sectionHeader}>
             <h3 style={styles.sectionTitle}>Recent Orders</h3>
-            <Link to="/admin/orders" style={styles.viewAllLink}>View All Orders</Link>
+            <Link to="/admin/orders" className="dash-view-all" style={styles.viewAllLink}>View All Orders</Link>
           </div>
           <div style={styles.tableWrapper}>
             <table style={styles.table}>
               <thead>
                 <tr>
+                  <th className="admin-actions-col" style={styles.th}>Actions</th>
                   <th style={styles.th}>Order #</th>
                   <th style={styles.th}>Customer</th>
                   <th style={styles.th}>Total</th>
                   <th style={styles.th}>Status</th>
-                  <th style={styles.th}>Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -363,23 +367,9 @@ const Dashboard = () => {
                   </tr>
                 ) : (
                   recentOrders.map((order) => (
-                    <tr key={order.id} style={styles.tr}>
-                      <td style={styles.td}>
-                        <span style={styles.orderNumber}>#{order.orderNumber}</span>
-                      </td>
-                      <td style={styles.td}>{order.customerName || 'N/A'}</td>
-                      <td style={{ ...styles.td, fontWeight: '600' }}>{formatCurrency(order.total)}</td>
-                      <td style={styles.td}>
-                        <span style={{
-                          ...styles.statusBadge,
-                          background: (ORDER_STATUS_COLORS[order.orderStatus] || c.textSecondary) + '20',
-                          color: ORDER_STATUS_COLORS[order.orderStatus] || c.textSecondary
-                        }}>
-                          {order.orderStatus}
-                        </span>
-                      </td>
-                      <td style={styles.td}>
-                        <div style={styles.actionBtns}>
+                    <tr key={order.id} className="dash-row" style={styles.tr}>
+                      <td className="admin-actions-col" style={styles.td}>
+                        <div className="admin-actions" style={styles.actionBtns}>
                           {getNextActions(order.orderStatus).map((action) => (
                             <button
                               key={action.value}
@@ -396,6 +386,20 @@ const Dashboard = () => {
                           )}
                         </div>
                       </td>
+                      <td style={styles.td}>
+                        <span style={styles.orderNumber}>#{order.orderNumber}</span>
+                      </td>
+                      <td style={styles.td}>{order.customerName || 'N/A'}</td>
+                      <td style={{ ...styles.td, fontWeight: '600' }}>{formatCurrency(order.total)}</td>
+                      <td style={styles.td}>
+                        <span style={{
+                          ...styles.statusBadge,
+                          background: (ORDER_STATUS_COLORS[order.orderStatus] || c.textSecondary) + '20',
+                          color: ORDER_STATUS_COLORS[order.orderStatus] || c.textSecondary
+                        }}>
+                          {order.orderStatus}
+                        </span>
+                      </td>
                     </tr>
                   ))
                 )}
@@ -405,22 +409,22 @@ const Dashboard = () => {
         </div>
 
         {/* Low Stock Products Table */}
-        <div style={styles.sectionCard}>
+        <div className="dash-section-card dash-fade" style={{ ...styles.sectionCard, animationDelay: '340ms' }}>
           <div style={styles.sectionHeader}>
             <h3 style={styles.sectionTitle}>
               <FaExclamationTriangle style={{ color: '#f59e0b', marginRight: '8px' }} />
               Low Stock Products
             </h3>
-            <Link to="/admin/products" style={styles.viewAllLink}>Manage Products</Link>
+            <Link to="/admin/products" className="dash-view-all" style={styles.viewAllLink}>Manage Products</Link>
           </div>
           <div style={styles.tableWrapper}>
             <table style={styles.table}>
               <thead>
                 <tr>
+                  <th className="admin-actions-col" style={styles.th}>Action</th>
                   <th style={styles.th}>Product</th>
                   <th style={styles.th}>Current Stock</th>
                   <th style={styles.th}>Price</th>
-                  <th style={styles.th}>Action</th>
                 </tr>
               </thead>
               <tbody>
@@ -430,7 +434,16 @@ const Dashboard = () => {
                   </tr>
                 ) : (
                   lowStockProducts.map((product) => (
-                    <tr key={product.id} style={styles.tr}>
+                    <tr key={product.id} className="dash-row" style={styles.tr}>
+                      <td className="admin-actions-col" style={styles.td}>
+                        <button
+                          className="dash-restock-btn"
+                          style={styles.restockBtn}
+                          onClick={() => handleRestock(product.id)}
+                        >
+                          Restock
+                        </button>
+                      </td>
                       <td style={styles.td}>
                         <div style={styles.productCell}>
                           <FaBoxOpen style={{ color: c.textSecondary, flexShrink: 0 }} />
@@ -447,14 +460,6 @@ const Dashboard = () => {
                         </span>
                       </td>
                       <td style={styles.td}>{formatCurrency(product.price)}</td>
-                      <td style={styles.td}>
-                        <button
-                          style={styles.restockBtn}
-                          onClick={() => handleRestock(product.id)}
-                        >
-                          Restock
-                        </button>
-                      </td>
                     </tr>
                   ))
                 )}
@@ -464,7 +469,74 @@ const Dashboard = () => {
         </div>
       </div>
 
-      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+      <style>{`
+        @keyframes spin { to { transform: rotate(360deg); } }
+        @keyframes dashFadeUp {
+          from { opacity: 0; transform: translateY(10px); }
+          to   { opacity: 1; transform: translateY(0); }
+        }
+        .dash-fade { animation: dashFadeUp 0.45s ease-out both; }
+
+        .dash-stat-card {
+          transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+          will-change: transform;
+        }
+        .dash-stat-card:hover {
+          transform: translateY(-3px);
+          box-shadow: 0 12px 28px rgba(0, 0, 0, 0.18);
+          border-color: rgba(14, 165, 233, 0.35);
+        }
+
+        .dash-chart-card {
+          transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        .dash-chart-card:hover {
+          transform: translateY(-2px);
+          box-shadow: 0 14px 32px rgba(0, 0, 0, 0.16);
+        }
+
+        .dash-section-card {
+          transition: box-shadow 0.2s ease;
+        }
+        .dash-section-card:hover {
+          box-shadow: 0 10px 26px rgba(0, 0, 0, 0.14);
+        }
+
+        .dash-row {
+          transition: background 0.15s ease, transform 0.15s ease;
+        }
+        .dash-row:hover {
+          transform: translateX(2px);
+        }
+
+        .dash-restock-btn:hover {
+          transform: scale(1.05);
+          box-shadow: 0 6px 14px rgba(226, 55, 68, 0.35);
+        }
+        .dash-view-all:hover {
+          background: rgba(226, 55, 68, 0.18) !important;
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+          .dash-fade,
+          .dash-stat-card,
+          .dash-chart-card,
+          .dash-section-card,
+          .dash-row,
+          .dash-restock-btn,
+          .dash-view-all {
+            animation: none !important;
+            transition: none !important;
+          }
+          .dash-stat-card:hover,
+          .dash-chart-card:hover,
+          .dash-section-card:hover,
+          .dash-row:hover,
+          .dash-restock-btn:hover {
+            transform: none !important;
+          }
+        }
+      `}</style>
     </AdminLayout>
   )
 }

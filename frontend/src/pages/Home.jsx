@@ -59,6 +59,17 @@ const Home = () => {
     }
   }
 
+  // Drop recently-viewed entries whose product no longer exists in DB
+  useEffect(() => {
+    if (loading || error) return
+    setRecentlyViewed(prev => {
+      const valid = prev.filter(rv => products.some(p => (p._id || p.id) === rv.id))
+      if (valid.length === prev.length) return prev
+      try { localStorage.setItem('recentlyViewed', JSON.stringify(valid)) } catch {}
+      return valid
+    })
+  }, [products, loading, error])
+
   const fetchCategories = async () => {
     try {
       const response = await API.get('/categories')

@@ -5,8 +5,7 @@ import API from '../config/api'
 import AdminLayout from '../components/AdminLayout'
 import Modal from '../components/Modal'
 import toast from 'react-hot-toast'
-import { FaPlus, FaTrash, FaImage, FaUpload, FaCloudUploadAlt, FaEdit } from 'react-icons/fa'
-import useDrive from '../services/useDrive'
+import { FaPlus, FaTrash, FaImage, FaUpload, FaEdit } from 'react-icons/fa'
 import { uploadImage, deleteImage, getImageUrl } from '../services/googleDrive'
 import ImageCropModal from '../components/ImageCropModal'
 
@@ -32,7 +31,6 @@ const Sliders = () => {
   const [cropSrc, setCropSrc] = useState(null)
   const [showCrop, setShowCrop] = useState(false)
   const [products, setProducts] = useState([])
-  const { driveReady, needsSetup, driveLoading, setupDrive } = useDrive()
 
   useEffect(() => {
     fetchSliders()
@@ -123,19 +121,25 @@ const Sliders = () => {
       let imageUrl = formData.image
       let driveFileId = ''
 
-      // Upload to Google Drive if file selected and Drive is ready
-      if (imageFile && driveReady) {
+      // Upload to Google Drive if file selected
+      if (imageFile) {
         setUploadingImage(true)
         try {
           const fileName = `slider_${Date.now()}.jpg`
           driveFileId = await uploadImage(imageFile, 'sliders', fileName)
           imageUrl = getImageUrl(driveFileId)
         } catch (err) {
-          toast.error('Image upload failed: ' + err.message)
+          toast.error('Image upload failed: ' + (err.message || 'Drive error'))
           return
         } finally {
           setUploadingImage(false)
         }
+      }
+
+      // Belt-and-suspenders: never persist base64 to Firestore.
+      if (typeof imageUrl === 'string' && imageUrl.startsWith('data:')) {
+        toast.error('Image upload incomplete. Please retry.')
+        return
       }
 
       const payload = {
@@ -170,7 +174,7 @@ const Sliders = () => {
 
     try {
       // Delete from Google Drive if it has a driveFileId
-      if (slider.driveFileId && driveReady) {
+      if (slider.driveFileId) {
         await deleteImage(slider.driveFileId).catch(() => {})
       }
       await API.delete(`/sliders/${sliderId}`)
@@ -208,17 +212,6 @@ const Sliders = () => {
             <p style={styles.subtitle}>{sliders.length} total sliders</p>
           </div>
           <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-            {needsSetup && (
-              <button
-                style={{ ...styles.addBtn, background: '#0ea5e9', boxShadow: '0 2px 8px rgba(14,165,233,0.3)' }}
-                onClick={() => setupDrive().then(() => toast.success('Google Drive connected!')).catch(err => toast.error(err.message))}
-              >
-                <FaCloudUploadAlt /> Setup Drive
-              </button>
-            )}
-            {driveReady && (
-              <span style={{ fontSize: '12px', color: '#22c55e', fontWeight: '500' }}>Drive Connected</span>
-            )}
             <button style={styles.addBtn} onClick={openAddModal}>
               <FaPlus /> Add Slider
             </button>

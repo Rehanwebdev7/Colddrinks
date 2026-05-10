@@ -5,14 +5,12 @@ import Modal from '../components/Modal'
 import toast from 'react-hot-toast'
 import { FaPlus, FaEdit, FaTrash, FaTruck, FaRupeeSign, FaSearch, FaArrowLeft, FaShoppingBag, FaMoneyBillWave, FaUpload } from 'react-icons/fa'
 import { uploadImage, getImageUrl } from '../services/googleDrive'
-import useDrive from '../services/useDrive'
 import { useTheme } from '../context/ThemeContext'
 import { getColors } from './themeColors'
 
 const Suppliers = () => {
   const { darkMode } = useTheme()
   const c = getColors(darkMode)
-  const { driveReady } = useDrive()
   const [suppliers, setSuppliers] = useState([])
   const [products, setProducts] = useState([])
   const [newProductImageFile, setNewProductImageFile] = useState(null)
@@ -161,15 +159,17 @@ const Suppliers = () => {
     setSaving(true)
     try {
       let imageUrl = newProductForm.image
-      // Upload to Google Drive if file selected
-      if (newProductImageFile && driveReady) {
+      if (newProductImageFile) {
         setUploadingImage(true)
         try {
           const fileName = `product_${newProductForm.name.replace(/\s+/g, '_')}_${Date.now()}.jpg`
           const fileId = await uploadImage(newProductImageFile, 'products', fileName)
           imageUrl = getImageUrl(fileId)
-        } catch (err) { toast.error('Image upload failed: ' + err.message); return }
+        } catch (err) { toast.error('Image upload failed: ' + (err.message || 'Drive error')); return }
         finally { setUploadingImage(false) }
+      }
+      if (typeof imageUrl === 'string' && imageUrl.startsWith('data:')) {
+        toast.error('Image upload incomplete. Please retry.'); return
       }
       const prodRes = await API.post('/products', {
         name: newProductForm.name.trim(),

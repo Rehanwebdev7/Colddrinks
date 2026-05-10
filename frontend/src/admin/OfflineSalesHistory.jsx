@@ -328,13 +328,13 @@ const OfflineSalesHistory = () => {
               <table style={s.table}>
                 <thead>
                   <tr>
+                    <th className="admin-actions-col" style={s.th}>Actions</th>
                     <th style={s.th}>Sale #</th>
                     <th style={s.th}>Customer</th>
                     <th style={s.th}>Date</th>
                     <th style={s.th}>Items</th>
                     <th style={s.th}>Payment</th>
                     <th style={{ ...s.th, textAlign: 'right' }}>Amount</th>
-                    <th style={s.th}>Actions</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -350,6 +350,26 @@ const OfflineSalesHistory = () => {
                         onMouseEnter={(e) => e.currentTarget.style.background = isUdhar ? 'rgba(249, 115, 22, 0.08)' : 'rgba(14, 165, 233, 0.04)'}
                         onMouseLeave={(e) => e.currentTarget.style.background = isUdhar ? 'rgba(249, 115, 22, 0.04)' : 'transparent'}
                       >
+                        <td className="admin-actions-col" style={s.td}>
+                          <div className="admin-actions" style={{ display: 'flex', gap: 6 }}>
+                            <button
+                              onClick={() => printBill(sale)}
+                              style={s.actionBtn}
+                              title="Print Bill"
+                            >
+                              <FaPrint size={13} />
+                            </button>
+                            {isUdhar && sale.customerId && (
+                              <button
+                                onClick={() => goToPaymentsForCustomer(sale.customerId)}
+                                style={s.udharBtn}
+                                title="Manage Udhar"
+                              >
+                                Udhar
+                              </button>
+                            )}
+                          </div>
+                        </td>
                         <td style={{ ...s.td, fontWeight: 700, color: '#f97316' }}>
                           {sale.saleNumber}
                         </td>
@@ -381,26 +401,6 @@ const OfflineSalesHistory = () => {
                         </td>
                         <td style={{ ...s.td, fontWeight: 700, fontSize: 14, textAlign: 'right' }}>
                           {formatCurrency(sale.total)}
-                        </td>
-                        <td style={s.td}>
-                          <div style={{ display: 'flex', gap: 6 }}>
-                            <button
-                              onClick={() => printBill(sale)}
-                              style={s.actionBtn}
-                              title="Print Bill"
-                            >
-                              <FaPrint size={13} />
-                            </button>
-                            {isUdhar && sale.customerId && (
-                              <button
-                                onClick={() => goToPaymentsForCustomer(sale.customerId)}
-                                style={s.udharBtn}
-                                title="Manage Udhar"
-                              >
-                                Udhar
-                              </button>
-                            )}
-                          </div>
                         </td>
                       </tr>
                     )

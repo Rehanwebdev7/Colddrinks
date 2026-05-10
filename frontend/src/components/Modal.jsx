@@ -3,7 +3,7 @@ import { FaTimes } from 'react-icons/fa'
 import { useTheme } from '../context/ThemeContext'
 import { getColors } from '../admin/themeColors'
 
-const Modal = ({ isOpen = true, onClose, title, children }) => {
+const Modal = ({ isOpen = true, onClose, title, children, footer, maxWidth = '520px' }) => {
   const { darkMode } = useTheme()
   const c = getColors(darkMode)
 
@@ -32,7 +32,7 @@ const Modal = ({ isOpen = true, onClose, title, children }) => {
 
   if (!isOpen) return null
 
-  const styles = getStyles(c)
+  const styles = getStyles(c, maxWidth)
 
   const handleOverlayClick = (e) => {
     if (e.target === e.currentTarget) {
@@ -55,12 +55,19 @@ const Modal = ({ isOpen = true, onClose, title, children }) => {
         <div style={styles.body}>
           {children}
         </div>
+
+        {/* Footer (sticky, only renders when footer prop is provided) */}
+        {footer && (
+          <div style={styles.footer}>
+            {footer}
+          </div>
+        )}
       </div>
     </div>
   )
 }
 
-const getStyles = (c) => ({
+const getStyles = (c, maxWidth = '520px') => ({
   overlay: {
     position: 'fixed',
     inset: 0,
@@ -70,8 +77,9 @@ const getStyles = (c) => ({
     alignItems: 'center',
     justifyContent: 'center',
     zIndex: 2000,
-    padding: window.innerWidth <= 768 ? '8px' : '20px',
+    padding: window.innerWidth <= 768 ? '90px 8px 20px' : '100px 20px 30px',
     animation: 'fadeIn 0.2s ease',
+    overflowY: 'auto',
   },
   modal: {
     background: c.surface,
@@ -79,12 +87,13 @@ const getStyles = (c) => ({
     borderRadius: '16px',
     boxShadow: '0 20px 60px rgba(0, 0, 0, 0.5)',
     width: '100%',
-    maxWidth: '520px',
-    maxHeight: '90vh',
+    maxWidth: maxWidth,
+    maxHeight: window.innerWidth <= 768 ? 'calc(100vh - 110px)' : 'calc(100vh - 130px)',
     overflow: 'hidden',
     display: 'flex',
     flexDirection: 'column',
     animation: 'slideUp 0.25s ease',
+    margin: 'auto',
   },
   header: {
     display: 'flex',
@@ -116,6 +125,13 @@ const getStyles = (c) => ({
     padding: window.innerWidth <= 768 ? '14px' : '24px',
     overflowY: 'auto',
     flex: 1,
+    minHeight: 0,
+  },
+  footer: {
+    padding: window.innerWidth <= 768 ? '12px 16px' : '16px 24px',
+    borderTop: `1px solid ${c.border}`,
+    background: c.surface,
+    flexShrink: 0,
   },
 })
 

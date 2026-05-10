@@ -2,12 +2,11 @@ import { useState, useEffect } from 'react'
 import API from '../config/api'
 import AdminLayout from '../components/AdminLayout'
 import toast from 'react-hot-toast'
-import { FaPalette, FaSave, FaUpload, FaQrcode, FaCloudUploadAlt } from 'react-icons/fa'
+import { FaPalette, FaSave, FaUpload, FaQrcode } from 'react-icons/fa'
 import { useSettings } from '../context/SettingsContext'
 import { useTheme } from '../context/ThemeContext'
 import { getColors } from './themeColors'
 import ImageCropModal from '../components/ImageCropModal'
-import useDrive from '../services/useDrive'
 import { uploadImage, getImageUrl } from '../services/googleDrive'
 
 const fontOptions = ['Inter', 'Poppins', 'Roboto', 'Open Sans', 'Lato', 'Montserrat', 'Nunito', 'Raleway']
@@ -19,7 +18,6 @@ const ThemeConfig = () => {
   const [form, setForm] = useState(settings)
   const [saving, setSaving] = useState(false)
   const [cropModal, setCropModal] = useState({ open: false, src: null, target: null, aspect: undefined, file: null })
-  const { driveReady, needsSetup, setupDrive } = useDrive()
 
   useEffect(() => {
     setForm(settings)
@@ -82,16 +80,6 @@ const ThemeConfig = () => {
             <FaPalette style={{ marginRight: '10px', color: '#e23744' }} /> Theme Config
           </h1>
           <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-            {needsSetup && (
-              <button onClick={() => setupDrive().then(() => toast.success('Google Drive connected!')).catch(err => toast.error(err.message))} style={{
-                display: 'flex', alignItems: 'center', gap: '8px', background: '#0ea5e9',
-                border: 'none', borderRadius: '10px', padding: '10px 24px', color: '#fff',
-                fontSize: '14px', fontWeight: '600', cursor: 'pointer'
-              }}>
-                <FaCloudUploadAlt /> Setup Drive
-              </button>
-            )}
-            {driveReady && <span style={{ fontSize: '12px', color: '#22c55e', fontWeight: '500' }}>Drive Connected</span>}
             <button onClick={handleSave} disabled={saving} style={{
               display: 'flex', alignItems: 'center', gap: '8px', background: '#e23744',
               border: 'none', borderRadius: '10px', padding: '10px 24px', color: '#fff',
@@ -257,6 +245,104 @@ const ThemeConfig = () => {
           </select>
         </div>
 
+        {/* Live Preview — reflects current form state in real time */}
+        <div style={sectionStyle}>
+          <h3 style={sectionTitle}>Live Preview</h3>
+          <div style={{
+            padding: '20px',
+            borderRadius: '14px',
+            background: `linear-gradient(135deg, ${form.colors?.primaryLight || '#fce4e6'} 0%, ${c.surface} 60%)`,
+            border: `1px solid ${c.border}`,
+            fontFamily: `'${form.font || 'Inter'}', sans-serif`,
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '14px' }}>
+              <div>
+                <div style={{
+                  display: 'inline-block',
+                  padding: '4px 10px',
+                  borderRadius: '999px',
+                  background: form.colors?.accent ? `${form.colors.accent}22` : 'rgba(14,165,233,0.13)',
+                  color: form.colors?.accent || '#0ea5e9',
+                  fontSize: '11px',
+                  fontWeight: '600',
+                  letterSpacing: '0.5px',
+                  textTransform: 'uppercase',
+                  marginBottom: '8px',
+                }}>
+                  Preview Tag
+                </div>
+                <h2 style={{
+                  margin: '0 0 6px 0',
+                  fontSize: '22px',
+                  fontWeight: '700',
+                  color: c.text,
+                  letterSpacing: '-0.01em',
+                }}>
+                  {form.siteName || 'Your Brand'}
+                </h2>
+                <p style={{ margin: 0, color: c.textSecondary, fontSize: '13px' }}>
+                  {form.siteTagline || 'Your tagline appears here in the chosen font.'}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={(e) => e.preventDefault()}
+                style={{
+                  background: form.colors?.primary || '#e23744',
+                  border: 'none',
+                  borderRadius: '10px',
+                  padding: '10px 22px',
+                  color: '#fff',
+                  fontSize: '14px',
+                  fontWeight: '600',
+                  cursor: 'pointer',
+                  fontFamily: `'${form.font || 'Inter'}', sans-serif`,
+                  boxShadow: form.colors?.primary
+                    ? `0 4px 14px ${form.colors.primary}55`
+                    : '0 4px 14px rgba(226,55,68,0.35)',
+                }}
+              >
+                Sample Button
+              </button>
+            </div>
+            <div style={{
+              display: 'flex',
+              gap: '8px',
+              marginTop: '16px',
+              flexWrap: 'wrap',
+            }}>
+              {[
+                { label: 'Primary', value: form.colors?.primary || '#e23744' },
+                { label: 'Primary Dark', value: form.colors?.primaryDark || '#c92e3b' },
+                { label: 'Primary Light', value: form.colors?.primaryLight || '#fce4e6' },
+                { label: 'Accent', value: form.colors?.accent || '#0ea5e9' },
+              ].map((s) => (
+                <div key={s.label} style={{
+                  display: 'flex', alignItems: 'center', gap: '8px',
+                  padding: '6px 12px',
+                  borderRadius: '8px',
+                  background: c.surface,
+                  border: `1px solid ${c.border}`,
+                  fontSize: '12px',
+                  color: c.textSecondary,
+                  fontWeight: '500',
+                }}>
+                  <span style={{
+                    width: '14px', height: '14px',
+                    borderRadius: '4px',
+                    background: s.value,
+                    border: `1px solid ${c.border}`,
+                  }} />
+                  {s.label}
+                </div>
+              ))}
+            </div>
+          </div>
+          <p style={{ color: c.textSecondary, fontSize: '12px', margin: '10px 0 0' }}>
+            Changes here update preview immediately. Click <strong style={{ color: c.text }}>Save All</strong> to apply across the entire site.
+          </p>
+        </div>
+
         {/* Contact */}
         <div style={sectionStyle}>
           <h3 style={sectionTitle}>Contact Info</h3>
@@ -324,21 +410,15 @@ const ThemeConfig = () => {
         onClose={() => setCropModal({ open: false, src: null, target: null, aspect: undefined, file: null })}
         onCropDone={async (croppedImage) => {
           if (!cropModal.target) return
-          // Upload to Google Drive if ready
-          if (driveReady) {
-            try {
-              const folderName = cropModal.target === 'logo' ? 'logos' : 'payment-qr'
-              const blob = await fetch(croppedImage).then(r => r.blob())
-              const fileName = `${cropModal.target}_${Date.now()}.jpg`
-              const fileId = await uploadImage(blob, folderName, fileName)
-              handleChange(cropModal.target, getImageUrl(fileId))
-              toast.success('Image uploaded to Drive')
-            } catch (err) {
-              toast.error('Drive upload failed, using local image')
-              handleChange(cropModal.target, croppedImage)
-            }
-          } else {
-            handleChange(cropModal.target, croppedImage)
+          try {
+            const folderName = cropModal.target === 'logo' ? 'logos' : 'payment-qr'
+            const blob = await fetch(croppedImage).then(r => r.blob())
+            const fileName = `${cropModal.target}_${Date.now()}.jpg`
+            const fileId = await uploadImage(blob, folderName, fileName)
+            handleChange(cropModal.target, getImageUrl(fileId))
+            toast.success('Image uploaded to Drive')
+          } catch (err) {
+            toast.error('Drive upload failed: ' + (err.message || 'unknown'))
           }
         }}
       />

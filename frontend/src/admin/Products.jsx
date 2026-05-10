@@ -9,7 +9,6 @@ import {
   FaPlus, FaEdit, FaTrash, FaSearch, FaImage, FaUpload,
   FaFilter, FaChevronLeft, FaChevronRight, FaBox, FaCloudUploadAlt
 } from 'react-icons/fa'
-import useDrive from '../services/useDrive'
 import ImageCropModal from '../components/ImageCropModal'
 import { uploadImage, deleteImage, getImageUrl } from '../services/googleDrive'
 
@@ -106,7 +105,6 @@ const Products = () => {
   const [cropSrc, setCropSrc] = useState(null)
   const [showCrop, setShowCrop] = useState(false)
   const [uploadingImage, setUploadingImage] = useState(false)
-  const { driveReady, needsSetup, driveLoading, setupDrive } = useDrive()
   const itemsPerPage = 10
 
   useEffect(() => {
@@ -166,6 +164,27 @@ const Products = () => {
   useEffect(() => {
     setCurrentPage(1)
   }, [searchQuery, categoryFilter, stockFilter])
+
+  // Auto-sync the offer label from buyQty / freeQty / free product name.
+  // Skips if user manually customized the label (_labelTouched=true) or if
+  // free product isn't selected yet.
+  useEffect(() => {
+    const offer = formData.offer
+    if (!offer?.enabled) return
+    if (offer._labelTouched) return
+    const freeProduct = products.find(p => p.id === offer.freeProductId)
+    if (!freeProduct) return
+    const newLabel = `Buy ${offer.buyQty || 1}, Get ${offer.freeQty || 1} ${freeProduct.name} Free!`
+    if (offer.label === newLabel) return
+    setFormData(prev => ({ ...prev, offer: { ...prev.offer, label: newLabel } }))
+  }, [
+    formData.offer?.enabled,
+    formData.offer?.buyQty,
+    formData.offer?.freeQty,
+    formData.offer?.freeProductId,
+    formData.offer?._labelTouched,
+    products,
+  ])
 
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target
@@ -262,7 +281,8 @@ const Products = () => {
       deliveryCharge: product.deliveryCharge ?? '',
       allowPiecePurchase: Boolean(product.allowPiecePurchase),
       allowHalfBox: Boolean(product.allowHalfBox),
-      offer: product.offer || null,
+      // Mark existing label as user-confirmed so auto-sync doesn't overwrite a saved custom label
+      offer: product.offer ? { ...product.offer, _labelTouched: Boolean(product.offer.label) } : null,
     })
     setImageFiles([])
     setShowModal(true)
@@ -283,12 +303,13 @@ const Products = () => {
       setSaving(true)
       const finalImages = [...(formData.images || [])]
 
+      const hasNewBase64 = finalImages.some((img, i) => img && img.startsWith('data:') && imageFiles[i])
+
       // Upload new images to Google Drive
-      if (driveReady) {
+      if (hasNewBase64) {
         setUploadingImage(true)
         try {
           for (let i = 0; i < finalImages.length; i++) {
-            // Only upload if it's a new base64 image (not already a URL)
             if (finalImages[i] && finalImages[i].startsWith('data:') && imageFiles[i]) {
               const fileName = `product_${formData.name.replace(/\s+/g, '_')}_${i}_${Date.now()}.jpg`
               const fileId = await uploadImage(imageFiles[i], 'products', fileName)
@@ -301,7 +322,7 @@ const Products = () => {
             await deleteImage(editingProduct.driveFileId).catch(() => {})
           }
         } catch (err) {
-          toast.error('Image upload failed: ' + err.message)
+          toast.error('Image upload failed: ' + (err.message || 'Drive error'))
           return
         } finally {
           setUploadingImage(false)
@@ -309,6 +330,11 @@ const Products = () => {
       }
 
       const cleanImages = finalImages.filter(Boolean)
+      // Belt-and-suspenders: never persist base64 to Firestore.
+      if (cleanImages.some(img => typeof img === 'string' && img.startsWith('data:'))) {
+        toast.error('Image upload incomplete. Please retry.')
+        return
+      }
 
       const payload = {
         name: formData.name,
@@ -412,17 +438,6 @@ const Products = () => {
             <p style={styles.subtitle}>{products.length} total products</p>
           </div>
           <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-            {needsSetup && (
-              <button
-                style={{ ...styles.addBtn, background: '#0ea5e9', boxShadow: '0 2px 8px rgba(14,165,233,0.3)' }}
-                onClick={() => setupDrive().then(() => toast.success('Google Drive connected!')).catch(err => toast.error(err.message))}
-              >
-                <FaCloudUploadAlt /> Setup Drive
-              </button>
-            )}
-            {driveReady && (
-              <span style={{ fontSize: '12px', color: '#22c55e', fontWeight: '500' }}>Drive Connected</span>
-            )}
             <button style={styles.addBtn} onClick={openAddModal}>
               <FaPlus /> Add Product
             </button>
@@ -472,12 +487,12 @@ const Products = () => {
             <table style={styles.table}>
               <thead>
                 <tr>
+                  <th className="admin-actions-col" style={styles.th}>Actions</th>
                   <th style={styles.th}>Product</th>
                   <th style={styles.th}>Category</th>
                   <th style={styles.th}>Price/Box</th>
                   <th style={styles.th}>Stock</th>
                   <th style={styles.th}>Status</th>
-                  <th style={{ ...styles.th, textAlign: 'right' }}>Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -491,6 +506,16 @@ const Products = () => {
                 ) : (
                   paginatedProducts.map((product) => (
                     <tr key={product.id} style={styles.tr}>
+                      <td className="admin-actions-col" style={styles.td}>
+                        <div className="admin-actions" style={styles.actionButtons}>
+                          <button style={styles.editBtn} onClick={() => openEditModal(product)} title="Edit">
+                            <FaEdit />
+                          </button>
+                          <button style={styles.deleteBtn} onClick={() => openDeleteModal(product)} title="Delete">
+                            <FaTrash />
+                          </button>
+                        </div>
+                      </td>
                       <td style={styles.td}>
                         <div style={styles.productInfo}>
                           <img
@@ -558,24 +583,19 @@ const Products = () => {
                         })()}
                       </td>
                       <td style={styles.td}>
-                        <span style={{
-                          ...styles.statusBadge,
-                          background: product.status === 'active' ? 'rgba(34, 197, 94, 0.1)' : 'rgba(239, 68, 68, 0.1)',
-                          color: product.status === 'active' ? '#22c55e' : '#ef4444',
-                          border: `1px solid ${product.status === 'active' ? 'rgba(34, 197, 94, 0.2)' : 'rgba(239, 68, 68, 0.2)'}`
-                        }}>
-                          {product.status === 'active' ? 'Active' : 'Inactive'}
-                        </span>
-                      </td>
-                      <td style={{ ...styles.td, textAlign: 'right' }}>
-                        <div style={styles.actionButtons}>
-                          <button style={styles.editBtn} onClick={() => openEditModal(product)} title="Edit">
-                            <FaEdit />
-                          </button>
-                          <button style={styles.deleteBtn} onClick={() => openDeleteModal(product)} title="Delete">
-                            <FaTrash />
-                          </button>
-                        </div>
+                        {(() => {
+                          const isActive = (product.status || 'active') === 'active'
+                          return (
+                            <span style={{
+                              ...styles.statusBadge,
+                              background: isActive ? 'rgba(34, 197, 94, 0.1)' : 'rgba(239, 68, 68, 0.1)',
+                              color: isActive ? '#22c55e' : '#ef4444',
+                              border: `1px solid ${isActive ? 'rgba(34, 197, 94, 0.2)' : 'rgba(239, 68, 68, 0.2)'}`
+                            }}>
+                              {isActive ? 'Active' : 'Inactive'}
+                            </span>
+                          )
+                        })()}
                       </td>
                     </tr>
                   ))
@@ -885,7 +905,7 @@ const Products = () => {
                     checked={Boolean(formData.offer?.enabled)}
                     onChange={(e) => {
                       if (e.target.checked) {
-                        setFormData(prev => ({ ...prev, offer: { enabled: true, buyQty: 2, freeProductId: '', freeQty: 1, label: '' } }))
+                        setFormData(prev => ({ ...prev, offer: { enabled: true, buyQty: 2, freeProductId: '', freeQty: 1, label: '', _labelTouched: false } }))
                       } else {
                         setFormData(prev => ({ ...prev, offer: null }))
                       }
@@ -955,7 +975,6 @@ const Products = () => {
                           <div
                             key={p.id}
                             onMouseDown={() => {
-                              const autoLabel = `Buy ${formData.offer.buyQty || 2}, Get ${formData.offer.freeQty || 1} ${p.name} Free!`
                               setFormData(prev => ({
                                 ...prev,
                                 offer: {
@@ -963,7 +982,6 @@ const Products = () => {
                                   freeProductId: p.id,
                                   _searchQuery: undefined,
                                   _searchOpen: false,
-                                  label: prev.offer.label || autoLabel,
                                 }
                               }))
                             }}
@@ -1000,7 +1018,15 @@ const Products = () => {
                   <input
                     type="text"
                     value={formData.offer.label || ''}
-                    onChange={(e) => setFormData(prev => ({ ...prev, offer: { ...prev.offer, label: e.target.value } }))}
+                    onChange={(e) => setFormData(prev => ({
+                      ...prev,
+                      offer: {
+                        ...prev.offer,
+                        label: e.target.value,
+                        // Empty input → resume auto-sync; any text → respect manual edit
+                        _labelTouched: e.target.value.length > 0,
+                      }
+                    }))}
                     style={styles.input}
                     placeholder="e.g. Buy 2 Boxes, Get 1 Sprite Free!"
                   />

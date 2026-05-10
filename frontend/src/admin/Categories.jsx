@@ -115,9 +115,9 @@ const Categories = () => {
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead>
               <tr>
+                <th className="admin-actions-col" style={{ textAlign: 'left', padding: '14px 18px', color: c.textSecondary, fontSize: '12px', fontWeight: '600', textTransform: 'uppercase', borderBottom: `1px solid ${c.border}` }}>Actions</th>
                 <th style={{ textAlign: 'left', padding: '14px 18px', color: c.textSecondary, fontSize: '12px', fontWeight: '600', textTransform: 'uppercase', borderBottom: `1px solid ${c.border}` }}>Name</th>
                 <th style={{ textAlign: 'left', padding: '14px 18px', color: c.textSecondary, fontSize: '12px', fontWeight: '600', textTransform: 'uppercase', borderBottom: `1px solid ${c.border}` }}>Status</th>
-                <th style={{ textAlign: 'right', padding: '14px 18px', color: c.textSecondary, fontSize: '12px', fontWeight: '600', textTransform: 'uppercase', borderBottom: `1px solid ${c.border}` }}>Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -125,18 +125,8 @@ const Categories = () => {
                 <tr><td colSpan={3} style={{ padding: '40px', textAlign: 'center', color: c.textSecondary }}>No categories yet</td></tr>
               ) : categories.map(cat => (
                 <tr key={cat.id}>
-                  <td style={{ padding: '14px 18px', color: c.text, fontWeight: '500', borderBottom: `1px solid ${c.border}` }}>{cat.name}</td>
-                  <td style={{ padding: '14px 18px', borderBottom: `1px solid ${c.border}` }}>
-                    <span style={{
-                      padding: '4px 12px', borderRadius: '20px', fontSize: '12px', fontWeight: '600',
-                      background: cat.status === 'active' ? 'rgba(34, 197, 94, 0.1)' : 'rgba(239, 68, 68, 0.1)',
-                      color: cat.status === 'active' ? '#22c55e' : '#ef4444'
-                    }}>
-                      {cat.status === 'active' ? 'Active' : 'Inactive'}
-                    </span>
-                  </td>
-                  <td style={{ padding: '14px 18px', textAlign: 'right', borderBottom: `1px solid ${c.border}` }}>
-                    <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+                  <td className="admin-actions-col" style={{ padding: '14px 18px', borderBottom: `1px solid ${c.border}` }}>
+                    <div className="admin-actions" style={{ display: 'flex', gap: '8px' }}>
                       <button onClick={() => openEditModal(cat)} style={{
                         background: 'rgba(59, 130, 246, 0.1)', border: '1px solid rgba(59, 130, 246, 0.25)',
                         borderRadius: '8px', padding: '8px 10px', color: '#3b82f6', cursor: 'pointer', fontSize: '13px'
@@ -146,6 +136,16 @@ const Categories = () => {
                         borderRadius: '8px', padding: '8px 10px', color: '#ef4444', cursor: 'pointer', fontSize: '13px'
                       }}><FaTrash /></button>
                     </div>
+                  </td>
+                  <td style={{ padding: '14px 18px', color: c.text, fontWeight: '500', borderBottom: `1px solid ${c.border}` }}>{cat.name}</td>
+                  <td style={{ padding: '14px 18px', borderBottom: `1px solid ${c.border}` }}>
+                    <span style={{
+                      padding: '4px 12px', borderRadius: '20px', fontSize: '12px', fontWeight: '600',
+                      background: cat.status === 'active' ? 'rgba(34, 197, 94, 0.1)' : 'rgba(239, 68, 68, 0.1)',
+                      color: cat.status === 'active' ? '#22c55e' : '#ef4444'
+                    }}>
+                      {cat.status === 'active' ? 'Active' : 'Inactive'}
+                    </span>
                   </td>
                 </tr>
               ))}

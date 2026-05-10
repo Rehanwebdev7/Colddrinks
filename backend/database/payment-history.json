@@ -1,402 +1,52 @@
 [
   {
-    "createdAt": "2026-03-23T06:34:10.171Z",
-    "description": "Order ORD-1001 delivered (COD) - added to outstanding",
     "id": "PH-001",
-    "type": "debit",
     "userId": "USR-002",
-    "amount": 3715.4,
-    "orderId": "ORD-001"
+    "type": "debit",
+    "amount": 18.75,
+    "description": "Order ORD-1001 delivered (COD) - added to outstanding",
+    "orderId": "ORD-001",
+    "method": null,
+    "createdAt": "2026-05-09T19:09:21.119Z"
   },
   {
-    "orderId": "ORD-001",
-    "createdAt": "2026-03-23T06:36:06.748Z",
-    "description": "Payment recorded for order ORD-1001",
+    "id": "PH-002",
+    "userId": "USR-002",
+    "type": "debit",
+    "amount": 18.75,
+    "description": "Offline udhar sale SALE-5002",
+    "orderId": "SALE-0002",
+    "method": "Udhar",
+    "createdAt": "2026-05-09T19:23:26.630Z"
+  },
+  {
+    "id": "PH-003",
     "userId": "USR-002",
     "type": "credit",
-    "id": "PH-002",
-    "amount": 3715.4
+    "amount": 18.75,
+    "description": "Online payment verified for order ORD-1002",
+    "orderId": "ORD-002",
+    "method": "Online",
+    "createdAt": "2026-05-09T19:33:03.920Z"
   },
   {
-    "orderId": "ORD-008",
-    "description": "Order ORD-1008 delivered (COD) - added to outstanding",
-    "createdAt": "2026-03-23T08:08:49.856Z",
-    "amount": 2243.2,
-    "type": "debit",
-    "userId": "USR-002",
-    "id": "PH-003"
-  },
-  {
-    "orderId": null,
-    "amount": 2000,
     "id": "PH-004",
     "userId": "USR-002",
     "type": "credit",
-    "description": "Payment of ₹2000.00 recorded by admin",
-    "createdAt": "2026-03-23T08:08:50.370Z"
+    "amount": 7.5,
+    "description": "Payment clearance approved - ₹7.50 cleared",
+    "orderId": null,
+    "method": "Clearance",
+    "createdAt": "2026-05-09T19:40:36.486Z"
   },
   {
     "id": "PH-005",
-    "type": "credit",
-    "userId": "USR-002",
-    "amount": 243.2,
-    "createdAt": "2026-03-23T08:08:50.888Z",
-    "description": "Payment of ₹243.20 recorded by admin",
-    "orderId": null
-  },
-  {
-    "orderId": "ORD-008",
-    "amount": 2243.2,
-    "id": "PH-006",
-    "type": "credit",
-    "userId": "USR-002",
-    "description": "Payment recorded for order ORD-1008",
-    "createdAt": "2026-03-23T08:08:51.398Z"
-  },
-  {
-    "amount": 2243.2,
-    "type": "debit",
-    "userId": "USR-004",
-    "id": "PH-007",
-    "description": "Order ORD-1009 delivered (COD) - added to outstanding",
-    "createdAt": "2026-03-23T08:08:51.436Z",
-    "orderId": "ORD-009"
-  },
-  {
-    "orderId": null,
-    "createdAt": "2026-03-23T08:08:51.967Z",
-    "description": "Payment clearance approved - ₹500.00 cleared",
-    "id": "PH-008",
-    "type": "credit",
-    "userId": "USR-004",
-    "amount": 500
-  },
-  {
-    "description": "Order ORD-1012 delivered (COD) - added to outstanding",
-    "createdAt": "2026-03-23T08:44:05.051Z",
-    "amount": 864.6,
-    "type": "debit",
-    "userId": "USR-003",
-    "id": "PH-009",
-    "orderId": "ORD-012"
-  },
-  {
-    "orderId": null,
-    "createdAt": "2026-03-23T08:45:36.919Z",
-    "description": "Payment clearance approved - ₹100.00 cleared",
-    "id": "PH-010",
-    "type": "credit",
-    "userId": "USR-003",
-    "amount": 100
-  },
-  {
-    "description": "Payment of ₹100.00 recorded by admin",
-    "createdAt": "2026-03-23T08:45:58.152Z",
-    "amount": 100,
-    "type": "credit",
-    "userId": "USR-003",
-    "id": "PH-011",
-    "orderId": null
-  },
-  {
-    "orderId": "ORD-013",
-    "createdAt": "2026-03-23T08:50:42.457Z",
-    "description": "Online payment verified for order ORD-1013",
-    "id": "PH-012",
-    "type": "credit",
-    "userId": "USR-003",
-    "amount": 728
-  },
-  {
-    "amount": 728,
-    "id": "PH-013",
-    "userId": "USR-003",
-    "type": "rejected",
-    "description": "Online payment rejected for order ORD-1014",
-    "createdAt": "2026-03-23T08:50:44.147Z",
-    "orderId": "ORD-014"
-  },
-  {
-    "description": "Order ORD-1004 delivered (COD) - added to outstanding",
-    "createdAt": "2026-03-26T08:43:37.713Z",
-    "amount": 728,
-    "type": "debit",
-    "userId": "USR-004",
-    "id": "PH-014",
-    "orderId": "ORD-004"
-  },
-  {
-    "orderId": "ORD-022",
-    "description": "Order ORD-1022 delivered (COD) - added to outstanding",
-    "createdAt": "2026-03-27T11:16:00.692Z",
-    "amount": 1729.2,
-    "id": "PH-015",
-    "userId": "USR-009",
-    "type": "debit"
-  },
-  {
-    "amount": 2000,
-    "id": "PH-016",
-    "userId": "USR-008",
-    "type": "debit",
-    "description": "Order ORD-1032 delivered (COD) - added to outstanding",
-    "createdAt": "2026-03-28T11:13:33.072Z",
-    "orderId": "ORD-032"
-  },
-  {
-    "createdAt": "2026-03-28T11:16:50.754Z",
-    "description": "Order ORD-1024 delivered (COD) - added to outstanding",
-    "id": "PH-017",
-    "userId": "USR-009",
-    "type": "debit",
-    "amount": 5310,
-    "orderId": "ORD-024"
-  },
-  {
-    "orderId": null,
-    "createdAt": "2026-03-28T11:24:11.654Z",
-    "description": "Payment of ₹64.00 recorded by admin",
-    "id": "PH-018",
-    "userId": "USR-003",
-    "type": "credit",
-    "amount": 64
-  },
-  {
-    "description": "Payment of ₹471.00 recorded by admin",
-    "createdAt": "2026-03-28T11:24:36.213Z",
-    "amount": 471,
-    "type": "credit",
-    "userId": "USR-004",
-    "id": "PH-019",
-    "orderId": null
-  },
-  {
-    "id": "PH-020",
-    "type": "credit",
-    "userId": "USR-004",
-    "amount": 200,
-    "createdAt": "2026-03-28T11:31:45.089Z",
-    "description": "Payment of ₹200.00 recorded by admin",
-    "orderId": null
-  },
-  {
-    "id": "PH-021",
-    "type": "credit",
-    "userId": "USR-004",
-    "amount": 200,
-    "method": "cash",
-    "createdAt": "2026-03-28T11:46:45.048Z",
-    "description": "Payment of ₹200.00 recorded by admin",
-    "orderId": null
-  },
-  {
-    "description": "Order ORD-1036 delivered (COD) - added to outstanding",
-    "createdAt": "2026-03-29T07:16:40.719Z",
-    "amount": 4000,
-    "method": null,
-    "id": "PH-022",
-    "userId": "USR-010",
-    "type": "debit",
-    "orderId": "ORD-036"
-  },
-  {
-    "orderId": "ORD-037",
-    "createdAt": "2026-03-29T08:28:41.999Z",
-    "description": "Order ORD-1037 delivered (COD) - added to outstanding",
-    "id": "PH-023",
-    "userId": "USR-010",
-    "type": "debit",
-    "method": null,
-    "amount": 4000
-  },
-  {
-    "orderId": "ORD-040",
-    "amount": 2000,
-    "method": "Online",
-    "id": "PH-024",
-    "userId": "USR-010",
-    "type": "credit",
-    "description": "Online payment verified for order ORD-1040",
-    "createdAt": "2026-03-29T08:53:27.569Z"
-  },
-  {
-    "id": "PH-025",
-    "type": "credit",
-    "userId": "USR-010",
-    "amount": 3500,
-    "method": "Clearance",
-    "createdAt": "2026-03-29T08:55:57.681Z",
-    "description": "Payment clearance approved - ₹3500.00 cleared",
-    "orderId": null
-  },
-  {
-    "id": "PH-026",
-    "userId": "USR-010",
-    "type": "debit",
-    "amount": 2000,
-    "method": "Online",
-    "createdAt": "2026-03-29T09:08:17.001Z",
-    "description": "Online payment rejected for order ORD-1041 - added to outstanding",
-    "orderId": "ORD-041"
-  },
-  {
-    "orderId": "ORD-044",
-    "description": "Order ORD-1044 delivered (COD) - added to outstanding",
-    "createdAt": "2026-03-30T09:03:59.989Z",
-    "amount": 2000,
-    "method": null,
-    "id": "PH-027",
-    "userId": "USR-002",
-    "type": "debit"
-  },
-  {
-    "orderId": null,
-    "id": "PH-028",
-    "type": "credit",
-    "userId": "USR-002",
-    "amount": 200,
-    "method": "Clearance",
-    "createdAt": "2026-03-30T09:08:42.887Z",
-    "description": "Payment clearance approved - ₹200.00 cleared"
-  },
-  {
-    "orderId": "ORD-046",
-    "id": "PH-029",
-    "type": "debit",
-    "userId": "USR-002",
-    "amount": 645,
-    "method": null,
-    "createdAt": "2026-03-30T09:20:04.732Z",
-    "description": "Order ORD-1046 delivered (COD) - added to outstanding"
-  },
-  {
-    "description": "Order ORD-1053 delivered (COD) - added to outstanding",
-    "createdAt": "2026-03-30T11:12:46.690Z",
-    "amount": 2000,
-    "method": null,
-    "id": "PH-030",
-    "type": "debit",
-    "userId": "USR-002",
-    "orderId": "ORD-053"
-  },
-  {
-    "amount": 935,
-    "method": null,
-    "id": "PH-031",
     "userId": "USR-002",
     "type": "debit",
-    "description": "Order ORD-1047 delivered (COD) - added to outstanding",
-    "createdAt": "2026-03-31T06:14:22.747Z",
-    "orderId": "ORD-047"
-  },
-  {
-    "createdAt": "2026-04-01T14:01:25.899Z",
-    "description": "Order ORD-1056 delivered (COD) - added to outstanding",
-    "type": "debit",
-    "userId": "USR-010",
-    "id": "PH-032",
-    "amount": 1045,
-    "method": null,
-    "orderId": "ORD-056"
-  },
-  {
-    "orderId": "ORD-057",
-    "createdAt": "2026-04-03T06:12:00.435Z",
-    "description": "Order ORD-1057 delivered (COD) - added to outstanding",
-    "id": "PH-033",
-    "userId": "USR-010",
-    "type": "debit",
-    "amount": 247.5,
-    "method": null
-  },
-  {
-    "createdAt": "2026-04-03T06:56:15.956Z",
-    "description": "Payment clearance approved - ₹7000.00 cleared",
-    "id": "PH-034",
-    "userId": "USR-010",
-    "type": "credit",
-    "method": "Clearance",
-    "amount": 7000,
-    "orderId": null
-  },
-  {
-    "id": "PH-035",
-    "type": "credit",
-    "userId": "USR-008",
-    "amount": 3000,
-    "method": "Online",
-    "createdAt": "2026-04-03T12:44:12.798Z",
-    "description": "Online payment verified for order ORD-1060",
-    "orderId": "ORD-060"
-  },
-  {
-    "amount": 4,
-    "method": null,
-    "id": "PH-036",
-    "type": "debit",
-    "userId": "USR-012",
-    "description": "Order ORD-1062 delivered (COD) - added to outstanding",
-    "createdAt": "2026-04-04T14:48:23.597Z",
-    "orderId": "ORD-062"
-  },
-  {
-    "orderId": "ORD-064",
-    "id": "PH-037",
-    "type": "debit",
-    "userId": "USR-013",
-    "amount": 450,
-    "method": null,
-    "createdAt": "2026-04-04T15:08:33.913Z",
-    "description": "Order ORD-1064 delivered (COD) - added to outstanding"
-  },
-  {
-    "description": "Offline udhar sale SALE-5002",
-    "createdAt": "2026-04-05T06:59:01.641Z",
-    "amount": 200,
+    "amount": 468.75,
+    "description": "Offline udhar sale SALE-5006",
+    "orderId": "SALE-0006",
     "method": "Udhar",
-    "type": "debit",
-    "userId": "USR-002",
-    "id": "PH-038",
-    "orderId": "SALE-0002"
-  },
-  {
-    "orderId": "SALE-0004",
-    "amount": 45720,
-    "method": "Udhar",
-    "userId": "USR-003",
-    "type": "debit",
-    "id": "PH-039",
-    "description": "Offline udhar sale SALE-5004",
-    "createdAt": "2026-04-05T08:25:30.189Z"
-  },
-  {
-    "method": null,
-    "amount": 1540,
-    "id": "PH-040",
-    "userId": "USR-010",
-    "type": "debit",
-    "description": "Order ORD-1054 delivered (COD) - added to outstanding",
-    "createdAt": "2026-04-10T09:11:01.042Z",
-    "orderId": "ORD-054"
-  },
-  {
-    "id": "PH-041",
-    "userId": "USR-010",
-    "type": "debit",
-    "amount": 945,
-    "description": "Order ORD-1066 delivered (COD) - added to outstanding",
-    "orderId": "ORD-066",
-    "method": null,
-    "createdAt": "2026-05-03T08:05:05.665Z"
-  },
-  {
-    "id": "PH-042",
-    "userId": "USR-010",
-    "type": "credit",
-    "amount": 1000,
-    "description": "Payment of ₹1000.00 recorded by admin",
-    "orderId": null,
-    "method": "cash",
-    "createdAt": "2026-05-03T08:10:32.151Z"
+    "createdAt": "2026-05-09T21:17:31.203Z"
   }
 ]
