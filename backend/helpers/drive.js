@@ -19,31 +19,73 @@
  */
 
 const path = require('path');
+const fs = require('fs');
 const { Readable } = require('stream');
 const { google } = require('googleapis');
 
 const KEY_FILE = path.join(__dirname, '..', 'drive-credentials.json');
 const MAIN_FOLDER_ID = process.env.GOOGLE_DRIVE_MAIN_FOLDER_ID || '1Rw05a5FRqOkFqt4B0W9eIF8NMQ20jsLA';
 
-const cred = require(KEY_FILE);
-
-let auth;
-if (cred.type === 'oauth_user') {
-  const oauth2 = new google.auth.OAuth2(cred.client_id, cred.client_secret);
-  oauth2.setCredentials({ refresh_token: cred.refresh_token });
-  auth = oauth2;
-} else {
-  auth = new google.auth.GoogleAuth({
-    keyFile: KEY_FILE,
-    scopes: ['https://www.googleapis.com/auth/drive'],
-  });
+function parseJsonEnv(name) {
+  const raw = process.env[name];
+  if (!raw || !raw.trim()) return null;
+  try {
+    return JSON.parse(raw);
+  } catch (err) {
+    throw new Error(`${name} is not valid JSON: ${err.message}`);
+  }
 }
 
-const drive = google.drive({ version: 'v3', auth });
+function parseBase64JsonEnv(name) {
+  const raw = process.env[name];
+  if (!raw || !raw.trim()) return null;
+  try {
+    return JSON.parse(Buffer.from(raw, 'base64').toString('utf8'));
+  } catch (err) {
+    throw new Error(`${name} is not valid base64 JSON: ${err.message}`);
+  }
+}
+
+function loadDriveCredentials() {
+  const inlineJson = parseJsonEnv('DRIVE_CREDENTIALS_JSON');
+  if (inlineJson) return inlineJson;
+
+  const base64Json = parseBase64JsonEnv('DRIVE_CREDENTIALS_B64');
+  if (base64Json) return base64Json;
+
+  if (!fs.existsSync(KEY_FILE)) return null;
+  return require(KEY_FILE);
+}
+
+const cred = loadDriveCredentials();
+const disabledError = `Google Drive credentials missing. Set DRIVE_CREDENTIALS_JSON/DRIVE_CREDENTIALS_B64 or provide ${KEY_FILE}`;
+
+let auth;
+if (cred) {
+  if (cred.type === 'oauth_user') {
+    const oauth2 = new google.auth.OAuth2(cred.client_id, cred.client_secret);
+    oauth2.setCredentials({ refresh_token: cred.refresh_token });
+    auth = oauth2;
+  } else {
+    auth = new google.auth.GoogleAuth({
+      credentials: cred,
+      scopes: ['https://www.googleapis.com/auth/drive'],
+    });
+  }
+}
+
+const drive = auth ? google.drive({ version: 'v3', auth }) : null;
 
 const folderCache = new Map();
 
+function requireDrive() {
+  if (!drive) {
+    throw new Error(disabledError);
+  }
+}
+
 async function ensureSubfolder(name) {
+  requireDrive();
   if (folderCache.has(name)) return folderCache.get(name);
 
   const q = `name='${name.replace(/'/g, "\\'")}' and '${MAIN_FOLDER_ID}' in parents and mimeType='application/vnd.google-apps.folder' and trashed=false`;
@@ -73,6 +115,7 @@ async function ensureSubfolder(name) {
 }
 
 async function uploadBuffer({ buffer, mimeType, filename, folderName }) {
+  requireDrive();
   const folderId = await ensureSubfolder(folderName);
 
   const created = await drive.files.create({
@@ -99,6 +142,7 @@ async function uploadBuffer({ buffer, mimeType, filename, folderName }) {
 }
 
 async function deleteFile(id) {
+  requireDrive();
   try {
     await drive.files.delete({ fileId: id });
     return { ok: true };
@@ -109,6 +153,9 @@ async function deleteFile(id) {
 }
 
 async function health() {
+  if (!drive) {
+    return { ok: false, error: disabledError };
+  }
   try {
     const about = await drive.about.get({ fields: 'user(emailAddress)' });
     return { ok: true, account: about.data.user && about.data.user.emailAddress };

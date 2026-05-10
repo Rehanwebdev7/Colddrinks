@@ -1,0 +1,35 @@
+services:
+  - type: web
+    name: colddrinks-backend
+    env: node
+    rootDir: backend
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /api
+    envVars:
+      - key: NODE_VERSION
+        value: 20
+      - key: PORT
+        value: 10000
+      - key: FRONTEND_URL
+        sync: false
+      - key: FIREBASE_PROJECT_ID
+        value: noor-coldrinks
+      - key: FIREBASE_SERVICE_ACCOUNT_JSON
+        sync: false
+      - key: DRIVE_CREDENTIALS_JSON
+        sync: false
+      - key: GOOGLE_DRIVE_MAIN_FOLDER_ID
+        sync: false
+      - key: SMTP_SERVICE
+        sync: false
+      - key: SMTP_HOST
+        sync: false
+      - key: SMTP_PORT
+        sync: false
+      - key: SMTP_USER
+        sync: false
+      - key: SMTP_PASS
+        sync: false
+      - key: SMTP_FROM
+        sync: false

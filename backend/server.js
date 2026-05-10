@@ -29,13 +29,44 @@ if (fs.existsSync(envPath)) {
   }
 }
 
+function parseJsonEnv(name) {
+  const raw = process.env[name];
+  if (!raw || !raw.trim()) return null;
+  try {
+    return JSON.parse(raw);
+  } catch (err) {
+    throw new Error(`${name} is not valid JSON: ${err.message}`);
+  }
+}
+
+function parseBase64JsonEnv(name) {
+  const raw = process.env[name];
+  if (!raw || !raw.trim()) return null;
+  try {
+    return JSON.parse(Buffer.from(raw, 'base64').toString('utf8'));
+  } catch (err) {
+    throw new Error(`${name} is not valid base64 JSON: ${err.message}`);
+  }
+}
+
+function loadServiceAccount() {
+  const inlineJson = parseJsonEnv('FIREBASE_SERVICE_ACCOUNT_JSON');
+  if (inlineJson) return inlineJson;
+
+  const base64Json = parseBase64JsonEnv('FIREBASE_SERVICE_ACCOUNT_B64');
+  if (base64Json) return base64Json;
+
+  return require('./service-account.json');
+}
+
 // ─── Firebase Admin SDK (for FCM push notifications) ───────────────────────
 const admin = require('firebase-admin');
-const serviceAccount = require('./service-account.json');
+const serviceAccount = loadServiceAccount();
+const projectId = process.env.FIREBASE_PROJECT_ID || serviceAccount.project_id || 'noor-coldrinks';
 
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount),
-  projectId: 'noor-coldrinks'
+  projectId
 });
 
 const fcmAdmin = admin.messaging();
@@ -60,7 +91,7 @@ const fsGetDoc = (ref) => ref.get();
 
 // ─── Configuration ───────────────────────────────────────────────────────────
 
-const PORT = 8000;
+const PORT = Number(process.env.PORT) || 8000;
 const JWT_SECRET = 'cold_drinks_shop_secret_key_2024';
 const DB_DIR = path.join(__dirname, 'database');
 const TAX_RATE = 0.18;
