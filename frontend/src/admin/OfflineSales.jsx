@@ -16,6 +16,7 @@ import API from '../config/api'
 import AdminLayout from '../components/AdminLayout'
 import Modal from '../components/Modal'
 import { useTheme } from '../context/ThemeContext'
+import { useSettings } from '../context/SettingsContext'
 import { getColors } from './themeColors'
 import {
   getAllowedPurchaseModes,
@@ -89,6 +90,7 @@ const getSaleItemKey = (item) => `${item.productId}-${item.purchaseMode}`
 const OfflineSales = () => {
   const navigate = useNavigate()
   const { darkMode } = useTheme()
+  const { settings } = useSettings()
   const c = getColors(darkMode)
   const styles = getStyles(c)
 
@@ -184,10 +186,15 @@ const OfflineSales = () => {
     }
 
     // When a filter is active (category or search), show ALL matches.
-    // Otherwise cap the default catalog view for visual hygiene.
+    // Otherwise cap default view to 5 — rest reachable via search/category.
     const hasFilter = categoryFilter !== 'all' || !!query
-    return hasFilter ? nextProducts : nextProducts.slice(0, 24)
+    return hasFilter ? nextProducts : nextProducts.slice(0, 5)
   }, [products, catalogQuery, categoryFilter])
+
+  const isCatalogCapped = useMemo(() => {
+    const hasFilter = categoryFilter !== 'all' || !!catalogQuery.trim()
+    return !hasFilter && products.length > 5
+  }, [products.length, catalogQuery, categoryFilter])
 
   const categoryOptions = useMemo(() => {
     const categories = Array.from(new Set(
@@ -443,41 +450,123 @@ const OfflineSales = () => {
     setSaleItems((prev) => prev.filter((_, itemIndex) => itemIndex !== index))
   }
 
+  // Number-to-words helper (matches Bills.jsx output format)
+  const numberToWords = (num) => {
+    if (!num) return 'Zero Rupees Only'
+    const ones = ['', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine',
+      'Ten', 'Eleven', 'Twelve', 'Thirteen', 'Fourteen', 'Fifteen', 'Sixteen', 'Seventeen', 'Eighteen', 'Nineteen']
+    const tens = ['', '', 'Twenty', 'Thirty', 'Forty', 'Fifty', 'Sixty', 'Seventy', 'Eighty', 'Ninety']
+    const convert = (n) => {
+      if (n < 20) return ones[n]
+      if (n < 100) return tens[Math.floor(n / 10)] + (n % 10 ? ' ' + ones[n % 10] : '')
+      if (n < 1000) return ones[Math.floor(n / 100)] + ' Hundred' + (n % 100 ? ' and ' + convert(n % 100) : '')
+      if (n < 100000) return convert(Math.floor(n / 1000)) + ' Thousand' + (n % 1000 ? ' ' + convert(n % 1000) : '')
+      if (n < 10000000) return convert(Math.floor(n / 100000)) + ' Lakh' + (n % 100000 ? ' ' + convert(n % 100000) : '')
+      return convert(Math.floor(n / 10000000)) + ' Crore' + (n % 10000000 ? ' ' + convert(n % 10000000) : '')
+    }
+    return convert(Math.round(num)) + ' Rupees Only'
+  }
+
   const printBill = (sale) => {
-    const itemsHTML = (sale.items || []).map(item => {
-      const mode = item.purchaseMode === 'piece' ? 'Pieces' : item.purchaseMode === 'half_box' ? 'Half Boxes' : 'Boxes'
+    const fmt = (n) => new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR' }).format(Number(n) || 0)
+    const items = sale.items || []
+    const subtotal = items.reduce((sum, item) => sum + ((Number(item.price) || 0) * (Number(item.quantity) || 0)), 0)
+    const discount = Number(sale.discount) || 0
+    const grandTotal = Number(sale.total) || (subtotal - discount)
+    const dateStr = new Date(sale.saleDate || sale.createdAt || Date.now()).toLocaleDateString('en-IN')
+
+    const itemsHTML = items.map((item, i) => {
+      const mode = item.purchaseMode || 'full_box'
+      const qtyLabel = mode === 'piece'
+        ? (item.quantity === 1 ? 'Piece' : 'Pieces')
+        : mode === 'half_box'
+        ? (item.quantity === 1 ? 'Half Box' : 'Half Boxes')
+        : (item.quantity === 1 ? 'Box' : 'Boxes')
+      const rateSuffix = mode === 'piece' ? '/piece' : mode === 'half_box' ? '/half' : '/box'
       const amount = (Number(item.price) || 0) * (Number(item.quantity) || 0)
       return `<tr>
-        <td style="padding:8px;border-bottom:1px solid #eee">${item.name || ''}</td>
-        <td style="padding:8px;border-bottom:1px solid #eee;text-align:center">${item.quantity} ${mode}</td>
-        <td style="padding:8px;border-bottom:1px solid #eee;text-align:right">Rs. ${(Number(item.price) || 0).toFixed(2)}</td>
-        <td style="padding:8px;border-bottom:1px solid #eee;text-align:right">Rs. ${amount.toFixed(2)}</td>
+        <td>${i + 1}</td>
+        <td>${item.name || 'N/A'}</td>
+        <td style="text-align:center">${item.quantity} ${qtyLabel}</td>
+        <td style="text-align:right">${fmt(item.price)} ${rateSuffix}</td>
+        <td style="text-align:right">${fmt(amount)}</td>
       </tr>`
     }).join('')
 
-    const date = new Date(sale.saleDate || sale.createdAt || Date.now()).toLocaleString('en-IN')
-    const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Invoice ${sale.saleNumber}</title></head>
-    <body style="font-family:Arial,sans-serif;max-width:800px;margin:0 auto;padding:20px">
-      <div style="text-align:center;border-bottom:2px solid #333;padding-bottom:16px;margin-bottom:16px">
-        <h1 style="color:#E23744;margin:0">Invoice</h1>
-        <p style="color:#666;margin:4px 0">Offline Counter Sale</p>
-      </div>
-      <div style="display:flex;justify-content:space-between;margin-bottom:16px">
-        <div><strong>Bill To:</strong><br>${sale.customerName || 'Walk-in Customer'}<br>${sale.customerPhone || ''}<br>${sale.customerAddress || ''}</div>
-        <div style="text-align:right"><strong>Invoice #:</strong> ${sale.saleNumber}<br><strong>Date:</strong> ${date}<br><strong>Payment:</strong> ${sale.paymentMethod}</div>
-      </div>
-      <table style="width:100%;border-collapse:collapse;margin-bottom:16px">
-        <thead><tr style="background:#f3f4f6"><th style="padding:10px;text-align:left">Item</th><th style="padding:10px;text-align:center">Qty</th><th style="padding:10px;text-align:right">Rate</th><th style="padding:10px;text-align:right">Amount</th></tr></thead>
-        <tbody>${itemsHTML}</tbody>
-      </table>
-      <div style="text-align:right">
-        <div>Subtotal: Rs. ${(Number(sale.subtotal) || 0).toFixed(2)}</div>
-        ${sale.discount > 0 ? `<div>Discount: -Rs. ${(Number(sale.discount) || 0).toFixed(2)}</div>` : ''}
-        <div style="font-size:20px;font-weight:700;color:#E23744;margin-top:8px">Total: Rs. ${(Number(sale.total) || 0).toFixed(2)}</div>
-        <div style="margin-top:8px;color:#666;font-size:12px">Status: ${sale.paymentStatus}</div>
-      </div>
-      <p style="text-align:center;margin-top:24px;color:#666;font-size:12px">Thank you for your business!</p>
-    </body></html>`
+    const html = `<!DOCTYPE html><html><head><title>Invoice ${sale.saleNumber || ''}</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Segoe UI', Arial, sans-serif; color: #1a1a2e; padding: 40px; max-width: 800px; margin: auto; }
+  .invoice-box { border: 2px solid #1a1a2e; padding: 30px; }
+  .header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px; padding-bottom: 20px; border-bottom: 3px double #1a1a2e; }
+  .shop-info h1 { font-size: 26px; color: #0e4166; margin-bottom: 4px; }
+  .shop-info p { font-size: 12px; color: #555; line-height: 1.6; }
+  .invoice-title { text-align: right; }
+  .invoice-title h2 { font-size: 28px; color: #0e4166; letter-spacing: 2px; text-transform: uppercase; }
+  .invoice-title p { font-size: 12px; color: #555; margin-top: 4px; }
+  .details-row { display: flex; justify-content: space-between; margin: 20px 0; }
+  .details-box h4 { font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: #888; margin-bottom: 6px; }
+  .details-box p { font-size: 13px; color: #333; line-height: 1.5; }
+  table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+  thead th { background: #0e4166; color: #fff; padding: 10px 8px; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; text-align: left; }
+  tbody td { padding: 10px 8px; font-size: 13px; border-bottom: 1px solid #e5e7eb; }
+  tbody tr:nth-child(even) { background: #f8f9fa; }
+  .totals { margin-left: auto; width: 280px; }
+  .total-row { display: flex; justify-content: space-between; padding: 6px 0; font-size: 13px; color: #555; }
+  .total-row.grand { border-top: 2px solid #1a1a2e; padding-top: 10px; margin-top: 6px; font-size: 16px; font-weight: 700; color: #1a1a2e; }
+  .amount-words { font-size: 12px; color: #555; font-style: italic; margin: 16px 0; padding: 10px; background: #f0f4f8; border-radius: 4px; }
+  .footer { margin-top: 30px; padding-top: 20px; border-top: 1px solid #ddd; display: flex; justify-content: space-between; }
+  .terms h4 { font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: #888; margin-bottom: 6px; }
+  .terms ol { font-size: 11px; color: #666; padding-left: 16px; line-height: 1.8; }
+  .signature p { font-size: 12px; color: #555; margin-top: 40px; border-top: 1px solid #333; padding-top: 6px; text-align: center; }
+  @media print { body { padding: 20px; } .invoice-box { border: none; padding: 0; } }
+</style></head>
+<body>
+<div class="invoice-box">
+  <div class="header">
+    <div class="shop-info">
+      <h1>${settings?.siteName || 'Shop'}</h1>
+      <p>${settings?.contact?.address || ''}<br>Phone: ${settings?.contact?.phone || ''} | Email: ${settings?.contact?.email || ''}</p>
+    </div>
+    <div class="invoice-title">
+      <h2>Invoice</h2>
+      <p>#${sale.saleNumber || ''}<br>${dateStr}</p>
+    </div>
+  </div>
+  <div class="details-row">
+    <div class="details-box">
+      <h4>Bill To</h4>
+      <p><strong>${sale.customerName || 'Walk-in Customer'}</strong><br>${sale.customerPhone || ''}<br>${sale.customerAddress || ''}</p>
+    </div>
+    <div class="details-box" style="text-align:right">
+      <h4>Order Details</h4>
+      <p>Order #: ${sale.saleNumber || ''}<br>Payment: ${sale.paymentMethod || 'Cash'}<br>Status: ${sale.paymentStatus || 'Paid'}</p>
+    </div>
+  </div>
+  <table>
+    <thead><tr><th>S.No</th><th>Item</th><th style="text-align:center">Qty</th><th style="text-align:right">Rate</th><th style="text-align:right">Amount</th></tr></thead>
+    <tbody>${itemsHTML}</tbody>
+  </table>
+  <div class="totals">
+    <div class="total-row"><span>Subtotal</span><span>${fmt(subtotal)}</span></div>
+    ${discount > 0 ? `<div class="total-row"><span>Discount</span><span>-${fmt(discount)}</span></div>` : ''}
+    <div class="total-row grand"><span>Grand Total</span><span>${fmt(grandTotal)}</span></div>
+  </div>
+  <div class="amount-words"><strong>Amount in words:</strong> ${numberToWords(grandTotal)}</div>
+  <div class="footer">
+    <div class="terms">
+      <h4>Terms & Conditions</h4>
+      <ol>
+        <li>Payment is due within 15 days from the date of invoice.</li>
+        <li>Goods once sold will not be taken back or exchanged.</li>
+        <li>Interest at 18% p.a. will be charged on overdue payments.</li>
+        <li>Subject to local jurisdiction only.</li>
+      </ol>
+    </div>
+    <div class="signature"><p>Authorized Signatory</p></div>
+  </div>
+</div>
+</body></html>`
 
     const iframe = document.createElement('iframe')
     iframe.style.position = 'fixed'
@@ -659,7 +748,11 @@ const OfflineSales = () => {
             <div style={styles.sectionBlock}>
               <div style={styles.sectionTitleRow}>
                 <h3 style={styles.sectionTitle}>1. Product picker</h3>
-                <span style={styles.sectionHint}>{filteredProducts.length} of {products.length} products • Stock waale only</span>
+                <span style={styles.sectionHint}>
+                  {isCatalogCapped
+                    ? `Showing ${filteredProducts.length} of ${products.length} • search/filter for more`
+                    : `${filteredProducts.length} of ${products.length} products • Stock waale only`}
+                </span>
               </div>
 
               {/* Live search bar */}

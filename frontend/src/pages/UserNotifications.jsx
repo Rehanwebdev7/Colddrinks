@@ -4,7 +4,8 @@ import API from '../config/api'
 import { useAuth } from '../context/AuthContext'
 import Navbar from '../components/Navbar'
 import Footer from '../components/Footer'
-import { FiPackage, FiDollarSign, FiBell, FiCheck } from 'react-icons/fi'
+import { FiPackage, FiBell, FiCheck } from 'react-icons/fi'
+import { FaRupeeSign } from 'react-icons/fa'
 import { ImSpinner8 } from 'react-icons/im'
 import toast from 'react-hot-toast'
 
@@ -73,7 +74,7 @@ const UserNotifications = () => {
   const getIcon = (type) => {
     switch (type) {
       case 'order': return <FiPackage />
-      case 'payment': return <FiDollarSign />
+      case 'payment': return <FaRupeeSign />
       default: return <FiBell />
     }
   }

@@ -252,5 +252,75 @@
     "paymentMethod": "Udhar",
     "orderStatus": "Completed",
     "pdfUrl": "/bills/BILL-2007.pdf"
+  },
+  {
+    "id": "BILL-008",
+    "billNumber": "BILL-2008",
+    "sourceType": "order",
+    "sourceId": "ORD-002",
+    "orderId": "ORD-002",
+    "orderNumber": "ORD-1002",
+    "userId": "USR-002",
+    "customerName": "Customer",
+    "customerPhone": "+919876543211",
+    "customerAddress": "okkk",
+    "billDate": "2026-05-10T08:29:28.997Z",
+    "createdAt": "2026-05-10T08:29:28.997Z",
+    "orderDate": "2026-05-09T19:32:22.447Z",
+    "items": [
+      {
+        "productId": "PRD-001",
+        "name": "Sprite",
+        "quantity": 1,
+        "price": 18.75,
+        "amount": 18.75,
+        "purchaseMode": "piece",
+        "unitLabel": "piece"
+      }
+    ],
+    "subtotal": 18.75,
+    "gst": 0,
+    "discount": 0,
+    "deliveryCharge": 0,
+    "total": 18.75,
+    "paymentStatus": "Paid",
+    "paymentMethod": "Online",
+    "orderStatus": "delivered",
+    "pdfUrl": "/bills/BILL-2008.pdf"
+  },
+  {
+    "id": "BILL-009",
+    "billNumber": "BILL-2009",
+    "sourceType": "offline_sale",
+    "sourceId": "SALE-0007",
+    "orderId": "SALE-0007",
+    "orderNumber": "SALE-5007",
+    "userId": null,
+    "customerName": "Walk-in Customer",
+    "customerPhone": "",
+    "customerAddress": "",
+    "billDate": "2026-05-10T08:35:39.831Z",
+    "createdAt": "2026-05-10T08:35:39.831Z",
+    "orderDate": "2026-05-10T08:35:39.802Z",
+    "items": [
+      {
+        "productId": "PRD-001",
+        "name": "Sprite",
+        "quantity": 1,
+        "price": 18.75,
+        "amount": 18.75,
+        "purchaseMode": "piece",
+        "unitLabel": "piece"
+      }
+    ],
+    "subtotal": 18.75,
+    "gst": 0,
+    "discount": 0,
+    "deliveryCharge": 0,
+    "total": 18.75,
+    "paymentStatus": "Paid",
+    "paymentMethod": "Cash",
+    "orderStatus": "Completed",
+    "pdfUrl": "/bills/BILL-2009.pdf"
   }
 ]

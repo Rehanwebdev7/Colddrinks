@@ -33,5 +33,24 @@
       "lastRotatedAt": "2026-05-09T18:49:01.859Z"
     },
     "outstanding": 498.75
+  },
+  {
+    "id": "USR-003",
+    "name": "Customer",
+    "email": "",
+    "phone": "+917886788678",
+    "password": "3fe1f7584833183e2da842b2f18123186919d4aa9828dbebdb3956429d9607bb",
+    "role": "customer",
+    "addresses": [],
+    "wallet": 0,
+    "fcmToken": null,
+    "createdAt": "2026-05-11T10:30:33.812Z",
+    "status": "active",
+    "customerSession": {
+      "id": "2c02daf1bf6cc626c9f5aa2ff3ecc278",
+      "refreshTokenHash": "62d01ba97d4414c7def1af3a867d026234894ee89b74f920bbd7fd46c664b6cb",
+      "createdAt": "2026-05-11T10:30:33.888Z",
+      "lastRotatedAt": "2026-05-11T10:30:33.888Z"
+    }
   }
 ]

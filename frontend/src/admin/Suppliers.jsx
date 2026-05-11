@@ -3,7 +3,7 @@ import API from '../config/api'
 import AdminLayout from '../components/AdminLayout'
 import Modal from '../components/Modal'
 import toast from 'react-hot-toast'
-import { FaPlus, FaEdit, FaTrash, FaTruck, FaRupeeSign, FaSearch, FaArrowLeft, FaShoppingBag, FaMoneyBillWave, FaUpload } from 'react-icons/fa'
+import { FaPlus, FaEdit, FaTrash, FaTruck, FaRupeeSign, FaSearch, FaArrowLeft, FaShoppingBag, FaMoneyBillWave, FaUpload, FaEye } from 'react-icons/fa'
 import { uploadImage, getImageUrl } from '../services/googleDrive'
 import { useTheme } from '../context/ThemeContext'
 import { getColors } from './themeColors'
@@ -31,6 +31,7 @@ const Suppliers = () => {
 
   // Purchase modal
   const [showPurchaseModal, setShowPurchaseModal] = useState(false)
+  const [purchaseConfirmStep, setPurchaseConfirmStep] = useState(false) // in-modal Paid/Pending confirm step
   const [purchaseForm, setPurchaseForm] = useState({ productId: '', quantity: '', amount: '', date: new Date().toISOString().split('T')[0], notes: '', unit: 'box' })
   const [productSearch, setProductSearch] = useState('')
   const [showProductList, setShowProductList] = useState(false)
@@ -111,8 +112,10 @@ const Suppliers = () => {
     } catch { toast.error('Failed to delete') }
   }
 
-  const handleAddPurchase = async () => {
-    if (!purchaseForm.amount) { toast.error('Amount is required'); return }
+  // Save purchase + refresh data. Returns { amount, date } so the caller can
+  // pre-fill the Add Payment modal in the "Paid" flow. Returns null on failure.
+  const savePurchaseAndRefresh = async () => {
+    if (!purchaseForm.amount) { toast.error('Amount is required'); return null }
     setSaving(true)
     try {
       const payload = { ...purchaseForm }
@@ -128,15 +131,23 @@ const Suppliers = () => {
         }
       }
       await API.post(`/suppliers/${selectedSupplier.id}/purchases`, payload)
+      const savedAmount = Number(purchaseForm.amount) || 0
+      const savedDate = purchaseForm.date
       toast.success('Purchase added — stock & rates updated!')
       setShowPurchaseModal(false)
+      setPurchaseConfirmStep(false)
       setPurchaseForm({ productId: '', quantity: '', amount: '', date: new Date().toISOString().split('T')[0], notes: '', unit: 'box' })
       setProductSearch(''); setSelectedProduct(null); setNewRate('')
-      openSupplierDetail(selectedSupplier)
+      await openSupplierDetail(selectedSupplier)
       fetchSuppliers()
       fetchProducts()
-    } catch { toast.error('Failed to add purchase') }
-    finally { setSaving(false) }
+      return { amount: savedAmount, date: savedDate }
+    } catch {
+      toast.error('Failed to add purchase')
+      return null
+    } finally {
+      setSaving(false)
+    }
   }
 
   const resetNewProductForm = () => { setNewProductForm({ name: '', category: '', description: '', boxQuantity: '', volume: '', pricePerBox: '', costPricePerBox: '', mrp: '', stockQuantity: '', lowStockAlert: '10', image: '', allowPiecePurchase: false, allowHalfBox: false }); setNewProductImageFile(null) }
@@ -345,7 +356,12 @@ const Suppliers = () => {
         </div>
 
         {/* Purchase Modal */}
-        <Modal isOpen={showPurchaseModal} onClose={() => { setShowPurchaseModal(false); setProductSearch(''); setSelectedProduct(null); setNewRate(''); setShowProductList(false) }} title="Add Purchase">
+        <Modal isOpen={showPurchaseModal} onClose={() => { setShowPurchaseModal(false); setPurchaseConfirmStep(false); setProductSearch(''); setSelectedProduct(null); setNewRate(''); setShowProductList(false) }} title="Add Purchase">
+          <div style={{
+            opacity: purchaseConfirmStep ? 0.55 : 1,
+            pointerEvents: purchaseConfirmStep ? 'none' : 'auto',
+            transition: 'opacity 0.15s',
+          }}>
           <div style={s.formGrid}>
             {/* Product Search + New Button */}
             <div style={{ ...s.formGroup, gridColumn: '1 / -1' }}>
@@ -475,10 +491,90 @@ const Suppliers = () => {
               <input type="text" value={purchaseForm.notes} onChange={e => setPurchaseForm(p => ({ ...p, notes: e.target.value }))} style={s.input} placeholder="Optional notes" />
             </div>
           </div>
-          <div style={s.modalFooter}>
-            <button style={s.cancelBtn} onClick={() => { setShowPurchaseModal(false); setProductSearch(''); setSelectedProduct(null); setNewRate('') }}>Cancel</button>
-            <button style={s.saveBtn} onClick={handleAddPurchase} disabled={saving}>{saving ? 'Saving...' : 'Add Purchase'}</button>
           </div>
+          {/* Two-step footer: form footer OR Paid/Pending confirm step */}
+          {!purchaseConfirmStep ? (
+            <div style={s.modalFooter}>
+              <button style={s.cancelBtn} onClick={() => { setShowPurchaseModal(false); setPurchaseConfirmStep(false); setProductSearch(''); setSelectedProduct(null); setNewRate('') }}>Cancel</button>
+              <button
+                style={s.saveBtn}
+                onClick={() => {
+                  if (!purchaseForm.amount) { toast.error('Amount is required'); return }
+                  setPurchaseConfirmStep(true)
+                }}
+                disabled={saving}
+              >
+                Add Purchase
+              </button>
+            </div>
+          ) : (
+            <div style={{ marginTop: 14, paddingTop: 14, borderTop: `1px solid ${c.border}` }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, marginBottom: 12 }}>
+                <strong style={{ color: c.text, fontSize: 14 }}>Payment status for this purchase?</strong>
+                <button
+                  onClick={() => setPurchaseConfirmStep(false)}
+                  disabled={saving}
+                  style={{ background: 'transparent', border: `1px solid ${c.border}`, borderRadius: 8, padding: '6px 12px', color: c.textSecondary, fontSize: 12, cursor: 'pointer' }}
+                >
+                  ← Back
+                </button>
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+                <button
+                  disabled={saving}
+                  onClick={async () => {
+                    const saved = await savePurchaseAndRefresh()
+                    if (saved) {
+                      // Pre-fill Add Payment modal so user picks method themselves
+                      setPaymentForm({
+                        amount: String(saved.amount),
+                        date: saved.date,
+                        method: 'cash',
+                        notes: 'Auto from purchase',
+                      })
+                      setShowPaymentModal(true)
+                    }
+                  }}
+                  style={{
+                    padding: '14px 12px',
+                    background: saving ? '#86d7a2' : '#22c55e',
+                    color: '#fff',
+                    border: 'none',
+                    borderRadius: 10,
+                    fontSize: 14,
+                    fontWeight: 700,
+                    cursor: saving ? 'not-allowed' : 'pointer',
+                    textAlign: 'center',
+                  }}
+                >
+                  ✓ Paid
+                  <div style={{ fontSize: 11, fontWeight: 500, opacity: 0.9, marginTop: 4 }}>
+                    Opens payment form pre-filled
+                  </div>
+                </button>
+                <button
+                  disabled={saving}
+                  onClick={async () => { await savePurchaseAndRefresh() }}
+                  style={{
+                    padding: '14px 12px',
+                    background: saving ? '#fcd34d' : '#f59e0b',
+                    color: '#fff',
+                    border: 'none',
+                    borderRadius: 10,
+                    fontSize: 14,
+                    fontWeight: 700,
+                    cursor: saving ? 'not-allowed' : 'pointer',
+                    textAlign: 'center',
+                  }}
+                >
+                  ⏳ Pending
+                  <div style={{ fontSize: 11, fontWeight: 500, opacity: 0.9, marginTop: 4 }}>
+                    Adds to baki balance
+                  </div>
+                </button>
+              </div>
+            </div>
+          )}
         </Modal>
 
         {/* New Product Modal — Same as Products page form */}
@@ -653,34 +749,52 @@ const Suppliers = () => {
           <input type="text" placeholder="Search suppliers..." value={search} onChange={e => setSearch(e.target.value)} style={s.searchInput} />
         </div>
 
-        {/* List */}
-        {filtered.length === 0 ? (
-          <div style={s.center}><p style={{ color: c.textSecondary }}>No suppliers found</p></div>
-        ) : (
-          <div style={s.list}>
-            {filtered.map(sup => (
-              <div key={sup.id} style={s.supplierCard} onClick={() => openSupplierDetail(sup)}>
-                <div style={s.supplierInfo}>
-                  <div style={s.supplierAvatar}>{sup.name.charAt(0).toUpperCase()}</div>
-                  <div>
-                    <h3 style={s.supplierName}>{sup.name}</h3>
-                    <p style={s.supplierPhone}>{sup.phone || 'No phone'}</p>
-                  </div>
-                </div>
-                <div style={s.supplierRight}>
-                  <div style={{ textAlign: 'right' }}>
-                    <p style={{ fontSize: '11px', color: c.textSecondary, margin: 0 }}>Pending</p>
-                    <p style={{ fontSize: '16px', fontWeight: '700', color: sup.pending > 0 ? '#ef4444' : '#22c55e', margin: 0 }}>{fmt(sup.pending)}</p>
-                  </div>
-                  <div style={{ display: 'flex', gap: '6px' }}>
-                    <button style={s.iconBtn} onClick={e => { e.stopPropagation(); openEditSupplier(sup) }}><FaEdit /></button>
-                    <button style={{ ...s.iconBtn, color: '#ef4444' }} onClick={e => { e.stopPropagation(); handleDeleteSupplier(sup.id) }}><FaTrash /></button>
-                  </div>
-                </div>
-              </div>
-            ))}
+        {/* List — Tabular (matches Customers table) */}
+        <div style={s.tableCard}>
+          <div style={s.tableWrap}>
+            <table style={s.table}>
+              <thead>
+                <tr>
+                  <th className="admin-actions-col" style={s.th}>Actions</th>
+                  <th style={s.th}>Name</th>
+                  <th style={s.th}>Phone</th>
+                  <th style={s.th}>Address</th>
+                  <th style={{ ...s.th, textAlign: 'right' }}>Pending</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filtered.length === 0 ? (
+                  <tr>
+                    <td colSpan={5} style={s.emptyCell}>No suppliers found</td>
+                  </tr>
+                ) : (
+                  filtered.map(sup => (
+                    <tr key={sup.id} style={s.tr}>
+                      <td className="admin-actions-col" style={s.td}>
+                        <div style={{ display: 'flex', gap: '6px' }}>
+                          <button style={s.viewBtn} onClick={() => openSupplierDetail(sup)} title="View Details"><FaEye /></button>
+                          <button style={s.editBtn} onClick={() => openEditSupplier(sup)} title="Edit"><FaEdit /></button>
+                          <button style={s.deleteBtn} onClick={() => handleDeleteSupplier(sup.id)} title="Delete"><FaTrash /></button>
+                        </div>
+                      </td>
+                      <td style={{ ...s.td, fontWeight: '500', color: c.text, cursor: 'pointer' }} onClick={() => openSupplierDetail(sup)}>
+                        <div style={s.nameCell}>
+                          <div style={s.supplierAvatar}>{sup.name.charAt(0).toUpperCase()}</div>
+                          {sup.name}
+                        </div>
+                      </td>
+                      <td style={s.td}>{sup.phone || '—'}</td>
+                      <td style={s.td}>{sup.address || '—'}</td>
+                      <td style={{ ...s.td, textAlign: 'right', fontWeight: '700', color: sup.pending > 0 ? '#ef4444' : '#22c55e' }}>
+                        {fmt(sup.pending)}
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
           </div>
-        )}
+        </div>
       </div>
 
       {/* Add/Edit Supplier Modal */}
@@ -718,13 +832,14 @@ const getStyles = (c) => ({
   searchWrap: { display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 16px', background: c.cardBg || c.surface, border: `1px solid ${c.border}`, borderRadius: '12px', marginBottom: '20px' },
   searchInput: { flex: 1, border: 'none', background: 'transparent', outline: 'none', fontSize: '14px', color: c.text },
   list: { display: 'flex', flexDirection: 'column', gap: '10px' },
-  supplierCard: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px', background: c.cardBg || c.surface, border: `1px solid ${c.border}`, borderRadius: '12px', cursor: 'pointer', transition: 'all 0.2s', gap: '12px' },
-  supplierInfo: { display: 'flex', alignItems: 'center', gap: '12px' },
-  supplierAvatar: { width: '42px', height: '42px', borderRadius: '50%', background: 'linear-gradient(135deg, #0ea5e9, #3b82f6)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '18px', fontWeight: '700', flexShrink: 0 },
-  supplierName: { fontSize: '15px', fontWeight: '600', color: c.text, margin: 0 },
-  supplierPhone: { fontSize: '12px', color: c.textSecondary, margin: 0 },
-  supplierRight: { display: 'flex', alignItems: 'center', gap: '12px' },
+  supplierAvatar: { width: '36px', height: '36px', borderRadius: '50%', background: 'linear-gradient(135deg, #0ea5e9, #3b82f6)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '15px', fontWeight: '700', flexShrink: 0 },
   iconBtn: { background: 'none', border: 'none', color: c.textSecondary, cursor: 'pointer', padding: '6px', fontSize: '14px', borderRadius: '6px' },
+  tableCard: { background: c.surface, borderRadius: '12px', border: `1px solid ${c.border}`, overflow: 'hidden' },
+  emptyCell: { padding: '40px', textAlign: 'center', color: c.textSecondary, fontSize: '14px' },
+  nameCell: { display: 'flex', alignItems: 'center', gap: '10px' },
+  viewBtn: { background: 'rgba(14, 165, 233, 0.1)', border: '1px solid rgba(14, 165, 233, 0.3)', borderRadius: '6px', padding: '8px', color: '#0ea5e9', cursor: 'pointer', fontSize: '13px' },
+  editBtn: { background: 'rgba(245, 158, 11, 0.1)', border: '1px solid rgba(245, 158, 11, 0.3)', borderRadius: '6px', padding: '8px', color: '#f59e0b', cursor: 'pointer', fontSize: '13px' },
+  deleteBtn: { background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.3)', borderRadius: '6px', padding: '8px', color: '#ef4444', cursor: 'pointer', fontSize: '13px' },
   // Detail view
   backBtn: { display: 'flex', alignItems: 'center', gap: '8px', background: 'none', border: `1px solid ${c.border}`, borderRadius: '10px', padding: '8px 16px', color: c.text, fontSize: '13px', cursor: 'pointer', marginBottom: '16px' },
   detailHeader: { marginBottom: '20px' },

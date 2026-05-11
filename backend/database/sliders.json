@@ -1,1 +1,12 @@
-[]
+[
+  {
+    "id": "SLD-001",
+    "image": "https://lh3.googleusercontent.com/d/1pMkpqRYRI1XV1ph74eL-ER22bW7MPzdV",
+    "title": "",
+    "subtitle": "",
+    "link": "",
+    "active": true,
+    "order": 0,
+    "createdAt": "2026-05-10T08:53:09.066Z"
+  }
+]

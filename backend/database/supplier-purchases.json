@@ -1,1 +1,26 @@
-[]
+[
+  {
+    "id": "SPUR-0001",
+    "supplierId": "SUP-001",
+    "productId": "PRD-002",
+    "productName": "Coca Cola",
+    "quantity": 10,
+    "unit": "box",
+    "amount": 3000,
+    "date": "2026-05-11",
+    "notes": "",
+    "createdAt": "2026-05-11T10:08:17.149Z"
+  },
+  {
+    "id": "SPUR-0002",
+    "supplierId": "SUP-002",
+    "productId": "PRD-001",
+    "productName": "Sprite",
+    "quantity": 15,
+    "unit": "box",
+    "amount": 4500,
+    "date": "2026-05-11",
+    "notes": "",
+    "createdAt": "2026-05-11T10:12:16.733Z"
+  }
+]

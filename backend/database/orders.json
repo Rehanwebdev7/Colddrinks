@@ -101,17 +101,42 @@
     "discount": 0,
     "couponCode": null,
     "total": 18.75,
-    "orderStatus": "Placed",
+    "orderStatus": "delivered",
     "paymentStatus": "Paid",
     "paymentMethod": "Online",
     "statusHistory": [
       {
         "status": "Placed",
         "timestamp": "2026-05-09T19:32:22.447Z"
+      },
+      {
+        "status": "confirmed",
+        "timestamp": "2026-05-10T08:29:02.916Z"
+      },
+      {
+        "status": "processing",
+        "timestamp": "2026-05-10T08:29:05.029Z"
+      },
+      {
+        "status": "shipped",
+        "timestamp": "2026-05-10T08:29:06.024Z"
+      },
+      {
+        "status": "Awaiting Confirmation",
+        "timestamp": "2026-05-10T08:29:08.172Z",
+        "note": "Customer delivery confirmation requested by admin"
+      },
+      {
+        "status": "delivered",
+        "timestamp": "2026-05-10T08:29:10.806Z"
       }
     ],
-    "updatedAt": "2026-05-09T19:33:03.920Z",
+    "updatedAt": "2026-05-10T08:29:10.806Z",
     "paymentVerifiedAt": "2026-05-09T19:33:03.920Z",
-    "paymentActionBy": "admin"
+    "paymentActionBy": "admin",
+    "deliveryConfirmationRequestedAt": "2026-05-10T08:29:08.172Z",
+    "deliveryConfirmationRequestedBy": "USR-001",
+    "deliveryConfirmedBy": "admin",
+    "deliveredAt": "2026-05-10T08:29:10.806Z"
   }
 ]

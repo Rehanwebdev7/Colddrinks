@@ -118,5 +118,35 @@
     "referenceId": "SALE-0006",
     "note": "Offline sale SALE-5006",
     "createdBy": "USR-001"
+  },
+  {
+    "id": "MOV-0009",
+    "createdAt": "2026-05-10T08:29:02.927Z",
+    "productId": "PRD-001",
+    "productName": "Sprite",
+    "quantity": 1,
+    "purchaseMode": "piece",
+    "boxEquivalent": 0.04,
+    "direction": "out",
+    "type": "online_order_confirmed",
+    "referenceType": "order",
+    "referenceId": "ORD-002",
+    "note": "Stock reserved on order confirmation ORD-1002",
+    "createdBy": "USR-001"
+  },
+  {
+    "id": "MOV-0010",
+    "createdAt": "2026-05-10T08:35:39.805Z",
+    "productId": "PRD-001",
+    "productName": "Sprite",
+    "quantity": 1,
+    "purchaseMode": "piece",
+    "boxEquivalent": 0.04,
+    "direction": "out",
+    "type": "offline_sale",
+    "referenceType": "offline_sale",
+    "referenceId": "SALE-0007",
+    "note": "Offline sale SALE-5007",
+    "createdBy": "USR-001"
   }
 ]

@@ -47,27 +47,50 @@ const Home = () => {
     fetchProducts()
     fetchSliders()
     fetchCategories()
-    loadRecentlyViewed()
   }, [])
 
-  const loadRecentlyViewed = () => {
+  // Recently viewed: rebuild from live products list so stale localStorage entries
+  // (products that were deleted from DB) are dropped, and live details (price,
+  // image, name) are refreshed from current DB record.
+  useEffect(() => {
+    if (loading || error) return
+    if (!Array.isArray(products) || products.length === 0) {
+      // Products list is genuinely empty — clear recently viewed too
+      setRecentlyViewed([])
+      try { localStorage.setItem('recentlyViewed', JSON.stringify([])) } catch {}
+      return
+    }
     try {
       const stored = JSON.parse(localStorage.getItem('recentlyViewed') || '[]')
-      setRecentlyViewed(stored.slice(0, 8))
+      if (!Array.isArray(stored)) {
+        setRecentlyViewed([])
+        return
+      }
+      const refreshed = stored
+        .map(rv => {
+          const rvId = String(rv.id ?? '')
+          const rvName = String(rv.name || '').trim().toLowerCase()
+          const live = products.find(p => {
+            const pid = String(p._id ?? p.id ?? '')
+            const pname = String(p.name || '').trim().toLowerCase()
+            return (rvId && pid && rvId === pid) || (rvName && pname && rvName === pname)
+          })
+          if (!live) return null
+          return {
+            id: live._id || live.id,
+            name: live.name,
+            image: live.image,
+            price: live.price ?? live.pricePerBox,
+            category: live.category,
+          }
+        })
+        .filter(Boolean)
+        .slice(0, 8)
+      setRecentlyViewed(refreshed)
+      try { localStorage.setItem('recentlyViewed', JSON.stringify(refreshed)) } catch {}
     } catch {
       setRecentlyViewed([])
     }
-  }
-
-  // Drop recently-viewed entries whose product no longer exists in DB
-  useEffect(() => {
-    if (loading || error) return
-    setRecentlyViewed(prev => {
-      const valid = prev.filter(rv => products.some(p => (p._id || p.id) === rv.id))
-      if (valid.length === prev.length) return prev
-      try { localStorage.setItem('recentlyViewed', JSON.stringify(valid)) } catch {}
-      return valid
-    })
   }, [products, loading, error])
 
   const fetchCategories = async () => {

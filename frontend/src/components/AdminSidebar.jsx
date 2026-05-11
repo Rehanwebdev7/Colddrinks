@@ -1,5 +1,9 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { NavLink, useNavigate } from 'react-router-dom'
+
+// Module-level cache: survives AdminSidebar unmounts (each admin page wraps
+// itself in <AdminLayout>, so the sidebar remounts on every route change).
+let sidebarScrollTopCache = 0
 import {
   FaTachometerAlt,
   FaBox,
@@ -22,6 +26,7 @@ import {
   FaCreditCard,
   FaHandHoldingUsd,
   FaExchangeAlt,
+  FaTicketAlt,
 } from 'react-icons/fa'
 import { useAuth } from '../context/AuthContext'
 import { useSettings } from '../context/SettingsContext'
@@ -35,10 +40,10 @@ const menuItems = [
   { path: '/admin/bills', icon: FaFileInvoice, label: 'Bills' },
 
   { type: 'group', label: 'Finance' },
-  { path: '/admin/online-payments', icon: FaCreditCard, label: 'Online Payments' },
   { path: '/admin/outstanding', icon: FaHandHoldingUsd, label: 'Outstanding (Udhaar)' },
-  { path: '/admin/transactions', icon: FaExchangeAlt, label: 'All Transactions' },
+  { path: '/admin/online-payments', icon: FaCreditCard, label: 'Online Payments' },
   { path: '/admin/offline-sales-history', icon: FaHistory, label: 'Offline Sales History' },
+  { path: '/admin/transactions', icon: FaExchangeAlt, label: 'All Transactions' },
 
   { type: 'group', label: 'People' },
   { path: '/admin/customers', icon: FaUsers, label: 'Customers' },
@@ -49,7 +54,7 @@ const menuItems = [
   { path: '/admin/categories', icon: FaTags, label: 'Categories' },
   { path: '/admin/products', icon: FaBox, label: 'Products' },
   { path: '/admin/sliders', icon: FaImages, label: 'Sliders' },
-  { path: '/admin/coupons', icon: FaTags, label: 'Coupons' },
+  { path: '/admin/coupons', icon: FaTicketAlt, label: 'Coupons' },
 
   { type: 'group', label: 'System' },
   { path: '/admin/theme', icon: FaPalette, label: 'Theme Config' },
@@ -62,6 +67,25 @@ const AdminSidebar = ({ isOpen, onClose, collapsed, onToggleCollapse, isMobile }
   const { settings } = useSettings()
   const navigate = useNavigate()
   const [showBrandLogo, setShowBrandLogo] = useState(Boolean(settings?.logo))
+  const navRef = useRef(null)
+
+  // Restore cached scroll position synchronously before paint so user
+  // doesn't see the sidebar jump to top on route change.
+  useLayoutEffect(() => {
+    if (navRef.current) navRef.current.scrollTop = sidebarScrollTopCache
+  }, [])
+
+  // Persist scroll continuously + on unmount
+  useEffect(() => {
+    const el = navRef.current
+    if (!el) return
+    const onScroll = () => { sidebarScrollTopCache = el.scrollTop }
+    el.addEventListener('scroll', onScroll, { passive: true })
+    return () => {
+      sidebarScrollTopCache = el.scrollTop
+      el.removeEventListener('scroll', onScroll)
+    }
+  }, [])
 
   useEffect(() => {
     setShowBrandLogo(Boolean(settings?.logo))
@@ -80,24 +104,27 @@ const AdminSidebar = ({ isOpen, onClose, collapsed, onToggleCollapse, isMobile }
   // Mobile: 280px but off-screen via transform
   const sidebarWidth = isMobile ? '280px' : (collapsed ? '72px' : '260px')
 
-  const logoImg = (size = '36px') => (
-    <div style={{
-      width: size, height: size, borderRadius: '10px',
-      display: 'flex', alignItems: 'center', justifyContent: 'center',
-      overflow: 'hidden', flexShrink: 0,
-    }}>
-      {settings?.logo && showBrandLogo ? (
+  // Logo container — transparent, no chrome. Image sits naturally on the sidebar bg.
+  // When collapsed prefer favicon (small mark); when expanded prefer full logo.
+  const logoImg = (boxW = '100%', boxH = '44px', preferFavicon = false) => {
+    const src = preferFavicon && settings?.favicon
+      ? settings.favicon
+      : (settings?.logo && showBrandLogo ? settings.logo : (settings?.favicon || '/vite.svg'))
+    return (
+      <div style={{
+        width: boxW, height: boxH,
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        overflow: 'hidden', flexShrink: 0,
+      }}>
         <img
-          src={settings.logo}
+          src={src}
           alt=""
-          style={{ width: size, height: size, objectFit: 'contain', borderRadius: '8px' }}
+          style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }}
           onError={() => setShowBrandLogo(false)}
         />
-      ) : (
-        <img src="/vite.svg" alt="" style={{ width: size, height: size, objectFit: 'contain' }} />
-      )}
-    </div>
-  )
+      </div>
+    )
+  }
 
   // Whether to show labels (expanded desktop or mobile)
   const showLabels = isMobile || !collapsed
@@ -141,30 +168,25 @@ const AdminSidebar = ({ isOpen, onClose, collapsed, onToggleCollapse, isMobile }
         visibility: isMobile && !isOpen ? 'hidden' : 'visible',
       }}>
 
-        {/* ── Logo Section ── */}
+        {/* ── Logo Section ── matches topbar height (64px) ── */}
         <div style={{
           display: 'flex',
           alignItems: 'center',
           justifyContent: !showLabels ? 'center' : 'space-between',
-          padding: !showLabels ? '0' : '0 16px',
+          padding: !showLabels ? '0 8px' : '0 14px',
           borderBottom: `1px solid ${c.sidebarBorder}`,
           height: '64px',
           boxSizing: 'border-box',
           flexShrink: 0,
         }}>
           {!showLabels ? (
-            /* Desktop Collapsed: favicon only */
-            logoImg('36px')
+            /* Desktop Collapsed: favicon-style mark */
+            logoImg('40px', '40px', true)
           ) : (
-            /* Expanded or Mobile */
+            /* Expanded or Mobile — wide logo only, no text */
             <>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', overflow: 'hidden', minWidth: 0 }}>
-                {logoImg('36px')}
-                <span style={{
-                  color: c.accent, fontSize: '18px', fontWeight: '700',
-                  letterSpacing: '-0.01em',
-                  whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
-                }}>{settings?.siteName || 'Royal'} Admin</span>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', flex: 1, minWidth: 0 }}>
+                {logoImg('100%', '44px')}
               </div>
               {isMobile && (
                 <button
@@ -174,7 +196,7 @@ const AdminSidebar = ({ isOpen, onClose, collapsed, onToggleCollapse, isMobile }
                     color: c.textSecondary, fontSize: '16px', cursor: 'pointer',
                     padding: '6px 8px', borderRadius: '8px',
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    flexShrink: 0,
+                    flexShrink: 0, marginLeft: '8px',
                   }}
                 >
                   <FaTimes />
@@ -185,7 +207,7 @@ const AdminSidebar = ({ isOpen, onClose, collapsed, onToggleCollapse, isMobile }
         </div>
 
         {/* ── Navigation ── */}
-        <nav className="admin-sidebar-nav" style={{
+        <nav ref={navRef} className="admin-sidebar-nav" style={{
           flex: 1,
           minHeight: 0,
           padding: !showLabels ? '10px 0' : '12px 10px',

@@ -5,23 +5,31 @@ import { useAuth } from '../context/AuthContext'
 import toast from 'react-hot-toast'
 import {
   FiUser, FiMail, FiPhone, FiMapPin, FiEdit2, FiSave, FiX,
-  FiPackage, FiDollarSign, FiBell, FiCheck, FiChevronRight, FiHeart,
+  FiPackage, FiBell, FiCheck, FiChevronRight, FiHeart,
   FiArrowLeft, FiXCircle, FiCalendar, FiClock, FiCheckCircle,
-  FiArrowUpRight, FiArrowDownLeft, FiLogOut, FiCamera
+  FiArrowUpRight, FiArrowDownLeft, FiLogOut, FiCamera, FiEye, FiEyeOff
 } from 'react-icons/fi'
-import { FaLock, FaHeadset } from 'react-icons/fa'
+import { FaLock, FaHeadset, FaRupeeSign, FaFacebook, FaInstagram, FaTwitter, FaYoutube } from 'react-icons/fa'
 import { useSettings } from '../context/SettingsContext'
 import { ImSpinner8 } from 'react-icons/im'
 import ImageCropModal from './ImageCropModal'
 import { getCartItemSummary, getCartItemUnitPriceLabel } from '../utils/purchase'
 
-const SideDrawer = ({ isOpen, onClose, user, onLogout, unreadNotifs, outstanding }) => {
+const SideDrawer = ({ isOpen, onClose, initialView = 'menu', user, onLogout, unreadNotifs, outstanding }) => {
   const navigate = useNavigate()
   const { updateProfile } = useAuth()
   const { settings } = useSettings()
 
-  const [activeView, setActiveView] = useState('menu')
+  const [activeView, setActiveView] = useState(initialView)
   const [viewHistory, setViewHistory] = useState([])
+
+  // Sync view when drawer opens with a specific view (e.g., bell icon → notifications)
+  useEffect(() => {
+    if (isOpen) {
+      setActiveView(initialView)
+      setViewHistory([])
+    }
+  }, [isOpen, initialView])
 
   // Data states
   const [orders, setOrders] = useState([])
@@ -42,6 +50,7 @@ const SideDrawer = ({ isOpen, onClose, user, onLogout, unreadNotifs, outstanding
 
   // Password
   const [passwordData, setPasswordData] = useState({ currentPassword: '', newPassword: '', confirmPassword: '' })
+  const [showPwd, setShowPwd] = useState({ current: false, next: false, confirm: false })
   const [changingPassword, setChangingPassword] = useState(false)
 
   // Orders filter
@@ -81,6 +90,33 @@ const SideDrawer = ({ isOpen, onClose, user, onLogout, unreadNotifs, outstanding
       }, 300)
     }
   }, [isOpen])
+
+  // Global click-outside: anywhere outside drawer panel closes it.
+  // Navbar sits above the overlay (z-index), so clicks on navbar bypass the
+  // overlay's click handler — this listener captures those too.
+  useEffect(() => {
+    if (!isOpen) return
+    const handleMouseDown = (e) => {
+      const panel = document.querySelector('.drawer-panel')
+      if (panel && !panel.contains(e.target)) {
+        onClose()
+      }
+    }
+    // Defer one tick so the click that opened the drawer doesn't immediately close it
+    const t = setTimeout(() => document.addEventListener('mousedown', handleMouseDown), 0)
+    return () => {
+      clearTimeout(t)
+      document.removeEventListener('mousedown', handleMouseDown)
+    }
+  }, [isOpen, onClose])
+
+  // ESC key to close
+  useEffect(() => {
+    if (!isOpen) return
+    const onKey = (e) => { if (e.key === 'Escape') onClose() }
+    document.addEventListener('keydown', onKey)
+    return () => document.removeEventListener('keydown', onKey)
+  }, [isOpen, onClose])
 
   // Init profile data when user changes
   useEffect(() => {
@@ -338,7 +374,7 @@ const SideDrawer = ({ isOpen, onClose, user, onLogout, unreadNotifs, outstanding
   const getNotifIcon = (type) => {
     switch (type) {
       case 'order': return <FiPackage />
-      case 'payment': return <FiDollarSign />
+      case 'payment': return <FaRupeeSign />
       default: return <FiBell />
     }
   }
@@ -402,12 +438,12 @@ const SideDrawer = ({ isOpen, onClose, user, onLogout, unreadNotifs, outstanding
           <FiChevronRight className="drawer-menu-chevron" />
         </button>
         <button className="drawer-menu-item" onClick={() => navigateTo('payments')}>
-          <FiDollarSign className="drawer-menu-icon" />
+          <FaRupeeSign className="drawer-menu-icon" />
           <span>Payment History</span>
           <FiChevronRight className="drawer-menu-chevron" />
         </button>
         <button className="drawer-menu-item" onClick={() => navigateTo('clearance')}>
-          <FiDollarSign className="drawer-menu-icon" />
+          <FaRupeeSign className="drawer-menu-icon" />
           <span>Clearance Requests</span>
           <FiChevronRight className="drawer-menu-chevron" />
         </button>
@@ -705,7 +741,7 @@ const SideDrawer = ({ isOpen, onClose, user, onLogout, unreadNotifs, outstanding
         <div className="drawer-loader"><ImSpinner8 className="spinner" /></div>
       ) : !paymentSummary ? (
         <div className="drawer-empty">
-          <FiDollarSign className="drawer-empty-icon" />
+          <FaRupeeSign className="drawer-empty-icon" />
           <h4>No payment data</h4>
         </div>
       ) : (
@@ -858,30 +894,76 @@ const SideDrawer = ({ isOpen, onClose, user, onLogout, unreadNotifs, outstanding
     </div>
   )
 
-  const renderPassword = () => (
-    <div className="drawer-password-view">
-      <form onSubmit={handleChangePassword} className="password-form">
-        <div className="form-group">
-          <label className="form-label">Current Password</label>
-          <input type="password" name="currentPassword" value={passwordData.currentPassword}
-            onChange={e => setPasswordData({...passwordData, currentPassword: e.target.value})} className="form-input" placeholder="Current password" />
-        </div>
-        <div className="form-group">
-          <label className="form-label">New Password</label>
-          <input type="password" name="newPassword" value={passwordData.newPassword}
-            onChange={e => setPasswordData({...passwordData, newPassword: e.target.value})} className="form-input" placeholder="New password" />
-        </div>
-        <div className="form-group">
-          <label className="form-label">Confirm New Password</label>
-          <input type="password" name="confirmPassword" value={passwordData.confirmPassword}
-            onChange={e => setPasswordData({...passwordData, confirmPassword: e.target.value})} className="form-input" placeholder="Confirm password" />
-        </div>
-        <button type="submit" className="btn btn-primary btn-block" disabled={changingPassword}>
-          {changingPassword ? <><ImSpinner8 className="spinner-sm" /> Updating...</> : 'Update Password'}
-        </button>
-      </form>
-    </div>
-  )
+  const renderPassword = () => {
+    const eyeBtn = (visibleKey) => ({
+      position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)',
+      background: 'transparent', border: 'none', color: 'var(--text-muted)',
+      cursor: 'pointer', padding: 4, display: 'flex', alignItems: 'center',
+      fontSize: 16,
+    })
+    const wrap = { position: 'relative' }
+    const inputWithEye = { paddingRight: 40 }
+    return (
+      <div className="drawer-password-view">
+        <form onSubmit={handleChangePassword} className="password-form">
+          <div className="form-group">
+            <label className="form-label">Current Password</label>
+            <div style={wrap}>
+              <input
+                type={showPwd.current ? 'text' : 'password'}
+                name="currentPassword"
+                value={passwordData.currentPassword}
+                onChange={e => setPasswordData({ ...passwordData, currentPassword: e.target.value })}
+                className="form-input"
+                style={inputWithEye}
+                placeholder="Current password"
+              />
+              <button type="button" onClick={() => setShowPwd(p => ({ ...p, current: !p.current }))} style={eyeBtn()} aria-label="Toggle current password">
+                {showPwd.current ? <FiEyeOff /> : <FiEye />}
+              </button>
+            </div>
+          </div>
+          <div className="form-group">
+            <label className="form-label">New Password</label>
+            <div style={wrap}>
+              <input
+                type={showPwd.next ? 'text' : 'password'}
+                name="newPassword"
+                value={passwordData.newPassword}
+                onChange={e => setPasswordData({ ...passwordData, newPassword: e.target.value })}
+                className="form-input"
+                style={inputWithEye}
+                placeholder="New password"
+              />
+              <button type="button" onClick={() => setShowPwd(p => ({ ...p, next: !p.next }))} style={eyeBtn()} aria-label="Toggle new password">
+                {showPwd.next ? <FiEyeOff /> : <FiEye />}
+              </button>
+            </div>
+          </div>
+          <div className="form-group">
+            <label className="form-label">Confirm New Password</label>
+            <div style={wrap}>
+              <input
+                type={showPwd.confirm ? 'text' : 'password'}
+                name="confirmPassword"
+                value={passwordData.confirmPassword}
+                onChange={e => setPasswordData({ ...passwordData, confirmPassword: e.target.value })}
+                className="form-input"
+                style={inputWithEye}
+                placeholder="Confirm password"
+              />
+              <button type="button" onClick={() => setShowPwd(p => ({ ...p, confirm: !p.confirm }))} style={eyeBtn()} aria-label="Toggle confirm password">
+                {showPwd.confirm ? <FiEyeOff /> : <FiEye />}
+              </button>
+            </div>
+          </div>
+          <button type="submit" className="btn btn-primary btn-block" disabled={changingPassword}>
+            {changingPassword ? <><ImSpinner8 className="spinner-sm" /> Updating...</> : 'Update Password'}
+          </button>
+        </form>
+      </div>
+    )
+  }
 
   const renderSupport = () => {
     const contact = settings?.contact || {}
@@ -896,9 +978,18 @@ const SideDrawer = ({ isOpen, onClose, user, onLogout, unreadNotifs, outstanding
 
     return (
       <div style={{ padding: '0 4px' }}>
-        <div style={{ textAlign: 'center', padding: '20px 0 16px' }}>
-          <h3 style={{ color: 'var(--dark)', fontSize: '18px', margin: 0 }}>{siteName}</h3>
-          <p style={{ color: 'var(--text-muted)', fontSize: '13px', margin: '8px 0 0', lineHeight: 1.5 }}>{about}</p>
+        <div style={{ textAlign: 'center', padding: '12px 0 16px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px' }}>
+          {settings?.logo ? (
+            <img
+              src={settings.logo}
+              alt={siteName}
+              referrerPolicy="no-referrer"
+              style={{ maxWidth: '160px', maxHeight: '64px', objectFit: 'contain' }}
+            />
+          ) : (
+            <h3 style={{ color: 'var(--dark)', fontSize: '20px', margin: 0 }}>{siteName}</h3>
+          )}
+          <p style={{ color: 'var(--text-muted)', fontSize: '13px', margin: 0, lineHeight: 1.5 }}>{about}</p>
         </div>
 
         <div style={infoStyle}>
@@ -925,17 +1016,42 @@ const SideDrawer = ({ isOpen, onClose, user, onLogout, unreadNotifs, outstanding
           </div>
         </div>
 
-        {(social.instagram || social.facebook || social.twitter || social.youtube) && (
-          <div style={{ padding: '16px 0', textAlign: 'center' }}>
-            <p style={{ ...labelStyle, marginBottom: '12px' }}>Follow Us</p>
-            <div style={{ display: 'flex', justifyContent: 'center', gap: '16px' }}>
-              {social.instagram && <a href={social.instagram} target="_blank" rel="noreferrer" style={{ color: '#E23744', fontSize: '22px' }}>IG</a>}
-              {social.facebook && <a href={social.facebook} target="_blank" rel="noreferrer" style={{ color: '#E23744', fontSize: '22px' }}>FB</a>}
-              {social.twitter && <a href={social.twitter} target="_blank" rel="noreferrer" style={{ color: '#E23744', fontSize: '22px' }}>X</a>}
-              {social.youtube && <a href={social.youtube} target="_blank" rel="noreferrer" style={{ color: '#E23744', fontSize: '22px' }}>YT</a>}
+        {(() => {
+          const socialEnabled = settings?.socialEnabled || {}
+          const items = [
+            { key: 'facebook', Icon: FaFacebook, color: '#1877f2' },
+            { key: 'instagram', Icon: FaInstagram, color: '#e4405f' },
+            { key: 'twitter', Icon: FaTwitter, color: '#1da1f2' },
+            { key: 'youtube', Icon: FaYoutube, color: '#ff0000' },
+          ].filter(({ key }) => {
+            const url = String(social[key] || '').trim()
+            return url && socialEnabled[key] !== false
+          })
+          if (items.length === 0) return null
+          return (
+            <div style={{ padding: '16px 0', textAlign: 'center' }}>
+              <p style={{ ...labelStyle, marginBottom: '12px' }}>Follow Us</p>
+              <div style={{ display: 'flex', justifyContent: 'center', gap: '14px' }}>
+                {items.map(({ key, Icon, color }) => (
+                  <a
+                    key={key}
+                    href={social[key]}
+                    target="_blank"
+                    rel="noreferrer"
+                    aria-label={key}
+                    style={{
+                      width: 38, height: 38, borderRadius: '50%',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      background: `${color}1a`, color, fontSize: 18,
+                    }}
+                  >
+                    <Icon />
+                  </a>
+                ))}
+              </div>
             </div>
-          </div>
-        )}
+          )
+        })()}
       </div>
     )
   }
@@ -961,7 +1077,7 @@ const SideDrawer = ({ isOpen, onClose, user, onLogout, unreadNotifs, outstanding
       <div className={`drawer-panel ${isOpen ? 'open' : ''}`}>
         {/* Header */}
         <div className="drawer-header">
-          {activeView !== 'menu' ? (
+          {activeView !== 'menu' && viewHistory.length > 0 ? (
             <button className="drawer-header-btn" onClick={goBack}>
               <FiArrowLeft />
             </button>

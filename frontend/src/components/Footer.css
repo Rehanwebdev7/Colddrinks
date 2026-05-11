@@ -27,18 +27,24 @@
 }
 
 .footer__brand-img {
-  max-height: 32px;
+  max-height: 52px;
+  max-width: 180px;
   object-fit: contain;
 }
 
 .footer__brand-icon {
-  font-size: 20px;
+  font-size: 22px;
 }
 
 .footer__brand-name {
   color: #fff;
   font-size: 17px;
   font-weight: 700;
+}
+
+/* When real logo is loaded, hide the brand-name text so logo takes prominence */
+.footer__brand-logo.has-logo .footer__brand-name {
+  display: none;
 }
 
 .footer__about {

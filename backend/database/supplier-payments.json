@@ -1,1 +1,11 @@
-[]
+[
+  {
+    "id": "SPAY-0001",
+    "supplierId": "SUP-001",
+    "amount": 2000,
+    "method": "cash",
+    "date": "2026-05-11",
+    "notes": "",
+    "createdAt": "2026-05-11T10:08:53.462Z"
+  }
+]

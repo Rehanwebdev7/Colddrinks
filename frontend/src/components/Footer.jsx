@@ -4,10 +4,22 @@ import { FaFacebook, FaInstagram, FaTwitter, FaYoutube, FaPhone, FaEnvelope, FaM
 import { useSettings } from '../context/SettingsContext'
 import './Footer.css'
 
+const SOCIAL_PLATFORMS = [
+  { key: 'facebook', Icon: FaFacebook },
+  { key: 'instagram', Icon: FaInstagram },
+  { key: 'twitter', Icon: FaTwitter },
+  { key: 'youtube', Icon: FaYoutube },
+]
+
 const Footer = () => {
   const { settings } = useSettings()
   const contact = settings?.contact || {}
   const social = settings?.social || {}
+  const socialEnabled = settings?.socialEnabled || {}
+  const visibleSocials = SOCIAL_PLATFORMS.filter(({ key }) => {
+    const url = String(social[key] || '').trim()
+    return url && socialEnabled[key] !== false
+  })
   const [showBrandLogo, setShowBrandLogo] = useState(Boolean(settings?.logo))
 
   useEffect(() => {
@@ -21,7 +33,7 @@ const Footer = () => {
 
           {/* Brand + About */}
           <div className="footer__col">
-            <div className="footer__brand-logo">
+            <div className={`footer__brand-logo${settings?.logo && showBrandLogo ? ' has-logo' : ''}`}>
               {settings?.logo && showBrandLogo ? (
                 <img
                   src={settings.logo}
@@ -60,16 +72,19 @@ const Footer = () => {
             </div>
           </div>
 
-          {/* Social */}
-          <div className="footer__col">
-            <h4 className="footer__title">Follow Us</h4>
-            <div className="footer__social">
-              <a href={social.facebook || '#'} target="_blank" rel="noopener noreferrer"><FaFacebook /></a>
-              <a href={social.instagram || '#'} target="_blank" rel="noopener noreferrer"><FaInstagram /></a>
-              <a href={social.twitter || '#'} target="_blank" rel="noopener noreferrer"><FaTwitter /></a>
-              <a href={social.youtube || '#'} target="_blank" rel="noopener noreferrer"><FaYoutube /></a>
+          {/* Social — only render if at least one platform is enabled + has URL */}
+          {visibleSocials.length > 0 && (
+            <div className="footer__col">
+              <h4 className="footer__title">Follow Us</h4>
+              <div className="footer__social">
+                {visibleSocials.map(({ key, Icon }) => (
+                  <a key={key} href={social[key]} target="_blank" rel="noopener noreferrer" aria-label={key}>
+                    <Icon />
+                  </a>
+                ))}
+              </div>
             </div>
-          </div>
+          )}
 
         </div>
       </div>

@@ -17,13 +17,13 @@
   --text-light: #686b78;
   --text-muted: #93959f;
   --bg: #ffffff;
-  --bg-light: #f5f7fa;
-  --surface: #eef1f6;
+  --bg-light: #faf7f2;
+  --surface: #f3eee5;
   --border: #e2e8f0;
   --success: #00a86b;
   --warning: #ffc107;
   --danger: #E23744;
-  --navbar-height: 110px;
+  --navbar-height: 72px;
   --container-max: 1280px;
   --radius: 12px;
   --radius-lg: 18px;
@@ -215,8 +215,11 @@
 
   body.dark-mode .product-card {
     background: #1e293b;
-    border-color: transparent;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    border: 1px solid rgba(148, 163, 184, 0.15);
+    box-shadow:
+      0 8px 24px rgba(0, 0, 0, 0.5),
+      0 2px 6px rgba(0, 0, 0, 0.35),
+      0 0 0 1px rgba(255, 255, 255, 0.04) inset;
   }
 
   body.dark-mode .product-card-body {
@@ -406,7 +409,7 @@ input, textarea, select {
 }
 
 h1, h2, h3, h4, h5, h6 {
-  font-family: 'Poppins', sans-serif;
+  font-family: var(--font-display, 'Poppins'), sans-serif;
   font-weight: 700;
   line-height: 1.3;
   color: var(--dark);
@@ -481,13 +484,16 @@ h4 { font-size: 1.1rem; font-weight: 600; }
 .navbar {
   position: sticky;
   top: 0;
-  z-index: 1000;
+  z-index: 10001;
   background: var(--glass-bg);
   backdrop-filter: var(--glass-blur);
   -webkit-backdrop-filter: var(--glass-blur);
   border-bottom: 1px solid rgba(0, 0, 0, 0.06);
   transition: box-shadow 0.3s ease;
 }
+
+/* When drawer is open, navbar sits ABOVE the overlay (z-index 10003 vs overlay 10002)
+   so the header stays crisp and clickable */
 
 .navbar:hover {
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
@@ -505,8 +511,8 @@ h4 { font-size: 1.1rem; font-weight: 600; }
 }
 
 .navbar-brand {
-  font-family: 'Poppins', sans-serif;
-  font-size: 2.5rem;
+  font-family: var(--font-display, 'Poppins'), sans-serif;
+  font-size: 1.5rem;
   font-weight: 800;
   background: var(--primary-gradient);
   -webkit-background-clip: text;
@@ -520,8 +526,14 @@ h4 { font-size: 1.1rem; font-weight: 600; }
 }
 
 .navbar-brand img {
-  max-height: 64px;
+  max-height: 48px;
+  max-width: 160px;
   object-fit: contain;
+}
+
+/* When the logo image is present, hide the brand-name text so the logo takes prominence */
+.navbar-brand.has-logo > span {
+  display: none;
 }
 
 .navbar-brand:hover {
@@ -800,7 +812,7 @@ h4 { font-size: 1.1rem; font-weight: 600; }
   height: 420px;
   overflow: hidden;
   background: var(--bg-light);
-  border-radius: 0 0 var(--radius-xl) var(--radius-xl);
+  border-radius: 0;
   margin-top: 0;
   z-index: 0;
 }
@@ -843,7 +855,7 @@ h4 { font-size: 1.1rem; font-weight: 600; }
 }
 
 .hero-slide-title {
-  font-family: 'Poppins', sans-serif;
+  font-family: var(--font-display, 'Poppins'), sans-serif;
   font-size: 32px;
   font-weight: 700;
   margin: 0 0 8px 0;
@@ -899,7 +911,7 @@ h4 { font-size: 1.1rem; font-weight: 600; }
 
 .hero-banner {
   position: relative;
-  background: linear-gradient(135deg, #E23744 0%, #ff6b6b 40%, #c62828 100%);
+  background: var(--primary-gradient);
   color: #fff;
   padding: 80px 20px;
   text-align: center;
@@ -982,7 +994,7 @@ h4 { font-size: 1.1rem; font-weight: 600; }
 }
 
 .hero-stat-value {
-  font-family: 'Poppins', sans-serif;
+  font-family: var(--font-display, 'Poppins'), sans-serif;
   font-size: 2rem;
   font-weight: 800;
 }
@@ -1001,7 +1013,7 @@ h4 { font-size: 1.1rem; font-weight: 600; }
   color: var(--primary);
   padding: 14px 40px;
   border-radius: 50px;
-  font-family: 'Poppins', sans-serif;
+  font-family: var(--font-display, 'Poppins'), sans-serif;
   font-size: 1rem;
   font-weight: 700;
   transition: var(--transition-bounce);
@@ -1266,7 +1278,7 @@ h4 { font-size: 1.1rem; font-weight: 600; }
 
 .product-card-overlay-text {
   color: #fff;
-  font-family: 'Poppins', sans-serif;
+  font-family: var(--font-display, 'Poppins'), sans-serif;
   font-size: 14px;
   font-weight: 700;
   text-transform: uppercase;
@@ -1466,7 +1478,7 @@ h4 { font-size: 1.1rem; font-weight: 600; }
 }
 
 .product-card-price {
-  font-family: 'Poppins', sans-serif;
+  font-family: var(--font-display, 'Poppins'), sans-serif;
   font-size: 17px;
   font-weight: 700;
   color: #111827;
@@ -1579,7 +1591,7 @@ h4 { font-size: 1.1rem; font-weight: 600; }
   gap: 8px;
   padding: 10px 26px;
   border-radius: var(--radius);
-  font-family: 'Poppins', sans-serif;
+  font-family: var(--font-display, 'Poppins'), sans-serif;
   font-size: 14px;
   font-weight: 600;
   border: 2px solid transparent;
@@ -1593,7 +1605,7 @@ h4 { font-size: 1.1rem; font-weight: 600; }
 .btn-primary {
   background: var(--primary-gradient);
   color: #fff;
-  box-shadow: 0 2px 10px rgba(226, 55, 68, 0.2);
+  box-shadow: var(--primary-glow);
 }
 
 .btn-primary:hover {
@@ -2182,7 +2194,7 @@ h4 { font-size: 1.1rem; font-weight: 600; }
 }
 
 .product-detail-price .selling-price {
-  font-family: 'Poppins', sans-serif;
+  font-family: var(--font-display, 'Poppins'), sans-serif;
   font-size: 2rem;
   font-weight: 800;
   color: var(--dark);
@@ -2508,7 +2520,7 @@ h4 { font-size: 1.1rem; font-weight: 600; }
 }
 
 .cart-item-total {
-  font-family: 'Poppins', sans-serif;
+  font-family: var(--font-display, 'Poppins'), sans-serif;
   font-size: 16px;
   font-weight: 700;
   color: var(--dark);
@@ -2545,7 +2557,7 @@ h4 { font-size: 1.1rem; font-weight: 600; }
 }
 
 .summary-row.summary-total {
-  font-family: 'Poppins', sans-serif;
+  font-family: var(--font-display, 'Poppins'), sans-serif;
   font-size: 18px;
   font-weight: 700;
   color: var(--dark);
@@ -2719,7 +2731,7 @@ h4 { font-size: 1.1rem; font-weight: 600; }
 }
 
 .order-list-total {
-  font-family: 'Poppins', sans-serif;
+  font-family: var(--font-display, 'Poppins'), sans-serif;
   font-weight: 700;
   font-size: 15px;
   color: var(--dark);
@@ -3012,7 +3024,7 @@ h4 { font-size: 1.1rem; font-weight: 600; }
 }
 
 .tracking-item-price {
-  font-family: 'Poppins', sans-serif;
+  font-family: var(--font-display, 'Poppins'), sans-serif;
   font-weight: 700;
   font-size: 14px;
   color: var(--dark);
@@ -3078,7 +3090,7 @@ h4 { font-size: 1.1rem; font-weight: 600; }
   align-items: center;
   justify-content: center;
   color: #fff;
-  font-family: 'Poppins', sans-serif;
+  font-family: var(--font-display, 'Poppins'), sans-serif;
   font-size: 1.5rem;
   font-weight: 700;
   flex-shrink: 0;
@@ -3199,7 +3211,7 @@ h4 { font-size: 1.1rem; font-weight: 600; }
 }
 
 .stat-value {
-  font-family: 'Poppins', sans-serif;
+  font-family: var(--font-display, 'Poppins'), sans-serif;
   font-size: 1.25rem;
   font-weight: 700;
   color: var(--dark);
@@ -3280,9 +3292,15 @@ h4 { font-size: 1.1rem; font-weight: 600; }
 .empty-state {
   text-align: center;
   padding: 80px 20px;
+  margin: 40px 0;
   border: 2px dashed var(--border);
   border-radius: var(--radius-xl);
   background: var(--bg);
+}
+
+.empty-cart-container {
+  padding-top: 32px;
+  padding-bottom: 48px;
 }
 
 .empty-state-icon {
@@ -3522,13 +3540,24 @@ h4 { font-size: 1.1rem; font-weight: 600; }
     gap: 12px;
     width: 100%;
     max-width: 100%;
+    box-sizing: border-box;
   }
 
   .product-card {
     border-radius: 16px;
     overflow: hidden;
-    border: none;
-    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+    border: 1px solid rgba(15, 23, 42, 0.08);
+    box-shadow: 0 4px 14px rgba(15, 23, 42, 0.10), 0 2px 4px rgba(15, 23, 42, 0.06);
+  }
+
+  /* Dark-mode mobile cards: stronger shadow + subtle outline so cards
+     don't blend into the dark page bg */
+  body.dark-mode .product-card {
+    border: 1px solid rgba(148, 163, 184, 0.18);
+    box-shadow:
+      0 6px 18px rgba(0, 0, 0, 0.55),
+      0 2px 6px rgba(0, 0, 0, 0.35),
+      0 0 0 1px rgba(255, 255, 255, 0.04) inset;
   }
 
   .product-card-image-wrapper {
@@ -3755,8 +3784,10 @@ h4 { font-size: 1.1rem; font-weight: 600; }
   }
 
   .container {
-    padding: 0 14px;
+    padding-left: 16px;
+    padding-right: 16px;
     overflow-x: hidden;
+    box-sizing: border-box;
   }
 
   .outstanding-strip {
@@ -3903,7 +3934,7 @@ h4 { font-size: 1.1rem; font-weight: 600; }
     font-size: 18px;
     font-weight: 700;
     color: var(--text);
-    font-family: 'Poppins', sans-serif;
+    font-family: var(--font-display, 'Poppins'), sans-serif;
   }
 
   .section-header-count {
@@ -3931,8 +3962,10 @@ h4 { font-size: 1.1rem; font-weight: 600; }
   h3 { font-size: 1.05rem; }
 
   .container {
-    padding: 0 14px;
+    padding-left: 16px;
+    padding-right: 16px;
     overflow-x: hidden;
+    box-sizing: border-box;
   }
 
   .page-wrapper {
@@ -4964,7 +4997,7 @@ h4 { font-size: 1.1rem; font-weight: 600; }
 }
 
 .qr-modal-amount {
-  font-family: 'Poppins', sans-serif;
+  font-family: var(--font-display, 'Poppins'), sans-serif;
   font-size: 1.75rem;
   font-weight: 800;
   color: #111827;
@@ -5010,7 +5043,7 @@ h4 { font-size: 1.1rem; font-weight: 600; }
 }
 
 .outstanding-amount {
-  font-family: 'Poppins', sans-serif;
+  font-family: var(--font-display, 'Poppins'), sans-serif;
   font-size: 1.5rem;
   font-weight: 700;
   color: var(--danger);
@@ -5065,7 +5098,7 @@ h4 { font-size: 1.1rem; font-weight: 600; }
   font-weight: 800;
   color: #ef4444;
   margin: 0;
-  font-family: 'Poppins', sans-serif;
+  font-family: var(--font-display, 'Poppins'), sans-serif;
   line-height: 1.2;
 }
 
@@ -5188,7 +5221,7 @@ h4 { font-size: 1.1rem; font-weight: 600; }
 .outstanding-strip-amount {
   font-size: 15px;
   font-weight: 800;
-  font-family: 'Poppins', sans-serif;
+  font-family: var(--font-display, 'Poppins'), sans-serif;
   letter-spacing: 0.3px;
 }
 
@@ -5322,14 +5355,18 @@ h4 { font-size: 1.1rem; font-weight: 600; }
 /* Overlay */
 .drawer-overlay {
   position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.65);
-  backdrop-filter: blur(6px);
-  -webkit-backdrop-filter: blur(6px);
-  z-index: 9998;
+  top: var(--navbar-height);
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(15, 23, 42, 0.55);
+  backdrop-filter: blur(8px) saturate(120%);
+  -webkit-backdrop-filter: blur(8px) saturate(120%);
+  z-index: 10002;
   opacity: 0;
   visibility: hidden;
   transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1), visibility 0.3s;
+  cursor: pointer;
 }
 .drawer-overlay.open {
   opacity: 1;
@@ -5344,7 +5381,7 @@ h4 { font-size: 1.1rem; font-weight: 600; }
   width: 380px;
   height: 100vh;
   background: var(--bg);
-  z-index: 9999;
+  z-index: 10003;
   display: flex;
   flex-direction: column;
   box-shadow: -12px 0 48px rgba(0, 0, 0, 0.12);

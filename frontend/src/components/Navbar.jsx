@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react'
+import { createPortal } from 'react-dom'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
-import { FaShoppingCart, FaSearch, FaBars, FaTimes, FaBell, FaRupeeSign } from 'react-icons/fa'
+import { FaShoppingCart, FaSearch, FaBars, FaTimes, FaBell, FaRupeeSign, FaHome } from 'react-icons/fa'
 import { FiSun, FiMoon, FiArrowLeft } from 'react-icons/fi'
 import { useAuth } from '../context/AuthContext'
 import { useCart } from '../context/CartContext'
@@ -19,6 +20,7 @@ const Navbar = () => {
   const [searchQuery, setSearchQuery] = useState('')
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [drawerOpen, setDrawerOpen] = useState(false)
+  const [drawerInitialView, setDrawerInitialView] = useState('menu')
   const [unreadNotifs, setUnreadNotifs] = useState(0)
   const [outstanding, setOutstanding] = useState(0)
   const [showLogoModal, setShowLogoModal] = useState(false)
@@ -237,11 +239,12 @@ const Navbar = () => {
             <FiArrowLeft />
           </button>
         )}
-        <Link to="/" className="navbar-brand">
+        <Link to="/" className={`navbar-brand${settings?.logo && showBrandLogo ? ' has-logo' : ''}`}>
           {settings?.logo && showBrandLogo && (
             <img
               src={settings.logo}
               alt={brandName}
+              referrerPolicy="no-referrer"
               onError={() => setShowBrandLogo(false)}
               onClick={(e) => { e.preventDefault(); e.stopPropagation(); setShowLogoModal(true) }}
               style={{ cursor: 'zoom-in' }}
@@ -320,6 +323,32 @@ const Navbar = () => {
 
         {/* Right Section */}
         <div className="navbar-actions">
+          {/* Home Icon — shown on non-home/non-products pages, quick return to Home */}
+          {location.pathname !== '/' && location.pathname !== '/products' && (
+            <Link
+              to="/"
+              className="nav-home-btn"
+              aria-label="Go home"
+              title="Home"
+              style={{
+                background: 'none',
+                border: 'none',
+                cursor: 'pointer',
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                width: 36, height: 36,
+                borderRadius: '8px',
+                color: 'inherit',
+                fontSize: '18px',
+                transition: 'background 0.2s',
+                textDecoration: 'none',
+              }}
+            >
+              <FaHome />
+            </Link>
+          )}
+
           {/* Dark Mode Toggle - only on Home page */}
           {(location.pathname === '/' || location.pathname === '/products') && (
             <button
@@ -331,14 +360,19 @@ const Navbar = () => {
             </button>
           )}
 
-          {/* Notifications Bell */}
+          {/* Notifications Bell — opens drawer with notifications view */}
           {isAuthenticated && user?.role !== 'admin' && (
-            <Link to="/notifications" className="notification-icon">
+            <button
+              type="button"
+              className="notification-icon"
+              onClick={() => { setDrawerInitialView('notifications'); setDrawerOpen(true) }}
+              aria-label="Open notifications"
+            >
               <FaBell />
               {unreadNotifs > 0 && (
                 <span className="notification-badge">{unreadNotifs > 99 ? '99+' : unreadNotifs}</span>
               )}
-            </Link>
+            </button>
           )}
 
           {/* Cart */}
@@ -351,7 +385,7 @@ const Navbar = () => {
 
           {/* User Section */}
           {isAuthenticated ? (
-            <button className="drawer-toggle-btn" onClick={() => setDrawerOpen(true)}>
+            <button className="drawer-toggle-btn" onClick={() => { setDrawerInitialView('menu'); setDrawerOpen(true) }}>
               <FaBars />
             </button>
           ) : (
@@ -460,35 +494,58 @@ const Navbar = () => {
         <SideDrawer
           isOpen={drawerOpen}
           onClose={() => setDrawerOpen(false)}
+          initialView={drawerInitialView}
           user={user}
           onLogout={handleLogout}
           unreadNotifs={unreadNotifs}
           outstanding={outstanding}
         />
       )}
-      {/* Logo Lightbox Modal */}
-      {showLogoModal && settings?.logo && (
+      {/* Logo Lightbox Modal — portal to body to avoid being clipped by
+          ancestor overflow/transform contexts */}
+      {showLogoModal && settings?.logo && createPortal(
         <div
           onClick={() => setShowLogoModal(false)}
           style={{
-            position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 10000,
-            background: 'rgba(0,0,0,0.85)',
+            position: 'fixed', inset: 0, zIndex: 100000,
+            background: 'rgba(0,0,0,0.88)',
+            backdropFilter: 'blur(4px)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            cursor: 'pointer', overflow: 'hidden',
+            cursor: 'zoom-out', overflow: 'hidden',
+            padding: '40px',
           }}
         >
           <img
             src={settings.logo}
             alt={brandName}
+            referrerPolicy="no-referrer"
             style={{
-              maxWidth: '80vw', maxHeight: '80vh',
+              maxWidth: '90vw', maxHeight: '90vh',
               borderRadius: '16px',
-              boxShadow: '0 20px 60px rgba(0,0,0,0.5)',
+              background: 'rgba(255,255,255,0.06)',
+              padding: '20px',
+              boxShadow: '0 25px 60px rgba(0,0,0,0.5)',
               objectFit: 'contain',
+              cursor: 'default',
             }}
             onClick={(e) => e.stopPropagation()}
           />
-        </div>
+          <button
+            type="button"
+            onClick={() => setShowLogoModal(false)}
+            aria-label="Close"
+            style={{
+              position: 'absolute', top: '24px', right: '24px',
+              background: 'rgba(255,255,255,0.12)',
+              border: '1px solid rgba(255,255,255,0.25)',
+              color: '#fff', borderRadius: '50%',
+              width: 40, height: 40, fontSize: 22,
+              cursor: 'pointer',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+            }}
+          >×</button>
+        </div>,
+        document.body
       )}
     </nav>
   )

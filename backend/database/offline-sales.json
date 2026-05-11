@@ -217,5 +217,39 @@
     "note": "",
     "outstandingAdded": true,
     "outstandingAddedAt": "2026-05-09T21:17:31.172Z"
+  },
+  {
+    "id": "SALE-0007",
+    "saleNumber": "SALE-5007",
+    "saleDate": "2026-05-10T08:35:39.802Z",
+    "createdAt": "2026-05-10T08:35:39.802Z",
+    "createdBy": "USR-001",
+    "source": "offline",
+    "customerId": null,
+    "customerName": "Walk-in Customer",
+    "customerPhone": "",
+    "customerAddress": "",
+    "items": [
+      {
+        "productId": "PRD-001",
+        "name": "Sprite",
+        "image": "https://lh3.googleusercontent.com/d/13tRHdKemXwsWMLgN_bIZob1JJV0GHkLd",
+        "quantity": 1,
+        "purchaseMode": "piece",
+        "unitLabel": "piece",
+        "boxQuantity": 24,
+        "boxEquivalent": 0.04,
+        "price": 18.75,
+        "pricePerBox": 450,
+        "gstPercent": 0
+      }
+    ],
+    "subtotal": 18.75,
+    "discount": 0,
+    "total": 18.75,
+    "paymentMethod": "Cash",
+    "paymentStatus": "Paid",
+    "note": "",
+    "outstandingAdded": false
   }
 ]

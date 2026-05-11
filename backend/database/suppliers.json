@@ -1,1 +1,16 @@
-[]
+[
+  {
+    "id": "SUP-001",
+    "name": "Lukman ",
+    "phone": "9876543218",
+    "address": "Millat Nagar",
+    "createdAt": "2026-05-10T08:40:39.319Z"
+  },
+  {
+    "id": "SUP-002",
+    "name": "Ilyass",
+    "phone": "9876541414",
+    "address": "OK",
+    "createdAt": "2026-05-11T10:11:58.035Z"
+  }
+]
