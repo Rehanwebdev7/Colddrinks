@@ -56,27 +56,37 @@ function loadServiceAccount() {
   const base64Json = parseBase64JsonEnv('FIREBASE_SERVICE_ACCOUNT_B64');
   if (base64Json) return base64Json;
 
-  return require('./service-account.json');
+  const localPath = path.join(__dirname, 'service-account.json');
+  if (fs.existsSync(localPath)) {
+    return require(localPath);
+  }
+
+  return null;
 }
 
 // ─── Firebase Admin SDK (for FCM push notifications) ───────────────────────
 const admin = require('firebase-admin');
 const serviceAccount = loadServiceAccount();
-const projectId = process.env.FIREBASE_PROJECT_ID || serviceAccount.project_id || 'noor-coldrinks';
+const projectId = process.env.FIREBASE_PROJECT_ID || serviceAccount?.project_id || 'noor-coldrinks';
 
-admin.initializeApp({
-  credential: admin.credential.cert(serviceAccount),
-  projectId
-});
+let fcmAdmin = null;
+let fsDb = null;
 
-const fcmAdmin = admin.messaging();
+if (serviceAccount) {
+  admin.initializeApp({
+    credential: admin.credential.cert(serviceAccount),
+    projectId
+  });
+  fcmAdmin = admin.messaging();
+  fsDb = admin.firestore();
+} else {
+  console.warn('Firebase service account not found. Starting with JSON fallback only.');
+}
 
 // ─── Firebase Setup ─────────────────────────────────────────────────────────
 // Backend uses firebase-admin (already initialized above for FCM) for Firestore
 // reads/writes. The previous client SDK was unauthenticated and got blocked by
 // Firestore Security Rules, causing silent sync failures.
-
-const fsDb = admin.firestore();
 
 // Thin shims so existing call sites (fsCollection, getDocs, fsDoc, fsSetDoc,
 // fsDeleteDoc, writeBatch, fsGetDoc) keep working unchanged. firebase-admin
@@ -920,6 +930,7 @@ function createNotification(type, title, message, targetUserId) {
 
 async function sendPush(token, title, body, data = {}) {
   if (!token) return;
+  if (!fcmAdmin) return;
   try {
     // Send DATA-ONLY message (no 'notification' field).
     // This ensures onBackgroundMessage always fires in the service worker
@@ -3967,10 +3978,12 @@ const server = http.createServer(async (req, res) => {
 
 preloadJSONFallbackCache();
 
-withTimeout(initFirestore(), 5000, 'Firestore init').then(() => {
+const firestoreInit = serviceAccount ? withTimeout(initFirestore(), 5000, 'Firestore init') : Promise.resolve();
+
+firestoreInit.then(() => {
   server.listen(PORT, () => {
     console.log(`Cold Drinks Shop API Server running on http://localhost:${PORT}`);
-    console.log(`Database: Firestore (noor-coldrinks) | Cache: in-memory`);
+    console.log(serviceAccount ? `Database: Firestore (noor-coldrinks) | Cache: in-memory` : `Database: JSON files (Firestore unavailable)`);
   });
 }).catch(err => {
   console.error('Firestore init failed:', err.message);
