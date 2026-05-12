@@ -48,5 +48,25 @@
     "orderId": "SALE-0006",
     "method": "Udhar",
     "createdAt": "2026-05-09T21:17:31.203Z"
+  },
+  {
+    "id": "PH-006",
+    "userId": "USR-003",
+    "type": "debit",
+    "amount": 18.75,
+    "description": "Offline udhar sale SALE-5008",
+    "orderId": "SALE-0008",
+    "method": "Udhar",
+    "createdAt": "2026-05-11T17:30:40.927Z"
+  },
+  {
+    "id": "PH-007",
+    "userId": "USR-003",
+    "type": "credit",
+    "amount": 1,
+    "description": "Payment of ₹1.00 recorded by admin",
+    "orderId": null,
+    "method": "cash",
+    "createdAt": "2026-05-11T17:40:57.104Z"
   }
 ]

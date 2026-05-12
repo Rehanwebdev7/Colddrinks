@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext'
 import { useCart } from '../context/CartContext'
 import toast from 'react-hot-toast'
 import { MdLocalDrink } from 'react-icons/md'
-import { FiPhone, FiLock, FiEye, FiEyeOff, FiArrowLeft, FiCheck } from 'react-icons/fi'
+import { FiPhone, FiLock, FiEye, FiEyeOff, FiArrowLeft, FiCheck, FiUser } from 'react-icons/fi'
 import { ImSpinner8 } from 'react-icons/im'
 
 const maskPhone = (phone) => {
@@ -20,6 +20,7 @@ const Login = () => {
 
   const [step, setStep] = useState('phone') // 'phone' | 'login' | 'register'
   const [phone, setPhone] = useState('')
+  const [name, setName] = useState('')
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
@@ -27,11 +28,13 @@ const Login = () => {
   const [loading, setLoading] = useState(false)
 
   const phoneRef = useRef(null)
+  const nameRef = useRef(null)
   const passwordRef = useRef(null)
 
   useEffect(() => {
     if (step === 'phone' && phoneRef.current) phoneRef.current.focus()
-    if ((step === 'login' || step === 'register') && passwordRef.current) passwordRef.current.focus()
+    if (step === 'register' && nameRef.current) nameRef.current.focus()
+    if (step === 'login' && passwordRef.current) passwordRef.current.focus()
   }, [step])
 
   const getPostLoginPath = () => {
@@ -85,6 +88,10 @@ const Login = () => {
 
   const handleRegister = async (e) => {
     e.preventDefault()
+    if (!name.trim()) {
+      toast.error('Please enter your name')
+      return
+    }
     if (!password.trim()) {
       toast.error('Please set a password')
       return
@@ -101,6 +108,7 @@ const Login = () => {
       setLoading(true)
       const result = await register({
         phone: phone.replace(/\D/g, ''),
+        name: name.trim(),
         password,
       })
       if (result.success) {
@@ -116,6 +124,7 @@ const Login = () => {
 
   const goBack = () => {
     setStep('phone')
+    setName('')
     setPassword('')
     setConfirmPassword('')
     setShowPassword(false)
@@ -247,10 +256,26 @@ const Login = () => {
               <h2 className="auth-title">New Here!</h2>
               <p className="auth-subtitle">
                 <FiPhone style={{ marginRight: 4, verticalAlign: 'middle' }} />
-                {maskPhone(phone)} — Set a password to get started
+                {maskPhone(phone)} — Set your name and password to get started
               </p>
 
               <form onSubmit={handleRegister} className="auth-form">
+                <div className="form-group">
+                  <label className="form-label">Full Name</label>
+                  <div className="input-with-icon">
+                    <FiUser className="input-icon" />
+                    <input
+                      ref={nameRef}
+                      type="text"
+                      placeholder="Enter your full name"
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
+                      className="form-input"
+                      autoComplete="name"
+                    />
+                  </div>
+                </div>
+
                 <div className="form-group">
                   <label className="form-label">Set Password</label>
                   <div className="input-with-icon">

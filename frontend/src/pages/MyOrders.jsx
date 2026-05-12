@@ -5,6 +5,7 @@ import { useAuth } from '../context/AuthContext'
 import Navbar from '../components/Navbar'
 import Footer from '../components/Footer'
 import BackToTop from '../components/BackToTop'
+import Modal from '../components/Modal'
 import { FiXCircle } from 'react-icons/fi'
 import toast from 'react-hot-toast'
 
@@ -36,6 +37,7 @@ const MyOrders = () => {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [activeFilter, setActiveFilter] = useState('all')
+  const [pendingAction, setPendingAction] = useState(null)
 
   useEffect(() => {
     if (!authLoading && !isAuthenticated) navigate('/login')
@@ -65,25 +67,29 @@ const MyOrders = () => {
 
   const cancelOrder = async (orderId, e) => {
     e.stopPropagation()
-    if (!window.confirm('Are you sure you want to cancel this order?')) return
-    try {
-      await API.put(`/orders/${orderId}/cancel`)
-      toast.success('Order cancelled successfully')
-      fetchOrders()
-    } catch (err) {
-      toast.error(err.response?.data?.message || 'Failed to cancel order')
-    }
+    setPendingAction({ type: 'cancel', orderId })
   }
 
   const confirmDelivery = async (orderId, e) => {
     e.stopPropagation()
-    if (!window.confirm('Confirm delivery only after receiving all items in this order.')) return
+    setPendingAction({ type: 'confirm', orderId })
+  }
+
+  const runPendingAction = async () => {
+    if (!pendingAction) return
     try {
-      await API.post(`/orders/${orderId}/confirm-delivery`)
-      toast.success('Delivery confirmed successfully')
+      if (pendingAction.type === 'cancel') {
+        await API.put(`/orders/${pendingAction.orderId}/cancel`)
+        toast.success('Order cancelled successfully')
+      } else {
+        await API.post(`/orders/${pendingAction.orderId}/confirm-delivery`)
+        toast.success('Delivery confirmed successfully')
+      }
       fetchOrders()
     } catch (err) {
-      toast.error(err.response?.data?.message || 'Failed to confirm delivery')
+      toast.error(err.response?.data?.message || `Failed to ${pendingAction.type === 'cancel' ? 'cancel order' : 'confirm delivery'}`)
+    } finally {
+      setPendingAction(null)
     }
   }
 
@@ -213,6 +219,31 @@ const MyOrders = () => {
       </div>
       <Footer />
       <BackToTop />
+      <Modal
+        isOpen={Boolean(pendingAction)}
+        onClose={() => setPendingAction(null)}
+        title={pendingAction?.type === 'cancel' ? 'Cancel Order' : 'Confirm Delivery'}
+        maxWidth="460px"
+        footer={pendingAction ? (
+          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 12 }}>
+            <button className="btn btn-secondary" onClick={() => setPendingAction(null)}>
+              Cancel
+            </button>
+            <button
+              className="btn btn-primary"
+              onClick={runPendingAction}
+            >
+              {pendingAction.type === 'cancel' ? 'Yes, Cancel' : 'Confirm'}
+            </button>
+          </div>
+        ) : null}
+      >
+        <p style={{ margin: 0, color: 'var(--text)' }}>
+          {pendingAction?.type === 'cancel'
+            ? 'Are you sure you want to cancel this order?'
+            : 'Confirm delivery only after receiving all items in this order.'}
+        </p>
+      </Modal>
     </div>
   )
 }

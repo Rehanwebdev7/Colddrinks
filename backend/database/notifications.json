@@ -208,5 +208,115 @@
     "targetUserId": null,
     "isRead": false,
     "createdAt": "2026-05-09T21:17:31.266Z"
+  },
+  {
+    "id": "NOTIF-022",
+    "type": "order",
+    "title": "Offline Sale Recorded",
+    "message": "SALE-5008 recorded for Customer worth ₹18.75.",
+    "image": "",
+    "targetUserId": null,
+    "isRead": false,
+    "createdAt": "2026-05-11T17:30:40.953Z"
+  },
+  {
+    "id": "NOTIF-023",
+    "type": "order",
+    "title": "Offline Sale Recorded",
+    "message": "SALE-5009 recorded for reggeg worth ₹18.75.",
+    "image": "",
+    "targetUserId": null,
+    "isRead": false,
+    "createdAt": "2026-05-11T17:39:01.931Z"
+  },
+  {
+    "id": "NOTIF-024",
+    "type": "payment",
+    "title": "Payment Recorded",
+    "message": "A payment of ₹1.00 has been recorded successfully.",
+    "image": "",
+    "targetUserId": "USR-003",
+    "isRead": false,
+    "createdAt": "2026-05-11T17:40:57.106Z"
+  },
+  {
+    "id": "NOTIF-025",
+    "type": "order",
+    "title": "Offline Sale Recorded",
+    "message": "SALE-5010 recorded for tterererre worth ₹450.00.",
+    "image": "",
+    "targetUserId": null,
+    "isRead": false,
+    "createdAt": "2026-05-11T17:53:09.589Z"
+  },
+  {
+    "id": "NOTIF-026",
+    "type": "general",
+    "title": "Notification from Cool Drinks Shop",
+    "message": "Thank you for being our valued customer!",
+    "image": "",
+    "targetUserId": "USR-004",
+    "isRead": false,
+    "createdAt": "2026-05-12T03:45:31.995Z"
+  },
+  {
+    "id": "NOTIF-027",
+    "type": "order",
+    "title": "New Order Received",
+    "message": "Roy Shaikh placed order ORD-1003 for ₹37.50 (COD).",
+    "image": "",
+    "targetUserId": null,
+    "isRead": false,
+    "createdAt": "2026-05-12T03:58:49.578Z"
+  },
+  {
+    "id": "NOTIF-028",
+    "type": "order",
+    "title": "Order Placed",
+    "message": "Your order ORD-1003 has been placed successfully.",
+    "image": "",
+    "targetUserId": "USR-005",
+    "isRead": false,
+    "createdAt": "2026-05-12T03:58:49.581Z"
+  },
+  {
+    "id": "NOTIF-029",
+    "type": "order",
+    "title": "New Order Received",
+    "message": "rweeew placed order ORD-1004 for ₹450.00 (COD).",
+    "image": "",
+    "targetUserId": null,
+    "isRead": false,
+    "createdAt": "2026-05-12T03:59:30.112Z"
+  },
+  {
+    "id": "NOTIF-030",
+    "type": "order",
+    "title": "Order Placed",
+    "message": "Your order ORD-1004 has been placed successfully.",
+    "image": "",
+    "targetUserId": "USR-006",
+    "isRead": true,
+    "createdAt": "2026-05-12T03:59:30.129Z"
+  },
+  {
+    "id": "NOTIF-031",
+    "type": "order",
+    "title": "Order Cancelled",
+    "message": "Roy Shaikh cancelled order ORD-1003.",
+    "image": "",
+    "targetUserId": null,
+    "isRead": false,
+    "createdAt": "2026-05-12T04:05:07.068Z"
+  },
+  {
+    "id": "NOTIF-032",
+    "type": "order",
+    "title": "Order Cancelled",
+    "message": "Your order ORD-1003 has been cancelled successfully.",
+    "image": "",
+    "targetUserId": "USR-005",
+    "isRead": false,
+    "createdAt": "2026-05-12T04:05:07.071Z"
   }
 ]

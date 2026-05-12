@@ -593,8 +593,8 @@ const OfflineSales = () => {
       return
     }
 
-    if (paymentMethod === 'Udhar' && !selectedCustomerId) {
-      toast.error('Udhar sale ke liye customer account select karo')
+    if (!linkedCustomer && walkInPhone && walkInPhone.length !== 10) {
+      toast.error('Phone number 10 digit ka hona chahiye')
       return
     }
 
@@ -1090,7 +1090,15 @@ const OfflineSales = () => {
                 </div>
                 <div style={styles.field}>
                   <label style={styles.label}>Phone</label>
-                  <input value={walkInPhone} onChange={(e) => setWalkInPhone(e.target.value)} placeholder="Optional" style={styles.input} />
+                  <input
+                    type="tel"
+                    inputMode="numeric"
+                    maxLength={10}
+                    value={walkInPhone}
+                    onChange={(e) => setWalkInPhone(e.target.value.replace(/\D/g, '').slice(0, 10))}
+                    placeholder="Optional"
+                    style={styles.input}
+                  />
                 </div>
               </div>
             )}

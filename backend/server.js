@@ -1059,9 +1059,14 @@ async function handleAuthRegister(req, res) {
     return num > max ? num : max;
   }, 0);
 
+  const trimmedName = String(body.name || '').trim();
+  if (!trimmedName) {
+    return error(res, 'Name is required');
+  }
+
   const newUser = {
     id: `USR-${String(maxId + 1).padStart(3, '0')}`,
-    name: body.name || 'Customer',
+    name: trimmedName,
     email: body.email || '',
     phone: normalized,
     password: hashPassword(password),
@@ -1176,7 +1181,11 @@ async function handleAuthProfile(req, res) {
   const index = users.findIndex(u => u.id === user.id);
   if (index === -1) return error(res, 'User not found', 404);
 
-  if (body.name) users[index].name = body.name;
+  if (body.name !== undefined) {
+    const trimmedName = String(body.name || '').trim();
+    if (!trimmedName) return error(res, 'Name is required');
+    users[index].name = trimmedName;
+  }
   if (body.email) users[index].email = body.email;
   if (body.phone) users[index].phone = body.phone;
   if (body.avatar !== undefined) users[index].avatar = body.avatar;
@@ -2000,9 +2009,6 @@ async function handleOfflineSalesCreate(req, res) {
 
   const normalizedPaymentMethod = String(paymentMethod || 'Cash').trim();
   const isUdhar = normalizedPaymentMethod.toLowerCase() === 'udhar';
-  if (isUdhar && !linkedCustomer) {
-    return error(res, 'Udhar sale ke liye customer account select karna zaroori hai');
-  }
 
   const products = readDB('products.json');
   const stockErrors = [];

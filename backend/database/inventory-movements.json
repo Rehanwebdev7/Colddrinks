@@ -148,5 +148,50 @@
     "referenceId": "SALE-0007",
     "note": "Offline sale SALE-5007",
     "createdBy": "USR-001"
+  },
+  {
+    "id": "MOV-0011",
+    "createdAt": "2026-05-11T17:30:40.924Z",
+    "productId": "PRD-001",
+    "productName": "Sprite",
+    "quantity": 1,
+    "purchaseMode": "piece",
+    "boxEquivalent": 0.04,
+    "direction": "out",
+    "type": "offline_sale",
+    "referenceType": "offline_sale",
+    "referenceId": "SALE-0008",
+    "note": "Offline sale SALE-5008",
+    "createdBy": "USR-001"
+  },
+  {
+    "id": "MOV-0012",
+    "createdAt": "2026-05-11T17:39:01.896Z",
+    "productId": "PRD-001",
+    "productName": "Sprite",
+    "quantity": 1,
+    "purchaseMode": "piece",
+    "boxEquivalent": 0.04,
+    "direction": "out",
+    "type": "offline_sale",
+    "referenceType": "offline_sale",
+    "referenceId": "SALE-0009",
+    "note": "Offline sale SALE-5009",
+    "createdBy": "USR-001"
+  },
+  {
+    "id": "MOV-0013",
+    "createdAt": "2026-05-11T17:53:09.548Z",
+    "productId": "PRD-002",
+    "productName": "Coca Cola",
+    "quantity": 1,
+    "purchaseMode": "full_box",
+    "boxEquivalent": 1,
+    "direction": "out",
+    "type": "offline_sale",
+    "referenceType": "offline_sale",
+    "referenceId": "SALE-0010",
+    "note": "Offline sale SALE-5010",
+    "createdBy": "USR-001"
   }
 ]

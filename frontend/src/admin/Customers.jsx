@@ -33,6 +33,17 @@ const Customers = () => {
   const [currentPage, setCurrentPage] = useState(1)
   const customersPerPage = 15
 
+  const getCustomerDisplayName = (customer) => {
+    const rawName = String(customer?.name || '').trim()
+    if (rawName && rawName.toLowerCase() !== 'customer') return rawName
+    return 'Unnamed Customer'
+  }
+
+  const getCustomerInitial = (customer) => {
+    const displayName = getCustomerDisplayName(customer)
+    return displayName?.charAt(0)?.toUpperCase() || 'U'
+  }
+
   useEffect(() => {
     fetchCustomers()
   }, [])
@@ -247,9 +258,9 @@ const Customers = () => {
                         <td style={{ ...styles.td, fontWeight: '500', color: c.text }}>
                           <div style={styles.nameCell}>
                             <div style={styles.avatar}>
-                              {customer.name?.charAt(0)?.toUpperCase() || 'U'}
+                              {getCustomerInitial(customer)}
                             </div>
-                            {customer.name || 'N/A'}
+                            {getCustomerDisplayName(customer)}
                           </div>
                         </td>
                         <td style={styles.td}>{customer.phone || 'N/A'}</td>
@@ -319,12 +330,12 @@ const Customers = () => {
         {showDetailModal && selectedCustomer && (
           <Modal onClose={() => setShowDetailModal(false)}>
             <div style={styles.modalContent}>
-              <div style={styles.profileHeader}>
-                <div style={styles.profileAvatar}>
-                  {selectedCustomer.name?.charAt(0)?.toUpperCase() || 'U'}
-                </div>
-                <div>
-                  <h2 style={styles.profileName}>{selectedCustomer.name}</h2>
+                <div style={styles.profileHeader}>
+                  <div style={styles.profileAvatar}>
+                  {getCustomerInitial(selectedCustomer)}
+                  </div>
+                  <div>
+                  <h2 style={styles.profileName}>{getCustomerDisplayName(selectedCustomer)}</h2>
                   <span style={{
                     ...styles.statusBadge,
                     background: (selectedCustomer.isBlocked || selectedCustomer.status === 'blocked')

@@ -9,7 +9,7 @@ function resolveApiBaseUrl() {
   }
 
   if (import.meta.env.DEV) {
-    return 'http://localhost:8000/api'
+    return '/api'
   }
 
   return `${window.location.origin}/api`

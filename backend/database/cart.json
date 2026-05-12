@@ -2,5 +2,35 @@
   {
     "userId": "USR-002",
     "items": []
+  },
+  {
+    "userId": "USR-004",
+    "items": [
+      {
+        "cartItemId": "PRD-002:full_box",
+        "productId": "PRD-002",
+        "name": "Coca Cola",
+        "image": "https://lh3.googleusercontent.com/d/1_-_esvDiyhUXMwnyjkS9oFUIdlmJCLrT",
+        "category": "Soft Drink",
+        "quantity": 1,
+        "purchaseMode": "full_box",
+        "price": 450,
+        "pricePerBox": 450,
+        "boxQuantity": 24,
+        "boxEquivalent": 1,
+        "stock": 20,
+        "maxQuantity": 20,
+        "deliveryCharge": 0,
+        "offer": null
+      }
+    ]
+  },
+  {
+    "userId": "USR-005",
+    "items": []
+  },
+  {
+    "userId": "USR-006",
+    "items": []
   }
 ]

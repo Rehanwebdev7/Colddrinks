@@ -322,5 +322,110 @@
     "paymentMethod": "Cash",
     "orderStatus": "Completed",
     "pdfUrl": "/bills/BILL-2009.pdf"
+  },
+  {
+    "id": "BILL-010",
+    "billNumber": "BILL-2010",
+    "sourceType": "offline_sale",
+    "sourceId": "SALE-0008",
+    "orderId": "SALE-0008",
+    "orderNumber": "SALE-5008",
+    "userId": "USR-003",
+    "customerName": "Customer",
+    "customerPhone": "+917886788678",
+    "customerAddress": "",
+    "billDate": "2026-05-11T17:30:40.944Z",
+    "createdAt": "2026-05-11T17:30:40.944Z",
+    "orderDate": "2026-05-11T17:30:40.921Z",
+    "items": [
+      {
+        "productId": "PRD-001",
+        "name": "Sprite",
+        "quantity": 1,
+        "price": 18.75,
+        "amount": 18.75,
+        "purchaseMode": "piece",
+        "unitLabel": "piece"
+      }
+    ],
+    "subtotal": 18.75,
+    "gst": 0,
+    "discount": 0,
+    "deliveryCharge": 0,
+    "total": 18.75,
+    "paymentStatus": "Pending",
+    "paymentMethod": "Udhar",
+    "orderStatus": "Completed",
+    "pdfUrl": "/bills/BILL-2010.pdf"
+  },
+  {
+    "id": "BILL-011",
+    "billNumber": "BILL-2011",
+    "sourceType": "offline_sale",
+    "sourceId": "SALE-0009",
+    "orderId": "SALE-0009",
+    "orderNumber": "SALE-5009",
+    "userId": null,
+    "customerName": "reggeg",
+    "customerPhone": "8787383878",
+    "customerAddress": "1212ddd",
+    "billDate": "2026-05-11T17:39:01.924Z",
+    "createdAt": "2026-05-11T17:39:01.924Z",
+    "orderDate": "2026-05-11T17:39:01.876Z",
+    "items": [
+      {
+        "productId": "PRD-001",
+        "name": "Sprite",
+        "quantity": 1,
+        "price": 18.75,
+        "amount": 18.75,
+        "purchaseMode": "piece",
+        "unitLabel": "piece"
+      }
+    ],
+    "subtotal": 18.75,
+    "gst": 0,
+    "discount": 0,
+    "deliveryCharge": 0,
+    "total": 18.75,
+    "paymentStatus": "Pending",
+    "paymentMethod": "Udhar",
+    "orderStatus": "Completed",
+    "pdfUrl": "/bills/BILL-2011.pdf"
+  },
+  {
+    "id": "BILL-012",
+    "billNumber": "BILL-2012",
+    "sourceType": "offline_sale",
+    "sourceId": "SALE-0010",
+    "orderId": "SALE-0010",
+    "orderNumber": "SALE-5010",
+    "userId": null,
+    "customerName": "tterererre",
+    "customerPhone": "0909988787",
+    "customerAddress": "2332weew232323",
+    "billDate": "2026-05-11T17:53:09.563Z",
+    "createdAt": "2026-05-11T17:53:09.563Z",
+    "orderDate": "2026-05-11T17:53:09.539Z",
+    "items": [
+      {
+        "productId": "PRD-002",
+        "name": "Coca Cola",
+        "quantity": 1,
+        "price": 450,
+        "amount": 450,
+        "purchaseMode": "full_box",
+        "unitLabel": "box"
+      }
+    ],
+    "subtotal": 450,
+    "gst": 0,
+    "discount": 0,
+    "deliveryCharge": 0,
+    "total": 450,
+    "paymentStatus": "Pending",
+    "paymentMethod": "Udhar",
+    "orderStatus": "Completed",
+    "pdfUrl": "/bills/BILL-2012.pdf"
   }
 ]

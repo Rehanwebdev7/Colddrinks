@@ -138,5 +138,92 @@
     "deliveryConfirmationRequestedBy": "USR-001",
     "deliveryConfirmedBy": "admin",
     "deliveredAt": "2026-05-10T08:29:10.806Z"
+  },
+  {
+    "id": "ORD-003",
+    "orderNumber": "ORD-1003",
+    "userId": "USR-005",
+    "customerName": "Roy Shaikh",
+    "customerPhone": "+918797879879",
+    "deliveryAddress": "Yahwhuuu",
+    "orderDate": "2026-05-12T03:58:49.574Z",
+    "items": [
+      {
+        "productId": "PRD-001",
+        "name": "Sprite",
+        "image": "https://lh3.googleusercontent.com/d/13tRHdKemXwsWMLgN_bIZob1JJV0GHkLd",
+        "quantity": 2,
+        "purchaseMode": "piece",
+        "unitLabel": "pieces",
+        "boxQuantity": 24,
+        "boxEquivalent": 0.08,
+        "price": 18.75,
+        "pricePerBox": 450,
+        "gstPercent": 0,
+        "deliveryCharge": 0
+      }
+    ],
+    "subtotal": 37.5,
+    "tax": 0,
+    "deliveryCharge": 0,
+    "discount": 0,
+    "couponCode": null,
+    "total": 37.5,
+    "orderStatus": "Cancelled",
+    "paymentStatus": "Pending",
+    "paymentMethod": "COD",
+    "statusHistory": [
+      {
+        "status": "Placed",
+        "timestamp": "2026-05-12T03:58:49.574Z"
+      },
+      {
+        "status": "Cancelled",
+        "timestamp": "2026-05-12T04:05:07.061Z",
+        "note": "Cancelled by customer"
+      }
+    ],
+    "updatedAt": "2026-05-12T04:05:07.061Z"
+  },
+  {
+    "id": "ORD-004",
+    "orderNumber": "ORD-1004",
+    "userId": "USR-006",
+    "customerName": "rweeew",
+    "customerPhone": "+919899898988",
+    "deliveryAddress": "hggshgashg",
+    "orderDate": "2026-05-12T03:59:30.100Z",
+    "items": [
+      {
+        "productId": "PRD-002",
+        "name": "Coca Cola",
+        "image": "https://lh3.googleusercontent.com/d/1_-_esvDiyhUXMwnyjkS9oFUIdlmJCLrT",
+        "quantity": 1,
+        "purchaseMode": "full_box",
+        "unitLabel": "box",
+        "boxQuantity": 24,
+        "boxEquivalent": 1,
+        "price": 450,
+        "pricePerBox": 450,
+        "gstPercent": 0,
+        "deliveryCharge": 0
+      }
+    ],
+    "subtotal": 450,
+    "tax": 0,
+    "deliveryCharge": 0,
+    "discount": 0,
+    "couponCode": null,
+    "total": 450,
+    "orderStatus": "Placed",
+    "paymentStatus": "Pending",
+    "paymentMethod": "COD",
+    "statusHistory": [
+      {
+        "status": "Placed",
+        "timestamp": "2026-05-12T03:59:30.100Z"
+      }
+    ],
+    "updatedAt": "2026-05-12T03:59:30.100Z"
   }
 ]

@@ -58,6 +58,17 @@ const Payments = ({ view = 'full' }) => {
   const [offlineSales, setOfflineSales] = useState([])
   const [offlinePending, setOfflinePending] = useState(0)
 
+  const getCustomerDisplayName = (customer) => {
+    const rawName = String(customer?.name || customer?.userName || customer?.customerName || '').trim()
+    if (rawName && rawName.toLowerCase() !== 'customer') return rawName
+    return 'Unnamed Customer'
+  }
+
+  const getCustomerInitial = (customer) => {
+    const displayName = getCustomerDisplayName(customer)
+    return displayName?.charAt(0)?.toUpperCase() || 'U'
+  }
+
   useEffect(() => {
     fetchPaymentData()
     fetchClearanceRequests()
@@ -470,7 +481,7 @@ const Payments = ({ view = 'full' }) => {
                         {order.orderNumber || order.id}
                       </div>
                       <div style={{ color: c.textSecondary, fontSize: '13px', marginTop: '2px' }}>
-                        {order.userName || order.customerName || 'Customer'} &middot; {order.userPhone || order.customerPhone || ''}
+                        {getCustomerDisplayName(order)} &middot; {order.userPhone || order.customerPhone || ''}
                       </div>
                       <div style={{ color: c.textSecondary, fontSize: '12px', marginTop: '2px' }}>
                         {new Date(order.createdAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
@@ -709,7 +720,7 @@ const Payments = ({ view = 'full' }) => {
                       <tr key={h.id} style={styles.tr}>
                         <td style={styles.td}>{new Date(h.createdAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}</td>
                         <td style={styles.td}>
-                          <div style={{ fontWeight: 600 }}>{h.customerName}</div>
+                          <div style={{ fontWeight: 600 }}>{getCustomerDisplayName(h)}</div>
                           <div style={{ fontSize: '12px', color: c.textMuted }}>{h.customerPhone}</div>
                         </td>
                         <td style={styles.td}>
@@ -736,7 +747,7 @@ const Payments = ({ view = 'full' }) => {
                         <td style={{ ...styles.td, fontWeight: 700, color: h.type === 'credit' ? '#22c55e' : '#ef4444' }}>
                           {h.type === 'credit' ? '+' : '-'}{formatCurrency(h.amount)}
                         </td>
-                        <td style={{ ...styles.td, fontSize: '12px', color: c.textMuted, maxWidth: '250px' }}>
+                        <td style={{ ...styles.td, fontSize: '12px', color: c.textSecondary, maxWidth: '360px', whiteSpace: 'normal', wordBreak: 'break-word', lineHeight: 1.5 }}>
                           {h.description}
                           {h.orderNumber && <span style={{ marginLeft: '4px', color: c.primary }}>({h.orderNumber})</span>}
                         </td>
@@ -813,7 +824,7 @@ const Payments = ({ view = 'full' }) => {
                         </div>
                       </td>
                       <td style={{ ...styles.td, fontWeight: '500', color: c.text }}>
-                        {customer.name}
+                        {getCustomerDisplayName(customer)}
                       </td>
                       <td style={styles.td}>{customer.phone || 'N/A'}</td>
                       <td style={styles.td}>{customer.totalOrders}</td>
@@ -840,7 +851,7 @@ const Payments = ({ view = 'full' }) => {
             <div style={styles.modalContent}>
               <h2 style={styles.modalTitle}>Record Payment</h2>
               <p style={styles.modalSubtext}>
-                Customer: <strong>{selectedCustomer.name}</strong>
+                Customer: <strong>{getCustomerDisplayName(selectedCustomer)}</strong>
               </p>
               <p style={styles.modalSubtext}>
                 Outstanding: <strong style={{ color: '#ef4444' }}>{formatCurrency(selectedCustomer.pending)}</strong>
@@ -892,7 +903,7 @@ const Payments = ({ view = 'full' }) => {
           <Modal onClose={() => setShowHistoryModal(false)}>
             <div style={styles.modalContent}>
               <h2 style={styles.modalTitle}>Payment History</h2>
-              <p style={styles.modalSubtext}>Customer: <strong>{selectedCustomer.name}</strong></p>
+              <p style={styles.modalSubtext}>Customer: <strong>{getCustomerDisplayName(selectedCustomer)}</strong></p>
 
               <div style={styles.historyList}>
                 {paymentHistory.length === 0 ? (
