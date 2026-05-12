@@ -2570,6 +2570,24 @@ h4 { font-size: 1.1rem; font-weight: 600; }
   margin: 8px 0;
 }
 
+.summary-item-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 6px 0;
+  font-size: 13px;
+  color: var(--text-muted);
+  line-height: 1.4;
+}
+
+.summary-item-name {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  margin-right: 8px;
+}
+
 /* Address Card */
 .address-card {
   display: flex;
@@ -5032,6 +5050,13 @@ h4 { font-size: 1.1rem; font-weight: 600; }
   color: #6b7280;
   margin-bottom: 12px;
   line-height: 1.45;
+}
+
+@media (max-width: 768px) {
+  .qr-modal-content { padding: 0; }
+  .qr-modal-amount { font-size: 1.4rem; margin-bottom: 8px; }
+  .qr-modal-image, .qr-modal-fallback { max-width: 190px; width: 190px; height: auto; margin-bottom: 8px; }
+  .qr-modal-note { font-size: 12px; margin-bottom: 6px; }
 }
 
 /* Outstanding Balance Card */

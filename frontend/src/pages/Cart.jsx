@@ -19,7 +19,7 @@ const MIN_ORDER_AMOUNT = 1000
 const Cart = () => {
   const navigate = useNavigate()
   const { items, updateQuantity, removeFromCart, getSubtotal, getTax, getTotal, getDeliveryCharge, getGstPercent, clearCart } = useCart()
-  const { user, isAuthenticated } = useAuth()
+  const { user, isAuthenticated, updateProfile } = useAuth()
   const { settings } = useSettings()
 
   const formatAddress = (addr) => {
@@ -69,11 +69,16 @@ const Cart = () => {
     }
   }
 
-  const handleAddressDone = () => {
+  const handleAddressDone = async () => {
     const trimmedAddress = validateAddress()
     if (!trimmedAddress) return
     setAddress(trimmedAddress)
     setEditingAddress(false)
+    try {
+      await updateProfile({ address: trimmedAddress })
+    } catch {
+      // silent fail - address still saved locally for current order
+    }
   }
 
   useEffect(() => {
@@ -235,7 +240,7 @@ const Cart = () => {
       <Navbar />
 
       <div className="container section-padding cart-page">
-        <h1 className="page-title">Your Cart ({items.length} {items.length === 1 ? 'item' : 'items'})</h1>
+        <h1 className="page-title">Your Cart ({items.filter(i => !i.isFreeItem).length} {items.filter(i => !i.isFreeItem).length === 1 ? 'item' : 'items'})</h1>
 
         <div className="cart-layout">
           {/* Cart Items */}
@@ -339,8 +344,17 @@ const Cart = () => {
           <div className="order-summary">
             <h2 className="summary-title">Order Summary</h2>
 
+            {items.map((item) => (
+              <div key={item.cartItemId || `${item.productId}-${item.purchaseMode}`} className="summary-item-row">
+                <span className="summary-item-name">{item.name}</span>
+                <span className={item.isFreeItem ? 'free-delivery' : ''}>
+                  {item.isFreeItem ? 'FREE' : `${'₹'}${((item.price || 0) * item.quantity).toFixed(2)}`}
+                </span>
+              </div>
+            ))}
+
             <div className="summary-row">
-              <span>Subtotal ({items.length} items)</span>
+              <span>Subtotal ({items.filter(i => !i.isFreeItem).length} items)</span>
               <span>{'\u20B9'}{getSubtotal().toFixed(2)}</span>
             </div>
             <div className="summary-row">
