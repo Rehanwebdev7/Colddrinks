@@ -105,6 +105,7 @@ const PORT = Number(process.env.PORT) || 8000;
 const JWT_SECRET = 'cold_drinks_shop_secret_key_2024';
 const DB_DIR = path.join(__dirname, 'database');
 const TAX_RATE = 0.18;
+const MIN_WEB_ORDER_AMOUNT = 1000;
 
 // ─── Firestore Collection Mapping ───────────────────────────────────────────
 
@@ -1701,6 +1702,10 @@ async function handleOrdersCreate(req, res) {
   // Apply coupon discount if provided
   const appliedDiscount = couponDiscount ? Math.round(Number(couponDiscount) * 100) / 100 : 0;
   const finalTotal = Math.round((total - appliedDiscount) * 100) / 100;
+
+  if (finalTotal < MIN_WEB_ORDER_AMOUNT) {
+    return error(res, `Minimum order amount is ₹${MIN_WEB_ORDER_AMOUNT}. Please add more items.`);
+  }
 
   const now = new Date().toISOString();
   const newOrder = {

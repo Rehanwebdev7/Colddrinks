@@ -14,6 +14,8 @@ import { ImSpinner8 } from 'react-icons/im'
 import Modal from '../components/Modal'
 import { getCartItemSummary, getCartItemUnitPriceLabel } from '../utils/purchase'
 
+const MIN_ORDER_AMOUNT = 1000
+
 const Cart = () => {
   const navigate = useNavigate()
   const { items, updateQuantity, removeFromCart, getSubtotal, getTax, getTotal, getDeliveryCharge, getGstPercent, clearCart } = useCart()
@@ -85,6 +87,9 @@ const Cart = () => {
     return Math.max(0, getTotal() - couponDiscount)
   }
 
+  const isBelowMinimumOrder = getFinalTotal() < MIN_ORDER_AMOUNT
+  const minimumOrderMessage = `Minimum order amount is ₹${MIN_ORDER_AMOUNT}. Add more items to continue.`
+
   const payableAmount = Number(getFinalTotal().toFixed(2))
   const upiId = settings?.upiId || '7028732945@ybl'
   const upiPayeeName = settings?.upiPayeeName || settings?.siteName || 'NOOR COLDINKS'
@@ -140,6 +145,11 @@ const Cart = () => {
 
     if (items.length === 0) {
       toast.error('Your cart is empty')
+      return
+    }
+
+    if (getFinalTotal() < MIN_ORDER_AMOUNT) {
+      toast.error(minimumOrderMessage)
       return
     }
 
@@ -345,6 +355,12 @@ const Cart = () => {
               <span>{'\u20B9'}{getFinalTotal().toFixed(2)}</span>
             </div>
 
+            {isBelowMinimumOrder && (
+              <div style={{ marginTop: 12, padding: '12px 14px', borderRadius: 12, background: 'rgba(226, 55, 68, 0.08)', color: '#ef4444', fontSize: 13, fontWeight: 600, lineHeight: 1.5 }}>
+                {minimumOrderMessage}
+              </div>
+            )}
+
             {/* Delivery Address */}
             <div className="form-group" style={{ marginTop: 20 }}>
               <label className="form-label">Delivery Address</label>
@@ -426,7 +442,7 @@ const Cart = () => {
             <button
               className="btn btn-primary btn-lg btn-block cart-primary-cta"
               onClick={handlePlaceOrder}
-              disabled={placing}
+              disabled={placing || isBelowMinimumOrder}
             >
               {placing ? (
                 <>
@@ -504,6 +520,11 @@ const Cart = () => {
               const trimmedAddress = validateAddress()
               if (!trimmedAddress) {
                 toast.error('Please enter a delivery address')
+                setShowQRModal(false)
+                return
+              }
+              if (getFinalTotal() < MIN_ORDER_AMOUNT) {
+                toast.error(minimumOrderMessage)
                 setShowQRModal(false)
                 return
               }
