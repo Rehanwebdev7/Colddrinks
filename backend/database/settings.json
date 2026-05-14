@@ -18,23 +18,23 @@
     "privacy": "ONLE FOR SALE "
   },
   "gstPercent": 18,
-  "font": "Lato",
   "upiPayeeName": "NOOR COLDINKS",
   "upiId": "7028732945@ybl",
-  "logo": "https://lh3.googleusercontent.com/d/13q17U8Zt7xTzNWwSnYIDet7Ohqi7WAjm",
-  "colors": {
-    "primaryLight": "#fa000c",
-    "primaryDark": "#e3e3e3",
-    "primary": "#ff293e",
-    "accent": "#5dfdeb"
-  },
   "updatedAt": "2026-04-03T12:01:59.000Z",
   "siteName": "AG",
+  "favicon": "https://lh3.googleusercontent.com/d/1xI9WWdr_zuxIcuG9YOZ0rx0epOjqnnf0",
+  "logo": "https://lh3.googleusercontent.com/d/13q17U8Zt7xTzNWwSnYIDet7Ohqi7WAjm",
   "socialEnabled": {
-    "facebook": true,
-    "instagram": true,
+    "youtube": true,
     "twitter": true,
-    "youtube": true
+    "facebook": true,
+    "instagram": true
   },
-  "favicon": "https://lh3.googleusercontent.com/d/1xI9WWdr_zuxIcuG9YOZ0rx0epOjqnnf0"
+  "font": "Lato",
+  "colors": {
+    "accent": "#5dfdeb",
+    "primaryLight": "#fa000c",
+    "primaryDark": "#e3e3e3",
+    "primary": "#ff293e"
+  }
 }

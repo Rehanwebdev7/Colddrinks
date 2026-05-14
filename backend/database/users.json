@@ -4,7 +4,7 @@
     "email": "admin@cooldrinks.com",
     "totalSpent": 0,
     "role": "admin",
-    "fcmToken": "d9aRWSvvSruGUjJ3EdgsQJ:APA91bHrYLfzMyilX58CjnqWJtCZLUIsjsUDKwDnk-MZVMZ3JXNkcBp5ERJGwOyLF88ZNZCZ_GBhS4U_qv_G3ajAA70b5_kEdEgskI6aFzcdQJh-Hw6GBGQ",
+    "fcmToken": "erqhoIr3SJN5U7WE8zy1s8:APA91bGX2JjUFBLU_iWfbGDKxX43lb6t3Lb3OvenalzELnEtLN9G4frEaqmF_A9WBvLd-aq2nsWVjrhx7sJkUZhNNK2KJRlZQyh4-YLxfc8d9g8uH8io0kY",
     "createdAt": "2025-01-10T09:00:00.000Z",
     "id": "USR-001",
     "status": "active",
@@ -51,64 +51,6 @@
       "refreshTokenHash": "62d01ba97d4414c7def1af3a867d026234894ee89b74f920bbd7fd46c664b6cb",
       "createdAt": "2026-05-11T10:30:33.888Z",
       "lastRotatedAt": "2026-05-11T10:30:33.888Z"
-    },
-    "outstanding": 17.75
-  },
-  {
-    "id": "USR-004",
-    "name": "Customer",
-    "email": "",
-    "phone": "+919898989898",
-    "password": "3331cf8f9c61d50160a9421af6282fdae8688e895035a5e8aa6708245f30a898",
-    "role": "customer",
-    "addresses": [],
-    "wallet": 0,
-    "fcmToken": null,
-    "createdAt": "2026-05-11T17:20:12.298Z",
-    "status": "active",
-    "customerSession": {
-      "id": "621fe3f0d4a3dec561de222551664388",
-      "refreshTokenHash": "930ca18eeb0552d9fce095715442661c188f5dfa1d1a2c9f19149c2a0bdcf535",
-      "createdAt": "2026-05-11T17:20:12.398Z",
-      "lastRotatedAt": "2026-05-11T17:20:12.398Z"
-    }
-  },
-  {
-    "id": "USR-005",
-    "name": "Roy Shaikh",
-    "email": "",
-    "phone": "+918797879879",
-    "password": "481f6cc0511143ccdd7e2d1b1b94faf0a700a8b49cd13922a70b5ae28acaa8c5",
-    "role": "customer",
-    "addresses": [],
-    "wallet": 0,
-    "fcmToken": null,
-    "createdAt": "2026-05-12T03:58:31.056Z",
-    "status": "active",
-    "customerSession": {
-      "id": "07b7e12b3e9b0d8171db135f6ba6e5e0",
-      "refreshTokenHash": "e65cea640138eee7b31b499f519a15a75b04ea06ed0b921dc7a453825cb542f9",
-      "createdAt": "2026-05-12T03:58:31.072Z",
-      "lastRotatedAt": "2026-05-12T03:58:31.072Z"
-    }
-  },
-  {
-    "id": "USR-006",
-    "name": "rweeew",
-    "email": "",
-    "phone": "+919899898988",
-    "password": "3331cf8f9c61d50160a9421af6282fdae8688e895035a5e8aa6708245f30a898",
-    "role": "customer",
-    "addresses": [],
-    "wallet": 0,
-    "fcmToken": null,
-    "createdAt": "2026-05-12T03:59:22.195Z",
-    "status": "active",
-    "customerSession": {
-      "id": "abf62657b4bb4ae685576db7b329b549",
-      "refreshTokenHash": "1cebd96511b0b480fb32263ea674640d5fb5b62f9ebba16ad4832fd46e9c2490",
-      "createdAt": "2026-05-12T03:59:22.200Z",
-      "lastRotatedAt": "2026-05-12T03:59:22.200Z"
     }
   }
 ]
