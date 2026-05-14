@@ -10,7 +10,12 @@
       "PowerShell(Get-NetTCPConnection *)",
       "Bash(curl -s -o /tmp/r -w \"OfflineSales=%{http_code}\\\\n\" \"http://localhost:3000/src/admin/OfflineSales.jsx\")",
       "Read(//tmp/**)",
-      "Bash(curl -s -o /tmp/r -w \"%{http_code}\\\\n\" \"http://localhost:3000/src/admin/OfflineSales.jsx\")"
+      "Bash(curl -s -o /tmp/r -w \"%{http_code}\\\\n\" \"http://localhost:3000/src/admin/OfflineSales.jsx\")",
+      "Bash(awk -F: '{print $1, $2}')",
+      "Bash(awk '$1 >= 3700 && $1 <= 3760 || $1 >= 4440 && $1 <= 4480 || $1 >= 6870 && $1 <= 6910')",
+      "Bash(git add *)",
+      "Bash(git commit *)",
+      "Bash(git push *)"
     ]
   }
 }
