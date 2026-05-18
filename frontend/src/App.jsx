@@ -1,9 +1,12 @@
-import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom'
+import { useEffect, useLayoutEffect } from 'react'
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom'
 import { Toaster } from 'react-hot-toast'
 import { AuthProvider, useAuth } from './context/AuthContext'
 import { CartProvider } from './context/CartContext'
 import { ThemeProvider } from './context/ThemeContext'
 import { SettingsProvider } from './context/SettingsContext'
+import { AuthModalProvider, useAuthModal } from './context/AuthModalContext'
+import AuthModal from './components/AuthModal'
 
 // Page imports
 import Home from './pages/Home'
@@ -14,10 +17,7 @@ import OrderTracking from './pages/OrderTracking'
 import Profile from './pages/Profile'
 import UserNotifications from './pages/UserNotifications'
 import Wishlist from './pages/Wishlist'
-import Login from './pages/Login'
-import Register from './pages/Register'
 import AdminLogin from './pages/AdminLogin'
-import ForgotPassword from './pages/ForgotPassword'
 import ResetPassword from './pages/ResetPassword'
 import BottomNav from './components/BottomNav'
 
@@ -41,10 +41,31 @@ import AdminCoupons from './admin/Coupons'
 import AdminOfflineSales from './admin/OfflineSales'
 import AdminOfflineSalesHistory from './admin/OfflineSalesHistory'
 
-// Protected Route wrapper for authenticated users
+// Scroll to top on route change (browser default scroll restoration is broken
+// inside SPAs — without this, navigating to a new page keeps the previous
+// page's scroll offset)
+const ScrollToTop = () => {
+  const { pathname } = useLocation()
+  useLayoutEffect(() => {
+    try {
+      window.scrollTo({ top: 0, left: 0, behavior: 'instant' })
+    } catch {
+      window.scrollTo(0, 0)
+    }
+  }, [pathname])
+  return null
+}
+
+// Protected Route wrapper — opens auth modal instead of redirecting
 const ProtectedRoute = ({ children }) => {
   const { isAuthenticated, loading } = useAuth()
-  const location = useLocation()
+  const { openAuth } = useAuthModal()
+
+  useEffect(() => {
+    if (!loading && !isAuthenticated) {
+      openAuth('phone')
+    }
+  }, [loading, isAuthenticated, openAuth])
 
   if (loading) {
     return (
@@ -57,15 +78,39 @@ const ProtectedRoute = ({ children }) => {
 
   if (!isAuthenticated) {
     return (
-      <Navigate
-        to="/login"
-        replace
-        state={{ returnTo: `${location.pathname}${location.search}${location.hash}` }}
-      />
+      <div className="auth-required-screen">
+        <div className="auth-required-card">
+          <div className="auth-required-icon">🔒</div>
+          <h2>Login required</h2>
+          <p>Sign in to access this page</p>
+          <button className="cart-primary-cta" onClick={() => openAuth('phone')}>
+            Login / Sign up
+          </button>
+        </div>
+      </div>
     )
   }
 
   return children
+}
+
+// Legacy /login route — opens modal and redirects home
+const LoginRedirect = () => {
+  const navigate = useNavigate()
+  const { openAuth } = useAuthModal()
+  const { isAuthenticated, loading } = useAuth()
+
+  useEffect(() => {
+    if (loading) return
+    if (isAuthenticated) {
+      navigate('/', { replace: true })
+    } else {
+      openAuth('phone')
+      navigate('/', { replace: true })
+    }
+  }, [loading, isAuthenticated, navigate, openAuth])
+
+  return null
 }
 
 // Admin Route wrapper
@@ -99,9 +144,9 @@ const AppRoutes = () => {
       <Route path="/" element={<Home />} />
       <Route path="/products" element={<Home />} />
       <Route path="/product/:id" element={<ProductDetail />} />
-      <Route path="/login" element={<Login />} />
-      <Route path="/register" element={<Navigate to="/login" replace />} />
-      <Route path="/forgot-password" element={<ForgotPassword />} />
+      <Route path="/login" element={<LoginRedirect />} />
+      <Route path="/register" element={<LoginRedirect />} />
+      <Route path="/forgot-password" element={<LoginRedirect />} />
       <Route path="/reset-password" element={<ResetPassword />} />
 
       {/* Protected Routes */}
@@ -316,37 +361,57 @@ const App = () => {
         <SettingsProvider>
           <AuthProvider>
             <CartProvider>
+              <AuthModalProvider>
               <Toaster
-                position="top-right"
+                position="top-center"
+                gutter={10}
                 toastOptions={{
                   duration: 3000,
+                  className: 'fizz-toast',
                   style: {
-                    background: '#1C1C1C',
+                    background: 'rgba(15, 18, 48, 0.85)',
                     color: '#FFFFFF',
-                    borderRadius: '8px',
-                    padding: '12px 16px',
-                    fontSize: '14px'
+                    borderRadius: '999px',
+                    padding: '12px 20px',
+                    fontSize: '0.92rem',
+                    fontWeight: 600,
+                    border: '1px solid rgba(255, 255, 255, 0.12)',
+                    boxShadow: '0 16px 48px rgba(0, 0, 0, 0.4)',
+                    backdropFilter: 'blur(16px)',
+                    WebkitBackdropFilter: 'blur(16px)'
                   },
                   success: {
                     iconTheme: {
-                      primary: '#28A745',
-                      secondary: '#FFFFFF'
+                      primary: '#00E07A',
+                      secondary: '#0F1230'
                     }
                   },
                   error: {
                     iconTheme: {
-                      primary: '#DC3545',
-                      secondary: '#FFFFFF'
+                      primary: '#FF4D7A',
+                      secondary: '#0F1230'
                     }
                   }
                 }}
               />
+              <ScrollToTop />
               <div className="app-shell">
+                <div className="bg-fizz" aria-hidden="true">
+                  <span style={{ top: '9%', left: '5%', '--d': '19s', '--mx': '34px', '--my': '-46px', animationDelay: '0s' }}>🥤</span>
+                  <span style={{ top: '15%', left: '83%', '--d': '23s', '--mx': '-40px', '--my': '38px', animationDelay: '-4s' }}>🧊</span>
+                  <span style={{ top: '34%', left: '47%', '--d': '27s', '--mx': '26px', '--my': '-30px', animationDelay: '-9s' }}>🫧</span>
+                  <span style={{ top: '46%', left: '9%', '--d': '21s', '--mx': '38px', '--my': '32px', animationDelay: '-6s' }}>🍾</span>
+                  <span style={{ top: '56%', left: '87%', '--d': '25s', '--mx': '-32px', '--my': '-40px', animationDelay: '-12s' }}>🍹</span>
+                  <span style={{ top: '79%', left: '13%', '--d': '24s', '--mx': '30px', '--my': '-36px', animationDelay: '-3s' }}>🧊</span>
+                  <span style={{ top: '84%', left: '78%', '--d': '20s', '--mx': '-36px', '--my': '30px', animationDelay: '-15s' }}>🥤</span>
+                </div>
                 <div className="app-content">
                   <AppRoutes />
                 </div>
                 <BottomNav />
+                <AuthModal />
               </div>
+              </AuthModalProvider>
             </CartProvider>
           </AuthProvider>
         </SettingsProvider>

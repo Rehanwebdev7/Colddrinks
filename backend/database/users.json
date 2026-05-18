@@ -47,10 +47,10 @@
     "createdAt": "2026-05-11T10:30:33.812Z",
     "status": "active",
     "customerSession": {
-      "id": "2c02daf1bf6cc626c9f5aa2ff3ecc278",
-      "refreshTokenHash": "62d01ba97d4414c7def1af3a867d026234894ee89b74f920bbd7fd46c664b6cb",
-      "createdAt": "2026-05-11T10:30:33.888Z",
-      "lastRotatedAt": "2026-05-11T10:30:33.888Z"
+      "id": "30c74084f6d1027e48231641e0c0ec0a",
+      "refreshTokenHash": "833ced8f252ca46b8b186f5612375b782655934e921eab350f251d7dd9bfa63c",
+      "createdAt": "2026-05-15T03:55:09.537Z",
+      "lastRotatedAt": "2026-05-18T05:47:04.501Z"
     }
   }
 ]

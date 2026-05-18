@@ -236,7 +236,7 @@
     "message": "A payment of ₹1.00 has been recorded successfully.",
     "image": "",
     "targetUserId": "USR-003",
-    "isRead": false,
+    "isRead": true,
     "createdAt": "2026-05-11T17:40:57.106Z"
   },
   {

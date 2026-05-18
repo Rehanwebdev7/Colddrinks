@@ -15,7 +15,12 @@
       "Bash(awk '$1 >= 3700 && $1 <= 3760 || $1 >= 4440 && $1 <= 4480 || $1 >= 6870 && $1 <= 6910')",
       "Bash(git add *)",
       "Bash(git commit *)",
-      "Bash(git push *)"
+      "Bash(git push *)",
+      "Bash(Get-ChildItem -Path \"D:\\\\PHP GITHUB\\\\Colddrinks\" -Directory)",
+      "Bash(Select-Object Name)",
+      "Bash(awk -F'\"' '{print $2}')",
+      "Bash(netstat -ano)",
+      "Bash(findstr \"3000 3001 3002\")"
     ]
   }
 }

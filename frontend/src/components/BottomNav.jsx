@@ -4,9 +4,9 @@ import { useCart } from '../context/CartContext'
 import { useAuth } from '../context/AuthContext'
 
 const navItems = [
-  { label: 'Home', icon: FiHome, path: '/' },
   { label: 'Wishlist', icon: FiHeart, path: '/wishlist', authRequired: true },
   { label: 'Cart', icon: FiShoppingCart, path: '/cart' },
+  { label: 'Home', icon: FiHome, path: '/', center: true },
   { label: 'Orders', icon: FiPackage, path: '/orders', authRequired: true },
   { label: 'Profile', icon: FiUser, path: '/profile', authRequired: true },
 ]
@@ -45,11 +45,11 @@ const BottomNav = () => {
           <button
             key={item.label}
             onClick={() => handleNavigate(item)}
-            className={`bnav-item${active ? ' active' : ''}`}
+            className={`bnav-item${active ? ' active' : ''}${item.center ? ' bnav-center' : ''}`}
             aria-label={item.label}
           >
             <span className="bnav-icon-wrap">
-              <Icon size={22} className="bnav-icon" />
+              <Icon size={item.center ? 26 : 22} className="bnav-icon" />
               {item.label === 'Cart' && itemCount > 0 && (
                 <span className="bnav-badge">
                   {itemCount > 99 ? '99+' : itemCount}

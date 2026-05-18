@@ -189,9 +189,15 @@ const ProductCard = ({ product }) => {
             <FiHeart style={wishlisted ? { fill: 'currentColor' } : {}} />
           </button>
         </div>
+        {offerText && (
+          <div className="product-card-offer-strip">
+            <span className="product-card-offer-tag">Free Offer</span>
+            <span className="product-card-offer-text">{offerText}</span>
+          </div>
+        )}
         <div className="product-card-body">
-          <div className="product-card-topline">
-            <h3 className="product-card-name">{name}</h3>
+          <h3 className="product-card-name">{name}</h3>
+          <div className="product-card-priceline">
             <div className="product-card-price">
               &#8377;{unitPrice.toFixed(2).replace(/\.00$/, '')}
               <span className="per-box">
@@ -199,25 +205,17 @@ const ProductCard = ({ product }) => {
               </span>
               {unitMrp > unitPrice && <span className="original-price">&#8377;{unitMrp.toFixed(2).replace(/\.00$/, '')}</span>}
             </div>
+            {isOutOfStock ? (
+              <span className="stock-status stock-out">Out of Stock</span>
+            ) : stock <= 10 ? (
+              <span className="stock-status stock-low">{lowStockText}</span>
+            ) : (
+              <span className="stock-status stock-in">In Stock</span>
+            )}
           </div>
-          {offerText && (
-            <div className="product-card-offer-strip">
-              <span className="product-card-offer-tag">Free Offer</span>
-              <span className="product-card-offer-text">{offerText}</span>
-            </div>
-          )}
           <div className="product-card-meta-row">
             <div className="product-card-box-info">
               {product.volume ? `${product.volume}ml · ` : ''}{product.boxQuantity || product.unitsPerBox || 24} {isPieceMode ? 'cans' : 'bottles'}/box
-            </div>
-            <div className="product-card-stock">
-              {isOutOfStock ? (
-                <span className="stock-status stock-out">Out of Stock</span>
-              ) : stock <= 10 ? (
-                <span className="stock-status stock-low">{lowStockText}</span>
-              ) : (
-                <span className="stock-status stock-in">In Stock</span>
-              )}
             </div>
           </div>
         </div>
@@ -240,7 +238,7 @@ const ProductCard = ({ product }) => {
               </button>
             ))}
           </div>
-          {cartQuantity > 0 ? (
+          {cartQuantity > 0 && (
             <div className="purchase-qty-row">
               <div className="mini-qty-control">
                 <button type="button" className="mini-qty-btn" onClick={handleDecrease}>
@@ -263,18 +261,6 @@ const ProductCard = ({ product }) => {
                   +
                 </button>
               </div>
-              <span className="purchase-qty-note">
-                {isFixedHalfBox ? 'Half box already added' : purchaseMode === 'piece' ? 'Adjust pieces from here' : 'Adjust quantity from here'}
-              </span>
-            </div>
-          ) : (
-            <div className="purchase-qty-row purchase-hint-row">
-              <span className="purchase-fixed-note">
-                {isFixedHalfBox ? 'Half box fixed at 1' : 'Tap add to start'}
-              </span>
-              <span className="purchase-qty-note">
-                {isFixedHalfBox ? 'For 1.5 box, add 1 full box + 1 half box' : purchaseMode === 'piece' ? 'Then increase pieces from here' : 'Then increase quantity from here'}
-              </span>
             </div>
           )}
         </div>

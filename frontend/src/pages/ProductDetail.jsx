@@ -611,41 +611,6 @@ const ProductDetail = () => {
             )}
             <h1 className="product-detail-name">{product.name}</h1>
 
-            <div className="product-detail-meta">
-              <div className="product-detail-box-info">
-                <BsBoxSeam className="box-icon" />
-                <span>{currentVolumeLabel ? `${currentVolumeLabel} · ` : ''}{product.bottlesPerBox || product.unitsPerBox || 24} bottles per box</span>
-              </div>
-
-              {sizeVariants.length > 1 && (
-                <div className="product-detail-variants-inline">
-                  <span className="product-detail-variants-label">Sizes:</span>
-                  <div className="product-detail-variants-grid">
-                    {sizeVariants.map((variantProduct) => {
-                      const variantId = getProductId(variantProduct)
-                      const isSelected = variantId === getProductId(product)
-                      const isDisabled = !variantProduct.isAvailable && !isSelected
-                      return (
-                        <button
-                          key={variantId}
-                          type="button"
-                          className={`product-detail-variant-chip${isSelected ? ' active' : ''}${isDisabled ? ' disabled' : ''}`}
-                          onClick={() => {
-                            if (!isSelected && !isDisabled) navigate(`/product/${variantId}`)
-                          }}
-                          disabled={isDisabled}
-                          aria-pressed={isSelected}
-                          title={isDisabled ? 'Out of stock' : formatVolumeLabel(variantProduct.volume)}
-                        >
-                          <span className="product-detail-variant-volume">{formatVolumeLabel(variantProduct.volume)}</span>
-                        </button>
-                      )
-                    })}
-                  </div>
-                </div>
-              )}
-            </div>
-
             <div className="product-detail-price">
               <span className="selling-price">&#8377;{unitPrice}</span>
               <span className="per-box">
@@ -657,14 +622,53 @@ const ProductDetail = () => {
               {savings && <span className="savings-badge">Save {savings.percent}%</span>}
             </div>
 
-            {stockStatus && (
-              <div className={`stock-status ${stockStatus.className}`}>{stockStatus.text}</div>
-            )}
-
-            {/* Delivery Estimation */}
-            <div className="delivery-badge">
-              <FiClock /> Delivery in 2-3 hours
+            {/* Compact info pills row — pack, stock, delivery in single dense row */}
+            <div className="product-detail-info-row">
+              <span className="info-pill pill-pack">
+                <BsBoxSeam />
+                {currentVolumeLabel ? `${currentVolumeLabel} · ` : ''}{product.bottlesPerBox || product.unitsPerBox || 24} bottles
+              </span>
+              {stockStatus && (
+                <span className={`info-pill stock-status ${stockStatus.className}`}>{stockStatus.text}</span>
+              )}
+              <span className="info-pill pill-delivery">
+                <FiClock /> 2-3 hr delivery
+              </span>
+              {product.brand && (
+                <span className="info-pill pill-brand">{product.brand}</span>
+              )}
+              {product.flavor && (
+                <span className="info-pill pill-flavor">{product.flavor}</span>
+              )}
             </div>
+
+            {sizeVariants.length > 1 && (
+              <div className="product-detail-variants-inline">
+                <span className="product-detail-variants-label">Sizes:</span>
+                <div className="product-detail-variants-grid">
+                  {sizeVariants.map((variantProduct) => {
+                    const variantId = getProductId(variantProduct)
+                    const isSelected = variantId === getProductId(product)
+                    const isDisabled = !variantProduct.isAvailable && !isSelected
+                    return (
+                      <button
+                        key={variantId}
+                        type="button"
+                        className={`product-detail-variant-chip${isSelected ? ' active' : ''}${isDisabled ? ' disabled' : ''}`}
+                        onClick={() => {
+                          if (!isSelected && !isDisabled) navigate(`/product/${variantId}`)
+                        }}
+                        disabled={isDisabled}
+                        aria-pressed={isSelected}
+                        title={isDisabled ? 'Out of stock' : formatVolumeLabel(variantProduct.volume)}
+                      >
+                        <span className="product-detail-variant-volume">{formatVolumeLabel(variantProduct.volume)}</span>
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
+            )}
 
             {/* Offer Banner */}
             {product.offer?.enabled && product.offer?.label && (

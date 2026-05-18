@@ -6,6 +6,7 @@ import { FiSun, FiMoon, FiArrowLeft } from 'react-icons/fi'
 import { useAuth } from '../context/AuthContext'
 import { useCart } from '../context/CartContext'
 import { useSettings } from '../context/SettingsContext'
+import { useAuthModal } from '../context/AuthModalContext'
 import API from '../config/api'
 import toast from 'react-hot-toast'
 import SideDrawer from './SideDrawer'
@@ -14,6 +15,7 @@ const Navbar = () => {
   const { user, isAuthenticated, logout } = useAuth()
   const { items } = useCart()
   const { settings } = useSettings()
+  const { openAuth } = useAuthModal()
   const navigate = useNavigate()
   const location = useLocation()
 
@@ -81,6 +83,11 @@ const Navbar = () => {
     setDrawerOpen(false)
     setMobileMenuOpen(false)
   }, [location.pathname])
+
+  // Auto-close mobile menu when user logs in
+  useEffect(() => {
+    if (isAuthenticated) setMobileMenuOpen(false)
+  }, [isAuthenticated])
 
   // Fetch products for autocomplete
   useEffect(() => {
@@ -240,17 +247,29 @@ const Navbar = () => {
           </button>
         )}
         <Link to="/" className={`navbar-brand${settings?.logo && showBrandLogo ? ' has-logo' : ''}`}>
-          {settings?.logo && showBrandLogo && (
-            <img
-              src={settings.logo}
-              alt={brandName}
-              referrerPolicy="no-referrer"
-              onError={() => setShowBrandLogo(false)}
-              onClick={(e) => { e.preventDefault(); e.stopPropagation(); setShowLogoModal(true) }}
-              style={{ cursor: 'zoom-in' }}
-            />
+          {settings?.logo && showBrandLogo ? (
+            <>
+              <img
+                className="navbar-brand-logo-full"
+                src={settings.logo}
+                alt={brandName}
+                referrerPolicy="no-referrer"
+                onError={() => setShowBrandLogo(false)}
+                onClick={(e) => { e.preventDefault(); e.stopPropagation(); setShowLogoModal(true) }}
+                style={{ cursor: 'zoom-in' }}
+              />
+              <img
+                className="navbar-brand-logo-icon"
+                src={settings.favicon || settings.logo}
+                alt={brandName}
+                referrerPolicy="no-referrer"
+                onClick={(e) => { e.preventDefault(); e.stopPropagation(); setShowLogoModal(true) }}
+                style={{ cursor: 'zoom-in' }}
+              />
+            </>
+          ) : (
+            <span>{brandName}</span>
           )}
-          <span>{brandName}</span>
         </Link>
         </div>
 
@@ -390,8 +409,8 @@ const Navbar = () => {
             </button>
           ) : (
             <div className="navbar-auth-links">
-              <Link to="/login" className="btn btn-outline">Login</Link>
-              <Link to="/register" className="btn btn-primary">Sign Up</Link>
+              <button type="button" className="btn btn-outline btn-sm" onClick={() => openAuth('phone')}>Login</button>
+              <button type="button" className="btn btn-primary btn-sm" onClick={() => openAuth('phone')}>Sign Up</button>
             </div>
           )}
 
@@ -407,9 +426,20 @@ const Navbar = () => {
         </div>
       </div>
 
-      {/* Mobile Menu */}
-      {mobileMenuOpen && (
+      {/* Mobile Menu — only when NOT authenticated */}
+      {mobileMenuOpen && !isAuthenticated && (
+        <div className="mobile-menu-backdrop" onClick={() => setMobileMenuOpen(false)} />
+      )}
+      {mobileMenuOpen && !isAuthenticated && (
         <div className="navbar-nav open">
+          <button
+            type="button"
+            className="navbar-nav-close"
+            onClick={() => setMobileMenuOpen(false)}
+            aria-label="Close menu"
+          >
+            <FaTimes />
+          </button>
           <form onSubmit={handleSearch} className="navbar-mobile-search">
             <div className="search-bar">
               <span className="search-icon">
@@ -433,8 +463,16 @@ const Navbar = () => {
 
           {!isAuthenticated && (
             <>
-              <Link to="/login" className="nav-link" onClick={() => setMobileMenuOpen(false)}>Login</Link>
-              <Link to="/register" className="nav-link" onClick={() => setMobileMenuOpen(false)}>Sign Up</Link>
+              <button
+                type="button"
+                className="nav-link"
+                onClick={() => { setMobileMenuOpen(false); openAuth('phone') }}
+              >Login</button>
+              <button
+                type="button"
+                className="nav-link"
+                onClick={() => { setMobileMenuOpen(false); openAuth('phone') }}
+              >Sign Up</button>
             </>
           )}
         </div>
