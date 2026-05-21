@@ -256,7 +256,7 @@
     "message": "Thank you for being our valued customer!",
     "image": "",
     "targetUserId": "USR-004",
-    "isRead": false,
+    "isRead": true,
     "createdAt": "2026-05-12T03:45:31.995Z"
   },
   {

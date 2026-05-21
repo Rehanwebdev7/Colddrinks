@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react'
 import { useAuth } from '../context/AuthContext'
 import { useCart } from '../context/CartContext'
 import { useAuthModal } from '../context/AuthModalContext'
+import { useSettings } from '../context/SettingsContext'
 import toast from 'react-hot-toast'
 import API from '../config/api'
 import { MdLocalDrink } from 'react-icons/md'
@@ -14,6 +15,7 @@ const AuthModal = () => {
   const { isOpen, view, closeAuth, switchView } = useAuthModal()
   const { checkPhone, login, register } = useAuth()
   const { hydrateCustomerCart } = useCart()
+  const { settings } = useSettings()
 
   const [phone, setPhone] = useState('')
   const [name, setName] = useState('')
@@ -58,6 +60,9 @@ const AuthModal = () => {
   }, [isOpen])
 
   if (!isOpen) return null
+
+  const brandName = settings?.siteName || 'Royal'
+  const brandLogo = settings?.logo || settings?.favicon || ''
 
   const handlePhoneSubmit = async (e) => {
     e.preventDefault()
@@ -139,8 +144,19 @@ const AuthModal = () => {
         </button>
 
         <div className="auth-modal-brand">
-          <div className="auth-modal-brand-icon"><MdLocalDrink /></div>
-          <span className="auth-modal-brand-name">Royal</span>
+          {brandLogo ? (
+            <img
+              src={brandLogo}
+              alt={brandName}
+              className="auth-modal-brand-logo"
+              referrerPolicy="no-referrer"
+            />
+          ) : (
+            <>
+              <div className="auth-modal-brand-icon"><MdLocalDrink /></div>
+              <span className="auth-modal-brand-name">{brandName}</span>
+            </>
+          )}
         </div>
 
         {/* PHONE STEP */}
@@ -231,7 +247,7 @@ const AuthModal = () => {
             <button onClick={goBackToPhone} className="auth-modal-back">
               <FiArrowLeft /> Change number
             </button>
-            <h2 className="auth-modal-title">Welcome to Royal!</h2>
+            <h2 className="auth-modal-title">Welcome to {brandName}!</h2>
             <p className="auth-modal-subtitle">
               <FiPhone style={{ marginRight: 4, verticalAlign: '-2px' }} />
               {maskPhone(phone)} — Set up your account

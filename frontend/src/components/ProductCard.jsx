@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { FaShoppingCart } from 'react-icons/fa'
-import { FiHeart, FiCheck } from 'react-icons/fi'
+import { FiHeart } from 'react-icons/fi'
 import { useCart } from '../context/CartContext'
 import { useAuth } from '../context/AuthContext'
 import API from '../config/api'
@@ -238,44 +238,36 @@ const ProductCard = ({ product }) => {
               </button>
             ))}
           </div>
-          {cartQuantity > 0 && (
-            <div className="purchase-qty-row">
-              <div className="mini-qty-control">
-                <button type="button" className="mini-qty-btn" onClick={handleDecrease}>
-                  -
-                </button>
-                {isFixedHalfBox ? (
-                  <span className="mini-qty-value">{cartQuantity}</span>
-                ) : (
-                  <input
-                    type="text"
-                    inputMode="numeric"
-                    pattern="[0-9]*"
-                    className="mini-qty-input"
-                    value={cartQuantity}
-                    onClick={(e) => e.stopPropagation()}
-                    onChange={handleQuantityInput}
-                  />
-                )}
-                <button type="button" className="mini-qty-btn" onClick={handleIncrease} disabled={isFixedHalfBox || cartQuantity >= maxQuantity}>
-                  +
-                </button>
-              </div>
-            </div>
-          )}
         </div>
         {cartQuantity > 0 ? (
-          <button
-            type="button"
-            onClick={(e) => {
-              e.preventDefault()
-              e.stopPropagation()
-            }}
-            className={`btn btn-primary btn-full btn-added${justAdded ? ' btn-added-pulse' : ''}`}
-          >
-            <FiCheck />
-            {isFixedHalfBox ? 'Half Box Added' : 'Added to Cart'}
-          </button>
+          <div className={`cart-qty-action${justAdded ? ' cart-qty-action-pulse' : ''}`}>
+            <button type="button" className="cart-qty-action-btn" onClick={handleDecrease} aria-label="Decrease quantity">
+              -
+            </button>
+            {isFixedHalfBox ? (
+              <span className="cart-qty-action-value">{cartQuantity}</span>
+            ) : (
+              <input
+                type="text"
+                inputMode="numeric"
+                pattern="[0-9]*"
+                className="cart-qty-action-input"
+                value={cartQuantity}
+                onClick={(e) => e.stopPropagation()}
+                onChange={handleQuantityInput}
+                aria-label="Cart quantity"
+              />
+            )}
+            <button
+              type="button"
+              className="cart-qty-action-btn"
+              onClick={handleIncrease}
+              disabled={isFixedHalfBox || cartQuantity >= maxQuantity}
+              aria-label="Increase quantity"
+            >
+              +
+            </button>
+          </div>
         ) : (
           <button onClick={handleAddToCart} disabled={isOutOfStock || maxQuantity === 0} className={`btn btn-primary btn-full${isOutOfStock || maxQuantity === 0 ? ' btn-disabled' : ''}`}>
             <FaShoppingCart />

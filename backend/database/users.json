@@ -43,14 +43,14 @@
     "role": "customer",
     "addresses": [],
     "wallet": 0,
-    "fcmToken": null,
+    "fcmToken": "cGIoOyyP51eKsc-xabapjh:APA91bGe1UjkLTf-YqKnELOUSyB0QEKufy-pMk9-x-T3OoQJ-UX9AJvNTL_c6W18e2S6BpFNTNN6bS5BeOp7BPiyWEuiAU_Nf1baNy-5qcNehdadmdPkWEg",
     "createdAt": "2026-05-11T10:30:33.812Z",
     "status": "active",
     "customerSession": {
-      "id": "30c74084f6d1027e48231641e0c0ec0a",
-      "refreshTokenHash": "833ced8f252ca46b8b186f5612375b782655934e921eab350f251d7dd9bfa63c",
-      "createdAt": "2026-05-15T03:55:09.537Z",
-      "lastRotatedAt": "2026-05-18T05:47:04.501Z"
+      "id": "fba8980fe83776a8b8a775423e26bcfc",
+      "refreshTokenHash": "ccb0adcd0a23c1673bf5c244225579964e54389d8d3aba01df7cc47b93692cc6",
+      "createdAt": "2026-05-20T05:02:28.519Z",
+      "lastRotatedAt": "2026-05-20T05:02:28.519Z"
     }
   }
 ]

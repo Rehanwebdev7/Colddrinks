@@ -528,7 +528,7 @@ const Navbar = () => {
       )}
 
       {/* Side Drawer */}
-      {isAuthenticated && (
+      {isAuthenticated && drawerOpen && (
         <SideDrawer
           isOpen={drawerOpen}
           onClose={() => setDrawerOpen(false)}

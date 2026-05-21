@@ -110,7 +110,11 @@ const Profile = () => {
     }
     try {
       setSaving(true)
-      const result = await updateProfile(profileData)
+      const result = await updateProfile({
+        name: profileData.name.trim(),
+        email: profileData.email.trim(),
+        address: profileData.address.trim()
+      })
       if (result.success) setIsEditing(false)
     } catch (err) {
       console.error('Profile update error:', err)
@@ -169,50 +173,6 @@ const Profile = () => {
                   user.name?.charAt(0)?.toUpperCase() || 'U'
                 )}
               </div>
-              {isEditing && (
-                <>
-                  <div className="profile-avatar-actions">
-                    <button
-                      type="button"
-                      className="profile-avatar-upload"
-                      onClick={() => fileInputRef.current?.click()}
-                    >
-                      <FiCamera /> Upload Photo
-                    </button>
-                    <button
-                      type="button"
-                      className="profile-avatar-upload"
-                      onClick={() => cameraInputRef.current?.click()}
-                    >
-                      <FiCamera /> Use Camera
-                    </button>
-                    {profileData.avatar && (
-                      <button
-                        type="button"
-                        className="profile-avatar-upload profile-avatar-remove"
-                        onClick={handleAvatarRemove}
-                      >
-                        <FiX /> Remove
-                      </button>
-                    )}
-                  </div>
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    accept="image/*"
-                    style={{ display: 'none' }}
-                    onChange={handleAvatarSelect}
-                  />
-                  <input
-                    ref={cameraInputRef}
-                    type="file"
-                    accept="image/*"
-                    capture="environment"
-                    style={{ display: 'none' }}
-                    onChange={handleAvatarSelect}
-                  />
-                </>
-              )}
             </div>
             <div className="profile-header-info">
               <h2>{user.name}</h2>
@@ -252,17 +212,13 @@ const Profile = () => {
               {isEditing ? (
                 <input type="email" name="email" value={profileData.email} onChange={handleChange} className="form-input" />
               ) : (
-                <p className="profile-field-value">{user.email}</p>
+                <p className="profile-field-value">{user.email || 'Not provided'}</p>
               )}
             </div>
 
             <div className="profile-field">
               <label className="profile-field-label"><FiPhone className="inline-icon" /> Phone</label>
-              {isEditing ? (
-                <input type="tel" name="phone" value={profileData.phone} onChange={handleChange} className="form-input" />
-              ) : (
-                <p className="profile-field-value">{user.phone || 'Not provided'}</p>
-              )}
+              <p className="profile-field-value">{user.phone || 'Not provided'}</p>
             </div>
 
             <div className="profile-field">

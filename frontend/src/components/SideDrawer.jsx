@@ -246,7 +246,11 @@ const SideDrawer = ({ isOpen, onClose, initialView = 'menu', user, onLogout, unr
     if (!profileData.name.trim()) { toast.error('Name is required'); return }
     try {
       setSaving(true)
-      const result = await updateProfile(profileData)
+      const result = await updateProfile({
+        name: profileData.name.trim(),
+        email: profileData.email.trim(),
+        address: profileData.address.trim()
+      })
       if (result.success) setIsEditing(false)
     } catch { /* ignore */ }
     finally { setSaving(false) }
@@ -387,6 +391,17 @@ const SideDrawer = ({ isOpen, onClose, initialView = 'menu', user, onLogout, unr
     }
   }
 
+  const openOrderFromNotification = async (notif) => {
+    const orderRef = parseOrderRef(`${notif.title || ''} ${notif.message || ''}`)
+    if (!orderRef) {
+      if (!notif.isRead) await markAsRead(notif.id)
+      return
+    }
+    if (!notif.isRead) await markAsRead(notif.id)
+    await fetchOrderDetail(orderRef)
+    navigateTo('order-detail')
+  }
+
   // ---- View title ----
   const getTitle = () => {
     switch (activeView) {
@@ -432,7 +447,7 @@ const SideDrawer = ({ isOpen, onClose, initialView = 'menu', user, onLogout, unr
           {orders.length > 0 && <span className="drawer-badge">{orders.length}</span>}
           <FiChevronRight className="drawer-menu-chevron" />
         </button>
-        <button className="drawer-menu-item" onClick={() => { onClose(); window.location.href = '/wishlist' }}>
+        <button className="drawer-menu-item" onClick={() => { onClose(); navigate('/wishlist') }}>
           <FiHeart className="drawer-menu-icon" />
           <span>My Wishlist</span>
           <FiChevronRight className="drawer-menu-chevron" />
@@ -492,18 +507,7 @@ const SideDrawer = ({ isOpen, onClose, initialView = 'menu', user, onLogout, unr
           </button>
         ) : (
           <>
-            <div className="profile-edit-actions" style={{ marginTop: 8, flexWrap: 'wrap', justifyContent: 'center' }}>
-              <button className="btn btn-outline btn-sm" type="button" onClick={() => galleryInputRef.current?.click()}>
-                <FiCamera /> Upload Photo
-              </button>
-              <button className="btn btn-outline btn-sm" type="button" onClick={() => cameraInputRef.current?.click()}>
-                <FiCamera /> Use Camera
-              </button>
-              {profileData.avatar && (
-                <button className="btn btn-outline btn-sm" type="button" onClick={handleAvatarRemove}>
-                  <FiX /> Remove Photo
-                </button>
-              )}
+            <div className="profile-edit-actions drawer-name-edit-actions" style={{ marginTop: 8, flexWrap: 'wrap', justifyContent: 'center' }}>
               <button className="btn btn-primary btn-sm" onClick={handleProfileSave} disabled={saving}>
                 {saving ? <ImSpinner8 className="spinner-sm" /> : <FiSave />} Save
               </button>
@@ -544,16 +548,12 @@ const SideDrawer = ({ isOpen, onClose, initialView = 'menu', user, onLogout, unr
           {isEditing ? (
             <input type="email" name="email" value={profileData.email} onChange={e => setProfileData({...profileData, email: e.target.value})} className="form-input" />
           ) : (
-            <p className="profile-field-value">{user?.email}</p>
+            <p className="profile-field-value">{user?.email || 'Not provided'}</p>
           )}
         </div>
         <div className="profile-field">
           <label className="profile-field-label"><FiPhone className="inline-icon" /> Phone</label>
-          {isEditing ? (
-            <input type="tel" name="phone" value={profileData.phone} onChange={e => setProfileData({...profileData, phone: e.target.value})} className="form-input" />
-          ) : (
-            <p className="profile-field-value">{user?.phone || 'Not provided'}</p>
-          )}
+          <p className="profile-field-value">{user?.phone || 'Not provided'}</p>
         </div>
         <div className="profile-field">
           <label className="profile-field-label"><FiMapPin className="inline-icon" /> Address</label>
@@ -1101,13 +1101,3 @@ const SideDrawer = ({ isOpen, onClose, initialView = 'menu', user, onLogout, unr
 }
 
 export default SideDrawer
-  const openOrderFromNotification = async (notif) => {
-    const orderRef = parseOrderRef(`${notif.title || ''} ${notif.message || ''}`)
-    if (!orderRef) {
-      if (!notif.isRead) await markAsRead(notif.id)
-      return
-    }
-    if (!notif.isRead) await markAsRead(notif.id)
-    await fetchOrderDetail(orderRef)
-    navigateTo('order-detail')
-  }

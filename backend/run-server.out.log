@@ -1,0 +1,21 @@
+
+🔥 Connecting to Firestore (noor-coldrinks)...
+  ✓ users: 3 docs
+  ✓ products: 4 docs
+  ✓ orders: 2 docs
+  ✓ cart: 1 docs
+  ✓ bills: 9 docs
+  ✓ categories: 3 docs
+  - coupons: empty
+  ✓ paymentHistory: 5 docs
+  ✓ paymentRequests: 1 docs
+  ✓ sliders: 1 docs
+  - wishlist: empty
+  ✓ offlineSales: 7 docs
+  ✓ inventoryMovements: 10 docs
+  ✓ suppliers: 2 docs
+  ✓ supplierPurchases: 2 docs
+  ✓ supplierPayments: 1 docs
+  ✓ settings/app: loaded
+🔥 Firestore ready!
+

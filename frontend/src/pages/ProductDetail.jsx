@@ -15,6 +15,7 @@ import {
   canPurchaseByPiece,
   getAllowedPurchaseModes,
   getDefaultPurchaseMode,
+  getCartItemId,
   getMaxPurchaseQuantity,
   getModeLabel,
   getModeShortLabel,
@@ -214,7 +215,7 @@ const compareRelatedProducts = (currentProduct, leftProduct, rightProduct) => {
 const ProductDetail = () => {
   const { id } = useParams()
   const navigate = useNavigate()
-  const { addToCart } = useCart()
+  const { items, addToCart, updateQuantity, removeFromCart } = useCart()
   const { isAuthenticated } = useAuth()
 
   const [product, setProduct] = useState(null)
@@ -226,6 +227,7 @@ const ProductDetail = () => {
   const [sizeVariants, setSizeVariants] = useState([])
   const [wishlisted, setWishlisted] = useState(false)
   const [activeImageIndex, setActiveImageIndex] = useState(0)
+  const [justAdded, setJustAdded] = useState(false)
   const touchStartX = useRef(0)
   const touchEndX = useRef(0)
 
@@ -242,6 +244,12 @@ const ProductDetail = () => {
       setQuantity(1)
     }
   }, [product, purchaseMode])
+
+  useEffect(() => {
+    if (!justAdded) return
+    const timer = window.setTimeout(() => setJustAdded(false), 900)
+    return () => window.clearTimeout(timer)
+  }, [justAdded])
 
   const fetchProduct = async () => {
     try {
@@ -415,6 +423,37 @@ const ProductDetail = () => {
   const handleAddToCart = () => {
     if (!product) return
     addToCart(product, purchaseMode === 'half_box' ? 1 : Number.parseInt(quantity, 10) || 1, purchaseMode)
+    setJustAdded(true)
+  }
+
+  const handleCartDecrease = () => {
+    if (!cartItem) return
+    if (cartQuantity <= 1 || isFixedHalfBox) {
+      removeFromCart(cartItemId)
+      return
+    }
+    updateQuantity(cartItemId, cartQuantity - 1)
+  }
+
+  const handleCartIncrease = () => {
+    if (!cartItem || cartQuantity >= maxQuantity || isFixedHalfBox) return
+    updateQuantity(cartItemId, cartQuantity + 1)
+    setJustAdded(true)
+  }
+
+  const handleCartQuantityInput = (e) => {
+    if (!cartItem || isFixedHalfBox) return
+    const nextValue = e.target.value.replace(/[^\d]/g, '')
+    if (nextValue === '') {
+      removeFromCart(cartItemId)
+      return
+    }
+    const numericValue = Number(nextValue)
+    if (!Number.isFinite(numericValue) || numericValue < 1) {
+      removeFromCart(cartItemId)
+      return
+    }
+    updateQuantity(cartItemId, Math.min(numericValue, maxQuantity))
   }
 
   const handleBuyNow = () => {
@@ -534,6 +573,9 @@ const ProductDetail = () => {
   const unitMrp = product?.mrp ? getUnitPrice({ ...product, pricePerBox: product.mrp, price: product.mrp }, purchaseMode) : 0
   const isFixedHalfBox = purchaseMode === 'half_box'
   const currentVolumeLabel = formatVolumeLabel(product?.volume)
+  const cartItemId = getCartItemId(getProductId(product), purchaseMode)
+  const cartItem = items.find((item) => item.cartItemId === cartItemId)
+  const cartQuantity = cartItem?.quantity || 0
 
   return (
     <div className="page-wrapper">
@@ -700,7 +742,7 @@ const ProductDetail = () => {
               </div>
             </div>
 
-            {!isFixedHalfBox ? (
+            {cartQuantity === 0 && !isFixedHalfBox ? (
               <div className="quantity-selector">
                 <span className="quantity-label">Quantity ({getModeLabel(purchaseMode).toLowerCase()}):</span>
                 <div className="quantity-controls">
@@ -724,17 +766,47 @@ const ProductDetail = () => {
                   </button>
                 </div>
               </div>
-            ) : (
+            ) : cartQuantity === 0 ? (
               <div className="quantity-selector">
                 <span className="quantity-label">Quantity</span>
                 <span className="purchase-fixed-note">Half box fixed at 1. For 1.5 box, add 1 full box plus 1 half box.</span>
               </div>
-            )}
+            ) : null}
 
             <div className="product-detail-actions">
-              <button className="btn btn-primary btn-lg" onClick={handleAddToCart} disabled={product.stock === 0 || maxQuantity === 0}>
-                <FaShoppingCart /> {isFixedHalfBox ? 'Add Half Box' : 'Add to Cart'}
-              </button>
+              {cartQuantity > 0 ? (
+                <div className={`cart-qty-action product-detail-cart-qty${justAdded ? ' cart-qty-action-pulse' : ''}`}>
+                  <button type="button" className="cart-qty-action-btn" onClick={handleCartDecrease} aria-label="Decrease cart quantity">
+                    <FiMinus />
+                  </button>
+                  {isFixedHalfBox ? (
+                    <span className="cart-qty-action-value">{cartQuantity}</span>
+                  ) : (
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      pattern="[0-9]*"
+                      className="cart-qty-action-input"
+                      value={cartQuantity}
+                      onChange={handleCartQuantityInput}
+                      aria-label="Cart quantity"
+                    />
+                  )}
+                  <button
+                    type="button"
+                    className="cart-qty-action-btn"
+                    onClick={handleCartIncrease}
+                    disabled={isFixedHalfBox || cartQuantity >= maxQuantity}
+                    aria-label="Increase cart quantity"
+                  >
+                    <FiPlus />
+                  </button>
+                </div>
+              ) : (
+                <button className="btn btn-primary btn-lg" onClick={handleAddToCart} disabled={product.stock === 0 || maxQuantity === 0}>
+                  <FaShoppingCart /> {isFixedHalfBox ? 'Add Half Box' : 'Add to Cart'}
+                </button>
+              )}
               <button className="btn btn-secondary btn-lg" onClick={handleBuyNow} disabled={product.stock === 0 || maxQuantity === 0}>
                 <FaBolt /> Buy Now
               </button>

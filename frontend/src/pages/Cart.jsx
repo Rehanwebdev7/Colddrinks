@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useCart } from '../context/CartContext'
 import { useAuth } from '../context/AuthContext'
@@ -36,6 +36,8 @@ const Cart = () => {
   const [placing, setPlacing] = useState(false)
   const [showQRModal, setShowQRModal] = useState(false)
   const [qrImageError, setQrImageError] = useState(false)
+  const [minimumNoticeActive, setMinimumNoticeActive] = useState(false)
+  const minimumNoticeRef = useRef(null)
 
   const couponDiscount = 0
 
@@ -94,6 +96,7 @@ const Cart = () => {
 
   const isBelowMinimumOrder = getFinalTotal() < MIN_ORDER_AMOUNT
   const minimumOrderMessage = `Minimum order amount is ₹${MIN_ORDER_AMOUNT}. Add more items to continue.`
+  const amountNeeded = Math.max(0, MIN_ORDER_AMOUNT - getFinalTotal())
 
   const payableAmount = Number(getFinalTotal().toFixed(2))
   const upiId = settings?.upiId || '7028732945@ybl'
@@ -142,9 +145,11 @@ const Cart = () => {
       return
     }
 
-    const trimmedAddress = validateAddress()
-    if (!trimmedAddress) {
-      toast.error('Please enter a delivery address')
+    if (getFinalTotal() < MIN_ORDER_AMOUNT) {
+      setMinimumNoticeActive(true)
+      minimumNoticeRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      window.setTimeout(() => setMinimumNoticeActive(false), 1200)
+      toast.error(minimumOrderMessage)
       return
     }
 
@@ -153,8 +158,9 @@ const Cart = () => {
       return
     }
 
-    if (getFinalTotal() < MIN_ORDER_AMOUNT) {
-      toast.error(minimumOrderMessage)
+    const trimmedAddress = validateAddress()
+    if (!trimmedAddress) {
+      toast.error('Please enter a delivery address')
       return
     }
 
@@ -235,19 +241,32 @@ const Cart = () => {
     )
   }
 
+  const regularCartItems = items.filter((item) => !item.isFreeItem)
+  const freeItemsBySource = items
+    .filter((item) => item.isFreeItem)
+    .reduce((acc, item) => {
+      const key = item.offerFromProductId || item.productId
+      const existing = acc.get(key) || []
+      existing.push(item)
+      acc.set(key, existing)
+      return acc
+    }, new Map())
+
   return (
     <div className="page-wrapper">
       <Navbar />
 
       <div className="container section-padding cart-page">
-        <h1 className="page-title">Your Cart ({items.filter(i => !i.isFreeItem).length} {items.filter(i => !i.isFreeItem).length === 1 ? 'item' : 'items'})</h1>
+        <h1 className="page-title">Your Cart ({regularCartItems.length} {regularCartItems.length === 1 ? 'item' : 'items'})</h1>
 
         <div className="cart-layout">
           {/* Cart Items */}
           <div className="cart-items-section">
             <div className="cart-items">
-              {items.map((item) => (
-                <div key={item.cartItemId || `${item.productId}-${item.purchaseMode || 'full_box'}`} className={`cart-item${item.isFreeItem ? ' cart-item-free' : ''}`}>
+              {regularCartItems.map((item) => {
+                const freeItems = freeItemsBySource.get(item.productId) || []
+                return (
+                <div key={item.cartItemId || `${item.productId}-${item.purchaseMode || 'full_box'}`} className="cart-item">
                   <div className="cart-item-image-wrapper">
                     <img
                       src={item.image || '/images/placeholder-drink.svg'}
@@ -278,6 +297,20 @@ const Cart = () => {
                         </p>
                         <p className="cart-item-meta">{getCartItemSummary(item)}</p>
                       </>
+                    )}
+
+                    {freeItems.length > 0 && (
+                      <div className="cart-inline-free-offers">
+                        {freeItems.map((freeItem) => (
+                          <div key={freeItem.cartItemId} className="cart-inline-free-offer">
+                            <span className="cart-inline-free-badge">FREE</span>
+                            <span className="cart-inline-free-name">
+                              {freeItem.quantity} x {freeItem.name.replace(/\s*\(FREE\)\s*$/i, '')}
+                            </span>
+                            <span className="cart-inline-free-label">{freeItem.offerLabel || 'Offer applied'}</span>
+                          </div>
+                        ))}
+                      </div>
                     )}
 
                     {!item.isFreeItem && (
@@ -336,7 +369,7 @@ const Cart = () => {
                     </span>
                   </div>
                 </div>
-              ))}
+              )})}
             </div>
           </div>
 
@@ -370,8 +403,12 @@ const Cart = () => {
             </div>
 
             {isBelowMinimumOrder && (
-              <div style={{ marginTop: 12, padding: '12px 14px', borderRadius: 12, background: 'rgba(226, 55, 68, 0.08)', color: '#ef4444', fontSize: 13, fontWeight: 600, lineHeight: 1.5 }}>
+              <div
+                ref={minimumNoticeRef}
+                className={`minimum-order-notice${minimumNoticeActive ? ' attention' : ''}`}
+              >
                 {minimumOrderMessage}
+                <span>Add ₹{amountNeeded.toFixed(2)} more to place this order.</span>
               </div>
             )}
 
@@ -456,12 +493,14 @@ const Cart = () => {
             <button
               className="btn btn-primary btn-lg btn-block cart-primary-cta"
               onClick={handlePlaceOrder}
-              disabled={placing || isBelowMinimumOrder}
+              disabled={placing}
             >
               {placing ? (
                 <>
                   <ImSpinner8 className="spinner-sm" /> Placing Order...
                 </>
+              ) : isBelowMinimumOrder ? (
+                `Add ₹${amountNeeded.toFixed(2)} more`
               ) : (
                 `Place Order \u2014 \u20B9${getFinalTotal().toFixed(2)}`
               )}
