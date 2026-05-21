@@ -209,7 +209,7 @@ const ThemeConfig = () => {
             {value && !isUploading && (
               <button
                 type="button"
-                onClick={() => onChange('')}
+                onClick={() => { onChange(''); toast('Image removed — click Save All to apply'); }}
                 style={{
                   background: 'rgba(239,68,68,0.12)',
                   border: '1px solid rgba(239,68,68,0.35)',
@@ -333,7 +333,7 @@ const ThemeConfig = () => {
                   <FaUpload style={{ fontSize: '10px' }} /> Choose
                 </label>
                 {form.paymentQr && (
-                  <button type="button" onClick={() => handleChange('paymentQr', '')} style={{ flex: 1, background: 'rgba(239,68,68,0.15)', border: '1px solid rgba(239,68,68,0.3)', borderRadius: '6px', padding: '6px 8px', color: '#ef4444', fontSize: '11px', cursor: 'pointer' }}>
+                  <button type="button" onClick={() => { handleChange('paymentQr', ''); toast('Image removed — click Save All to apply'); }} style={{ flex: 1, background: 'rgba(239,68,68,0.15)', border: '1px solid rgba(239,68,68,0.3)', borderRadius: '6px', padding: '6px 8px', color: '#ef4444', fontSize: '11px', cursor: 'pointer' }}>
                     Remove
                   </button>
                 )}
@@ -670,6 +670,7 @@ const ThemeConfig = () => {
         onCropDone={async (croppedImage) => {
           const target = cropModal.target
           if (!target) return
+          const oldValue = form[target]
           const folderName = target === 'logo'
             ? 'logos'
             : target === 'favicon'
@@ -688,8 +689,7 @@ const ThemeConfig = () => {
             toast.success(`${target.charAt(0).toUpperCase() + target.slice(1)} uploaded`)
           } catch (err) {
             toast.error('Drive upload failed: ' + (err.message || 'unknown'))
-            // Rollback to empty on failure so user knows it didn't save
-            handleChange(target, '')
+            handleChange(target, oldValue)
           } finally {
             setUploadingTarget(null)
           }

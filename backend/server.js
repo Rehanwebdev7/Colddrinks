@@ -3208,9 +3208,9 @@ async function handleSettingsUpdate(req, res) {
   const merged = deepMerge(current, body);
   writeSettings(merged);
 
-  // Drive cleanup: image fields (logo, paymentQr) replaced or cleared.
+  // Drive cleanup: image fields (logo, favicon, paymentQr) replaced or cleared.
   const replaced = [];
-  for (const field of ['logo', 'paymentQr']) {
+  for (const field of ['logo', 'favicon', 'paymentQr']) {
     if (current[field] && current[field] !== merged[field]) replaced.push(current[field]);
   }
   if (replaced.length > 0) await deleteDriveFilesFromUrls(replaced);
@@ -3698,7 +3698,7 @@ async function handleOrderRate(req, res, orderId) {
 
 // ─── DRIVE HANDLERS (service-account uploads) ──────────────────────────────
 
-const ALLOWED_DRIVE_FOLDERS = new Set(['products', 'sliders', 'logos', 'suppliers', 'theme', 'misc']);
+const ALLOWED_DRIVE_FOLDERS = new Set(['products', 'sliders', 'logos', 'suppliers', 'theme', 'misc', 'favicons', 'payment-qr']);
 const MAX_DRIVE_B64_LEN = 14 * 1024 * 1024; // ≈ 10 MB binary after base64 decode
 
 // Parse Drive file ID from the public lh3 URL we generate at upload time.
