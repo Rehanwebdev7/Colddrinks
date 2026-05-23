@@ -7244,8 +7244,8 @@ body.dark-mode .app-shell .bg-fizz span::before {
   }
 
   .app-shell .hero-slide-image {
-    object-fit: cover !important;
+    object-fit: contain !important;
     object-position: center center !important;
-    background: transparent !important;
+    background: #0F1230 !important;
   }
 }
