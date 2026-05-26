@@ -6696,15 +6696,18 @@ body.dark-mode .quantity-controls .qty-value {
   }
 
   .app-shell .product-grid > .product-card .product-card-actions {
-    grid-template-columns: minmax(106px, 0.88fr) minmax(128px, 1.12fr) !important;
+    grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr) !important;
     align-items: center !important;
     overflow: visible !important;
   }
 
   .app-shell .product-grid > .product-card .cart-qty-action {
     box-sizing: border-box !important;
-    width: 100% !important;
+    width: auto !important;
     max-width: 100% !important;
+    min-width: 90px !important;
+    justify-self: center !important;
+    margin: 0 auto !important;
     height: 34px !important;
     min-height: 34px !important;
     display: grid !important;
@@ -7241,9 +7244,9 @@ body.dark-mode .app-shell .bg-fizz span::before {
   }
 
   .app-shell .hero-slide-image {
-    object-fit: cover !important;
+    object-fit: contain !important;
     object-position: center center !important;
-    background: transparent !important;
+    background: #0F1230 !important;
   }
 }
 

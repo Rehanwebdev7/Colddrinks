@@ -20,7 +20,26 @@
       "Bash(Select-Object Name)",
       "Bash(awk -F'\"' '{print $2}')",
       "Bash(netstat -ano)",
-      "Bash(findstr \"3000 3001 3002\")"
+      "Bash(findstr \"3000 3001 3002\")",
+      "Bash(awk NR>=5100 && NR<=5115 {print NR\": \"$0} *)",
+      "Bash(awk NR>=5700 && NR<=5720 {print NR\": \"$0} *)",
+      "Bash(awk NR>=6620 && NR<=6640 {print NR\": \"$0} *)",
+      "Bash(awk -F: '{if \\($1 < 5322 && $1 > 5000\\) print}')",
+      "Bash(awk -F: '{if \\($1 < 5863 && $1 > 5700\\) print}')",
+      "Bash(awk -F: '{if \\($1 < 6698 && $1 > 6600\\) print}')",
+      "Bash(git checkout *)",
+      "Bash(awk -F: '{if \\($1 < 5330 && $1 > 5100\\) print}')",
+      "Bash(awk -F: '{if \\($1 < 5870 && $1 > 5700\\) print}')",
+      "Bash(lsof -ti:3001,8000)",
+      "Bash(xargs kill *)",
+      "Bash(curl -s http://localhost:8000/api/drive/health)",
+      "Bash(node scripts/generate-drive-token.js)",
+      "Bash(lsof -ti:8000)",
+      "Bash(curl -s http://localhost:8000/api/health)",
+      "Bash(curl -s http://localhost:8000/)",
+      "Bash(python3 -c \"import json,sys; p=json.load\\(sys.stdin\\); [print\\(x.get\\('name','?'\\), '|', x.get\\('image','no-img'\\)[:60]\\) for x in p[:5]]\")",
+      "Bash(git reset *)",
+      "Bash(lsof -ti:8000,3001)"
     ]
   }
 }
