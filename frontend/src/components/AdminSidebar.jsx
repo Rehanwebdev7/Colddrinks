@@ -53,6 +53,7 @@ const menuItems = [
   { path: '/admin/notifications', icon: FaBell, label: 'Notifications' },
   { path: '/admin/categories', icon: FaTags, label: 'Categories' },
   { path: '/admin/products', icon: FaBox, label: 'Products' },
+  { path: '/admin/inventory/low-stock', icon: FaBox, label: 'Low Stock' },
   { path: '/admin/sliders', icon: FaImages, label: 'Sliders' },
   { path: '/admin/coupons', icon: FaTicketAlt, label: 'Coupons' },
 

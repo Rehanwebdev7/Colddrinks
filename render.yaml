@@ -17,6 +17,17 @@ services:
         value: noor-coldrinks
       - key: FIREBASE_SERVICE_ACCOUNT_JSON
         sync: false
+      # JWT_SECRET — 48-byte hex (96 chars). Set in Render dashboard.
+      # Generate: node -e "console.log(require('crypto').randomBytes(48).toString('hex'))"
+      - key: JWT_SECRET
+        sync: false
+      # Render's filesystem is ephemeral — set to "1" so writes go to Firestore only.
+      # JSON file writes would be lost on dyno restart.
+      - key: JSON_FALLBACK_DISABLED
+        value: "1"
+      # CORS allow-list (comma-separated). Must include production frontend URL.
+      - key: ALLOWED_ORIGINS
+        sync: false
       - key: DRIVE_CREDENTIALS_JSON
         sync: false
       - key: GOOGLE_DRIVE_MAIN_FOLDER_ID

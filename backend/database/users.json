@@ -1,18 +1,18 @@
 [
   {
-    "totalOrders": 0,
-    "email": "admin@cooldrinks.com",
-    "totalSpent": 0,
-    "role": "admin",
-    "fcmToken": "erqhoIr3SJN5U7WE8zy1s8:APA91bGX2JjUFBLU_iWfbGDKxX43lb6t3Lb3OvenalzELnEtLN9G4frEaqmF_A9WBvLd-aq2nsWVjrhx7sJkUZhNNK2KJRlZQyh4-YLxfc8d9g8uH8io0kY",
     "createdAt": "2025-01-10T09:00:00.000Z",
-    "id": "USR-001",
-    "status": "active",
-    "phone": "+919876543210",
     "walletBalance": 0,
+    "status": "active",
     "outstanding": 0,
+    "totalSpent": 0,
+    "phone": "+919876543210",
+    "totalOrders": 0,
+    "id": "USR-001",
     "name": "Rajesh Kumar",
-    "password": "e86f78a8a3caf0b60d8e74e5942aa6d86dc150cd3c03338aef25b7d2d7e3acc7"
+    "role": "admin",
+    "password": "$2b$10$GFuxA3rsNctWoYKX94DW3.Y6JrUwxTiJ9dJAqi97B5Mcr3mdPJMeG",
+    "email": "admin@cooldrinks.com",
+    "fcmToken": "erqhoIr3SJN5U7WE8zy1s8:APA91bGX2JjUFBLU_iWfbGDKxX43lb6t3Lb3OvenalzELnEtLN9G4frEaqmF_A9WBvLd-aq2nsWVjrhx7sJkUZhNNK2KJRlZQyh4-YLxfc8d9g8uH8io0kY"
   },
   {
     "id": "USR-002",
@@ -52,5 +52,81 @@
       "createdAt": "2026-05-20T05:02:28.519Z",
       "lastRotatedAt": "2026-05-20T05:02:28.519Z"
     }
+  },
+  {
+    "createdAt": "2026-05-25T11:02:56.295Z",
+    "addresses": [],
+    "phone": "+919999999998",
+    "customerSession": {
+      "lastRotatedAt": "2026-05-25T11:11:13.782Z",
+      "createdAt": "2026-05-25T11:11:13.782Z",
+      "refreshTokenHash": "7de73a30c5b7927462d4af605e69ee20518a0acab3d8d74b8e49750f03c91c12",
+      "id": "0cbf86d8c97ef48ad8cbd2dc01397bf3"
+    },
+    "password": "$2b$10$sDw9xvT4r52vXcoBJXfVKOuVH4L5DyIFMC1N7Ny84aet9ld3tcExu",
+    "name": "Test User",
+    "email": "",
+    "id": "USR-004",
+    "wallet": 0,
+    "role": "customer",
+    "status": "active",
+    "fcmToken": null
+  },
+  {
+    "customerSession": {
+      "lastRotatedAt": "2026-05-25T11:11:13.378Z",
+      "createdAt": "2026-05-25T11:11:13.378Z",
+      "id": "b178acbfa522fdcd0fbeb95ea266c008",
+      "refreshTokenHash": "41fd43c5d7db74ab2ed185901168471d5d88d9a874cb17d48487f85e059ed60c"
+    },
+    "fcmToken": null,
+    "id": "USR-005",
+    "wallet": 0,
+    "phone": "+919999999900",
+    "email": "",
+    "status": "active",
+    "createdAt": "2026-05-25T11:10:36.344Z",
+    "addresses": [],
+    "password": "$2b$10$4dOn4rl.ge3I9BFkjbrb7Oof5oXZuTO8eYGbxa7IU6EXXgt0AUPzi",
+    "name": "Smoke Test",
+    "role": "customer"
+  },
+  {
+    "wallet": 0,
+    "role": "customer",
+    "createdAt": "2026-05-25T11:10:50.482Z",
+    "email": "",
+    "phone": "+919999999901",
+    "id": "USR-006",
+    "addresses": [],
+    "customerSession": {
+      "createdAt": "2026-05-25T11:10:50.545Z",
+      "id": "32d976f4f2b468bc6d9f1624ff186a72",
+      "lastRotatedAt": "2026-05-25T11:10:50.545Z",
+      "refreshTokenHash": "fd977d7914b561a206edcb16e43edc886b52c3627c80985bc741d6a643afd43f"
+    },
+    "password": "$2b$10$8wzrkYHPcZTH07gsbk1ObOvDPp4gIOZ6IUEyTBnUOU38jGWftbfiW",
+    "name": "Smoke Test 2",
+    "status": "active",
+    "fcmToken": null
+  },
+  {
+    "name": "Audit Test",
+    "customerSession": {
+      "createdAt": "2026-05-25T11:24:03.929Z",
+      "id": "022ccbd1a80f17583f406c0ca6601490",
+      "lastRotatedAt": "2026-05-25T11:24:03.929Z",
+      "refreshTokenHash": "3ecef4d3240df0f3b29e60e5383fa09740c71930c26728530a83702e5bbca9d5"
+    },
+    "createdAt": "2026-05-25T11:24:03.665Z",
+    "fcmToken": null,
+    "wallet": 0,
+    "addresses": [],
+    "phone": "+919999999902",
+    "status": "active",
+    "role": "customer",
+    "email": "",
+    "password": "$2b$10$Y268LSFs7834HSjfJC5u0.jUYWDtNiKDmIJEaFSnLUDSo/9k16IhG",
+    "id": "USR-007"
   }
 ]

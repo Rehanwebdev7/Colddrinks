@@ -17,9 +17,11 @@ const MAX_IMAGES = 4
 const initialForm = {
   name: '',
   category: '',
+  brand: '',
   description: '',
   boxQuantity: '',
   volume: '',
+  volumeUnit: 'ml',
   pricePerBox: '',
   costPricePerBox: '',
   mrp: '',
@@ -32,7 +34,31 @@ const initialForm = {
   allowPiecePurchase: false,
   allowHalfBox: false,
   offer: null,
+  // Variants mode (nested)
+  hasVariants: false,
+  variants: [],     // Array of variant objects (see backend schema)
 }
+
+const emptyVariant = () => ({
+  variantId: '',       // server assigns; empty = new
+  flavor: '',
+  volume: '',
+  volumeUnit: 'ml',
+  pricePerBox: '',
+  mrp: '',
+  costPricePerBox: '',
+  boxQuantity: '24',
+  stockQuantity: '0',
+  lowStockAlert: '5',
+  gstPercent: '',
+  deliveryCharge: '',
+  allowPiecePurchase: false,
+  allowHalfBox: false,
+  isActive: true,
+  status: 'active',
+  image: '',
+  images: null,
+})
 
 const getSellingModeLabel = (product) => {
   if (product.allowPiecePurchase) return 'Piece'
@@ -94,6 +120,10 @@ const Products = () => {
   const [stockFilter, setStockFilter] = useState('All')
   const [showModal, setShowModal] = useState(false)
   const [showDeleteModal, setShowDeleteModal] = useState(false)
+  const [variantsViewTarget, setVariantsViewTarget] = useState(null)   // product whose variants to show in popover
+  const [restockTargetVariant, setRestockTargetVariant] = useState(null) // { productId, variantId, label } for quick restock from popover
+  const [restockQty, setRestockQty] = useState('')
+  const [restocking, setRestocking] = useState(false)
   const [editingProduct, setEditingProduct] = useState(null)
   const [deleteTarget, setDeleteTarget] = useState(null)
   const [formData, setFormData] = useState(initialForm)
@@ -136,19 +166,37 @@ const Products = () => {
     }
   }
 
+  // Effective stock + low-stock checks (works for both variants + single-SKU)
+  const effectiveStock = (p) => {
+    if (p.hasVariants === true) return Number(p.totalStock) || 0
+    return Number(p.stockQuantity) || 0
+  }
+  const isLowStock = (p) => {
+    if (p.hasVariants === true) return p.hasLowStock === true
+    return (Number(p.stockQuantity) || 0) <= (Number(p.lowStockAlert) || 10)
+  }
+  const isOutOfStock = (p) => {
+    if (p.hasVariants === true) return p.outOfStock === true
+    return (Number(p.stockQuantity) || 0) === 0
+  }
+
   // Filtering logic
   const filteredProducts = products.filter(p => {
-    // Search filter
+    // Search filter — matches name + brand + variant flavors
     if (searchQuery) {
       const q = searchQuery.toLowerCase()
-      if (!p.name?.toLowerCase().includes(q)) return false
+      const hits =
+        (p.name || '').toLowerCase().includes(q) ||
+        (p.brand || '').toLowerCase().includes(q) ||
+        (p.availableFlavors || []).some(f => String(f).toLowerCase().includes(q))
+      if (!hits) return false
     }
     // Category filter
     if (categoryFilter !== 'All' && p.category !== categoryFilter) return false
     // Stock filter
-    if (stockFilter === 'In Stock' && (p.stockQuantity || 0) > (p.lowStockAlert || 10)) return true
-    if (stockFilter === 'Low Stock' && (p.stockQuantity || 0) > 0 && (p.stockQuantity || 0) <= (p.lowStockAlert || 10)) return true
-    if (stockFilter === 'Out of Stock' && (p.stockQuantity || 0) === 0) return true
+    if (stockFilter === 'In Stock' && !isOutOfStock(p) && !isLowStock(p)) return true
+    if (stockFilter === 'Low Stock' && isLowStock(p) && !isOutOfStock(p)) return true
+    if (stockFilter === 'Out of Stock' && isOutOfStock(p)) return true
     if (stockFilter !== 'All') return false
     return true
   })
@@ -201,7 +249,9 @@ const Products = () => {
     })
   }
 
-  const handleImageUpload = (e, slotIndex) => {
+  // Generic image upload — slotKey can be a number (product image index) OR
+  // an object { type: 'variant', index: N } for variant image upload.
+  const handleImageUpload = (e, slotKey) => {
     const file = e.target.files[0]
     if (!file) return
     if (!file.type.startsWith('image/')) {
@@ -212,12 +262,22 @@ const Products = () => {
       toast.error('Image size must be less than 5MB')
       return
     }
-    setActiveImageSlot(slotIndex)
-    setImageFiles(prev => {
-      const next = [...prev]
-      next[slotIndex] = file
-      return next
-    })
+    setActiveImageSlot(slotKey)
+    // Store File for upload — keyed differently depending on slot type
+    if (typeof slotKey === 'object' && slotKey?.type === 'variant') {
+      // Variant image: use product imageFiles slot N+1000 to avoid collision with product slots
+      setImageFiles(prev => {
+        const next = [...prev]
+        next[1000 + slotKey.index] = file
+        return next
+      })
+    } else {
+      setImageFiles(prev => {
+        const next = [...prev]
+        next[slotKey] = file
+        return next
+      })
+    }
     const reader = new FileReader()
     reader.onloadend = () => {
       setCropSrc(reader.result)
@@ -231,10 +291,36 @@ const Products = () => {
 
   const handleCropDone = (croppedDataUrl) => {
     const slot = activeImageSlot
+    if (typeof slot === 'object' && slot?.type === 'variant') {
+      // Set image on variant
+      setFormData(prev => {
+        const next = [...(prev.variants || [])]
+        if (next[slot.index]) {
+          next[slot.index] = { ...next[slot.index], image: croppedDataUrl }
+        }
+        return { ...prev, variants: next }
+      })
+    } else {
+      setFormData(prev => {
+        const next = [...(prev.images || [])]
+        next[slot] = croppedDataUrl
+        return { ...prev, images: next }
+      })
+    }
+  }
+
+  const handleVariantImageRemove = (variantIdx) => {
     setFormData(prev => {
-      const next = [...(prev.images || [])]
-      next[slot] = croppedDataUrl
-      return { ...prev, images: next }
+      const next = [...(prev.variants || [])]
+      if (next[variantIdx]) {
+        next[variantIdx] = { ...next[variantIdx], image: '' }
+      }
+      return { ...prev, variants: next }
+    })
+    setImageFiles(prev => {
+      const next = [...prev]
+      next[1000 + variantIdx] = undefined
+      return next
     })
   }
 
@@ -264,12 +350,37 @@ const Products = () => {
     const existingImages = Array.isArray(product.images) && product.images.length > 0
       ? product.images
       : product.image ? [product.image] : []
+    const incomingVariants = Array.isArray(product.variants)
+      ? product.variants.map(v => ({
+          variantId: v.variantId || '',
+          flavor: v.flavor || '',
+          volume: v.volume ?? '',
+          volumeUnit: v.volumeUnit || 'ml',
+          pricePerBox: v.pricePerBox ?? '',
+          mrp: v.mrp ?? '',
+          costPricePerBox: v.costPricePerBox ?? '',
+          boxQuantity: v.boxQuantity ?? '24',
+          stockQuantity: v.stockQuantity ?? '0',
+          lowStockAlert: v.lowStockAlert ?? '5',
+          gstPercent: v.gstPercent ?? '',
+          deliveryCharge: v.deliveryCharge ?? '',
+          allowPiecePurchase: Boolean(v.allowPiecePurchase),
+          allowHalfBox: Boolean(v.allowHalfBox),
+          isActive: v.isActive !== false,
+          status: v.status || 'active',
+          image: v.image || '',
+          images: Array.isArray(v.images) ? v.images : null,
+          offer: v.offer || null,
+        }))
+      : []
     setFormData({
       name: product.name || '',
       category: product.category || '',
+      brand: product.brand || '',
       description: product.description || '',
       boxQuantity: product.boxQuantity || '',
       volume: product.volume || '',
+      volumeUnit: product.volumeUnit || 'ml',
       pricePerBox: product.pricePerBox || '',
       costPricePerBox: product.costPricePerBox || '',
       mrp: product.mrp || '',
@@ -283,10 +394,73 @@ const Products = () => {
       allowHalfBox: Boolean(product.allowHalfBox),
       // Mark existing label as user-confirmed so auto-sync doesn't overwrite a saved custom label
       offer: product.offer ? { ...product.offer, _labelTouched: Boolean(product.offer.label) } : null,
+      hasVariants: product.hasVariants === true,
+      variants: incomingVariants,
     })
     setImageFiles([])
     setShowModal(true)
   }
+
+  // Variants helpers
+  const handleVariantChange = (idx, field, value) => {
+    setFormData(prev => {
+      const next = [...(prev.variants || [])]
+      next[idx] = { ...next[idx], [field]: value }
+      // Mutex piece/half
+      if (field === 'allowPiecePurchase' && value === true) {
+        next[idx].allowHalfBox = false
+      }
+      return { ...prev, variants: next }
+    })
+  }
+
+  const addVariant = () => {
+    setFormData(prev => {
+      const variants = [...(prev.variants || []), emptyVariant()]
+      if (variants.length > 20) {
+        toast.error('Maximum 20 variants per product')
+        return prev
+      }
+      return { ...prev, variants }
+    })
+  }
+
+  const removeVariant = (idx) => {
+    setFormData(prev => {
+      const next = [...(prev.variants || [])]
+      next.splice(idx, 1)
+      return { ...prev, variants: next }
+    })
+  }
+
+  const duplicateVariant = (idx) => {
+    setFormData(prev => {
+      const variants = [...(prev.variants || [])]
+      if (variants.length >= 20) {
+        toast.error('Maximum 20 variants per product')
+        return prev
+      }
+      const src = { ...variants[idx], variantId: '' }    // new variant, server assigns id
+      variants.splice(idx + 1, 0, src)
+      return { ...prev, variants }
+    })
+  }
+
+  // Compute aggregates for live preview
+  const variantAggregates = (() => {
+    const vs = (formData.variants || []).filter(v => v.status !== 'discontinued' && v.isActive !== false)
+    if (vs.length === 0) return null
+    const prices = vs.map(v => Number(v.pricePerBox) || 0).filter(p => p > 0)
+    const stocks = vs.map(v => Number(v.stockQuantity) || 0)
+    const lowCount = vs.filter(v => (Number(v.stockQuantity) || 0) <= (Number(v.lowStockAlert) || 0)).length
+    return {
+      count: formData.variants.length,
+      minPrice: prices.length ? Math.min(...prices) : 0,
+      maxPrice: prices.length ? Math.max(...prices) : 0,
+      totalStock: stocks.reduce((a, b) => a + b, 0),
+      lowCount,
+    }
+  })()
 
   const openDeleteModal = (product) => {
     setDeleteTarget(product)
@@ -336,12 +510,92 @@ const Products = () => {
         return
       }
 
+      // Upload variant images to Drive (variant.image as base64 → Drive URL)
+      const variantsWithImages = [...(formData.variants || [])]
+      if (formData.hasVariants && variantsWithImages.length > 0) {
+        setUploadingImage(true)
+        try {
+          for (let i = 0; i < variantsWithImages.length; i++) {
+            const v = variantsWithImages[i]
+            const file = imageFiles[1000 + i]
+            if (v?.image && typeof v.image === 'string' && v.image.startsWith('data:') && file) {
+              const variantLabel = `${v.flavor || 'variant'}_${v.volume || 'x'}${v.volumeUnit || ''}`.replace(/\s+/g, '_')
+              const fileName = `product_${formData.name.replace(/\s+/g, '_')}_${variantLabel}_${Date.now()}.jpg`
+              const fileId = await uploadImage(file, 'products', fileName)
+              variantsWithImages[i] = { ...v, image: getImageUrl(fileId) }
+            }
+          }
+        } catch (err) {
+          toast.error('Variant image upload failed: ' + (err.message || 'Drive error'))
+          return
+        } finally {
+          setUploadingImage(false)
+        }
+        // Safety: refuse to save if any variant.image still base64
+        if (variantsWithImages.some(v => typeof v?.image === 'string' && v.image.startsWith('data:'))) {
+          toast.error('Variant image upload incomplete. Please retry.')
+          return
+        }
+      }
+
+      // Build variants payload — only included if variants mode is enabled
+      const variantsPayload = formData.hasVariants
+        ? variantsWithImages.map(v => ({
+            variantId: v.variantId || undefined,    // undefined → server assigns new
+            flavor: v.flavor || null,
+            volume: Number(v.volume) || 0,
+            volumeUnit: v.volumeUnit || 'ml',
+            pricePerBox: Number(v.pricePerBox) || 0,
+            mrp: Number(v.mrp) || 0,
+            costPricePerBox: Number(v.costPricePerBox) || 0,
+            boxQuantity: Number(v.boxQuantity) || 24,
+            stockQuantity: Number(v.stockQuantity) || 0,
+            lowStockAlert: Number(v.lowStockAlert) || 0,
+            gstPercent: v.gstPercent !== '' ? Number(v.gstPercent) : 0,
+            deliveryCharge: v.deliveryCharge !== '' ? Number(v.deliveryCharge) : 0,
+            allowPiecePurchase: Boolean(v.allowPiecePurchase),
+            allowHalfBox: v.allowPiecePurchase ? false : Boolean(v.allowHalfBox),
+            isActive: v.isActive !== false,
+            status: v.status || 'active',
+            image: v.image || null,
+            images: Array.isArray(v.images) ? v.images : null,
+            // Per-variant offer override (optional; null = inherit from product)
+            offer: v.offer?.enabled ? {
+              enabled: true,
+              buyQty: Number(v.offer.buyQty) || 1,
+              freeProductId: v.offer.freeProductId || null,
+              freeVariantId: v.offer.freeVariantId || null,
+              freeQty: Number(v.offer.freeQty) || 1,
+              label: v.offer.label || '',
+            } : null,
+          }))
+        : []
+
+      // Pre-submit duplicate-variant client check (server also validates)
+      if (formData.hasVariants && variantsPayload.length > 0) {
+        const seen = new Set()
+        for (const v of variantsPayload) {
+          const key = `${v.flavor || '_default'}|${v.volume}|${v.volumeUnit}`
+          if (seen.has(key)) {
+            toast.error(`Duplicate variant: ${v.flavor ? v.flavor + ' ' : ''}${v.volume}${v.volumeUnit}`)
+            return
+          }
+          seen.add(key)
+        }
+        if (variantsPayload.some(v => !v.volume || v.volume <= 0)) {
+          toast.error('Every variant needs a volume > 0')
+          return
+        }
+      }
+
       const payload = {
         name: formData.name,
         category: formData.category,
+        brand: formData.brand || null,
         description: formData.description,
         boxQuantity: Number(formData.boxQuantity) || 0,
         volume: formData.volume ? Number(formData.volume) : null,
+        volumeUnit: formData.volumeUnit || null,
         pricePerBox: Number(formData.pricePerBox) || 0,
         costPricePerBox: Number(formData.costPricePerBox) || 0,
         mrp: Number(formData.mrp) || 0,
@@ -358,9 +612,11 @@ const Products = () => {
           enabled: true,
           buyQty: Number(formData.offer.buyQty) || 1,
           freeProductId: formData.offer.freeProductId || null,
+          freeVariantId: formData.offer.freeVariantId || null,   // optional explicit free variant
           freeQty: Number(formData.offer.freeQty) || 1,
           label: formData.offer.label || '',
         } : null,
+        variants: variantsPayload,    // empty array if hasVariants=false; server treats as no variants
       }
 
       if (editingProduct) {
@@ -511,6 +767,20 @@ const Products = () => {
                           <button style={styles.editBtn} onClick={() => openEditModal(product)} title="Edit">
                             <FaEdit />
                           </button>
+                          {product.hasVariants === true && (
+                            <button
+                              onClick={() => setVariantsViewTarget(product)}
+                              title="View all variants"
+                              style={{
+                                padding: '6px 10px', borderRadius: 6, border: `1px solid ${c.border}`,
+                                background: 'rgba(99, 102, 241, 0.08)', color: '#6366f1',
+                                cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 4,
+                                fontWeight: 700, fontSize: 11,
+                              }}
+                            >
+                              <FaBox style={{ fontSize: 11 }} /> {(product.variants || []).length}
+                            </button>
+                          )}
                           <button style={styles.deleteBtn} onClick={() => openDeleteModal(product)} title="Delete">
                             <FaTrash />
                           </button>
@@ -683,6 +953,84 @@ const Products = () => {
               ))}
             </select>
           </div>
+          <div style={styles.formGroup}>
+            <label style={styles.label}>Brand</label>
+            <input
+              type="text"
+              name="brand"
+              value={formData.brand}
+              onChange={handleInputChange}
+              style={styles.input}
+              placeholder="e.g. Coca-Cola"
+            />
+          </div>
+          {/* ─── Product Mode Toggle ───────────────────────────────────────── */}
+          <div style={{ ...styles.formGroup, gridColumn: '1 / -1' }}>
+            <label style={styles.label}>Product Mode</label>
+            <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+              <label style={{
+                flex: 1, minWidth: 200, padding: 12, borderRadius: 10, cursor: 'pointer',
+                border: `2px solid ${!formData.hasVariants ? '#f97316' : c.border}`,
+                background: !formData.hasVariants ? 'rgba(249,115,22,0.08)' : c.bg,
+                display: 'flex', alignItems: 'center', gap: 10,
+                color: c.text,
+              }}>
+                <input
+                  type="radio"
+                  name="hasVariants"
+                  checked={!formData.hasVariants}
+                  onChange={() => setFormData(prev => ({ ...prev, hasVariants: false }))}
+                />
+                <div>
+                  <div style={{ fontWeight: 600, color: c.text }}>Single product</div>
+                  <div style={{ fontSize: 12, color: c.textSecondary }}>One price, one size, one stock</div>
+                </div>
+              </label>
+              <label style={{
+                flex: 1, minWidth: 200, padding: 12, borderRadius: 10, cursor: 'pointer',
+                border: `2px solid ${formData.hasVariants ? '#f97316' : c.border}`,
+                background: formData.hasVariants ? 'rgba(249,115,22,0.08)' : c.bg,
+                display: 'flex', alignItems: 'center', gap: 10,
+                color: c.text,
+              }}>
+                <input
+                  type="radio"
+                  name="hasVariants"
+                  checked={formData.hasVariants}
+                  onChange={() => setFormData(prev => {
+                    // If flipping ON for first time and no variants yet, seed one starter row from current top-level fields
+                    if (!prev.hasVariants && (prev.variants || []).length === 0) {
+                      return {
+                        ...prev,
+                        hasVariants: true,
+                        variants: [{
+                          ...emptyVariant(),
+                          flavor: '',
+                          volume: prev.volume || '',
+                          volumeUnit: prev.volumeUnit || 'ml',
+                          pricePerBox: prev.pricePerBox || '',
+                          mrp: prev.mrp || '',
+                          costPricePerBox: prev.costPricePerBox || '',
+                          boxQuantity: prev.boxQuantity || '24',
+                          stockQuantity: prev.stockQuantity || '0',
+                          lowStockAlert: prev.lowStockAlert || '5',
+                          gstPercent: prev.gstPercent || '',
+                          deliveryCharge: prev.deliveryCharge || '',
+                          allowPiecePurchase: prev.allowPiecePurchase,
+                          allowHalfBox: prev.allowHalfBox,
+                        }]
+                      }
+                    }
+                    return { ...prev, hasVariants: true }
+                  })}
+                />
+                <div>
+                  <div style={{ fontWeight: 600, color: c.text }}>Product with variants</div>
+                  <div style={{ fontSize: 12, color: c.textSecondary }}>Multiple flavors / sizes — each with own price + stock</div>
+                </div>
+              </label>
+            </div>
+          </div>
           <div style={{ ...styles.formGroup, gridColumn: '1 / -1' }}>
             <label style={styles.label}>Description</label>
             <textarea
@@ -693,94 +1041,99 @@ const Products = () => {
               placeholder="Product description"
             />
           </div>
-          <div style={styles.formGroup}>
-            <label style={styles.label}>Box Quantity</label>
-            <input
-              type="number"
-              name="boxQuantity"
-              value={formData.boxQuantity}
-              onChange={handleInputChange}
-              onWheel={(e) => e.target.blur()}
-              style={styles.input}
-              placeholder="e.g. 24"
-            />
-          </div>
-          <div style={styles.formGroup}>
-            <label style={styles.label}>Bottle Volume (ml)</label>
-            <input
-              type="number"
-              name="volume"
-              value={formData.volume}
-              onChange={handleInputChange}
-              onWheel={(e) => e.target.blur()}
-              style={styles.input}
-              placeholder="e.g. 300"
-            />
-          </div>
-          <div style={styles.formGroup}>
-            <label style={styles.label}>Price per Box *</label>
-            <input
-              type="number"
-              name="pricePerBox"
-              value={formData.pricePerBox}
-              onChange={handleInputChange}
-              onWheel={(e) => e.target.blur()}
-              style={styles.input}
-              placeholder="e.g. 450"
-            />
-          </div>
-          <div style={styles.formGroup}>
-            <label style={styles.label}>Cost Price per Box</label>
-            <input
-              type="number"
-              name="costPricePerBox"
-              value={formData.costPricePerBox}
-              onChange={handleInputChange}
-              onWheel={(e) => e.target.blur()}
-              style={styles.input}
-              placeholder="Kitne me kharida"
-            />
-            <span style={{ fontSize: '11px', color: '#9ca3af', marginTop: '4px', display: 'block' }}>Profit calculate karne ke liye</span>
-          </div>
-          <div style={styles.formGroup}>
-            <label style={styles.label}>MRP</label>
-            <input
-              type="number"
-              name="mrp"
-              value={formData.mrp}
-              onChange={handleInputChange}
-              onWheel={(e) => e.target.blur()}
-              style={styles.input}
-              placeholder="e.g. 500"
-            />
-          </div>
-          <div style={styles.formGroup}>
-            <label style={styles.label}>Stock Quantity</label>
-            <input
-              type="number"
-              name="stockQuantity"
-              value={formData.stockQuantity}
-              onChange={handleInputChange}
-              onWheel={(e) => e.target.blur()}
-              style={styles.input}
-              placeholder="e.g. 100"
-            />
-          </div>
-          <div style={styles.formGroup}>
-            <label style={styles.label}>Low Stock Alert</label>
-            <input
-              type="number"
-              name="lowStockAlert"
-              value={formData.lowStockAlert}
-              onChange={handleInputChange}
-              onWheel={(e) => e.target.blur()}
-              style={styles.input}
-              placeholder="e.g. 10"
-            />
-            <p style={styles.inlineHint}>
-              Ye threshold box equivalent me hota hai. Example: piece product me `10` ka matlab `10 boxes worth` stock.
-            </p>
-          </div>
+          {/* Single-mode pricing/stock fields — HIDDEN in variants mode (captured per variant) */}
+          {!formData.hasVariants && (
+            <>
+              <div style={styles.formGroup}>
+                <label style={styles.label}>Box Quantity</label>
+                <input
+                  type="number"
+                  name="boxQuantity"
+                  value={formData.boxQuantity}
+                  onChange={handleInputChange}
+                  onWheel={(e) => e.target.blur()}
+                  style={styles.input}
+                  placeholder="e.g. 24"
+                />
+              </div>
+              <div style={styles.formGroup}>
+                <label style={styles.label}>Bottle Volume (ml)</label>
+                <input
+                  type="number"
+                  name="volume"
+                  value={formData.volume}
+                  onChange={handleInputChange}
+                  onWheel={(e) => e.target.blur()}
+                  style={styles.input}
+                  placeholder="e.g. 300"
+                />
+              </div>
+              <div style={styles.formGroup}>
+                <label style={styles.label}>Price per Box *</label>
+                <input
+                  type="number"
+                  name="pricePerBox"
+                  value={formData.pricePerBox}
+                  onChange={handleInputChange}
+                  onWheel={(e) => e.target.blur()}
+                  style={styles.input}
+                  placeholder="e.g. 450"
+                />
+              </div>
+              <div style={styles.formGroup}>
+                <label style={styles.label}>Cost Price per Box</label>
+                <input
+                  type="number"
+                  name="costPricePerBox"
+                  value={formData.costPricePerBox}
+                  onChange={handleInputChange}
+                  onWheel={(e) => e.target.blur()}
+                  style={styles.input}
+                  placeholder="Kitne me kharida"
+                />
+                <span style={{ fontSize: '11px', color: '#9ca3af', marginTop: '4px', display: 'block' }}>Profit calculate karne ke liye</span>
+              </div>
+              <div style={styles.formGroup}>
+                <label style={styles.label}>MRP</label>
+                <input
+                  type="number"
+                  name="mrp"
+                  value={formData.mrp}
+                  onChange={handleInputChange}
+                  onWheel={(e) => e.target.blur()}
+                  style={styles.input}
+                  placeholder="e.g. 500"
+                />
+              </div>
+              <div style={styles.formGroup}>
+                <label style={styles.label}>Stock Quantity</label>
+                <input
+                  type="number"
+                  name="stockQuantity"
+                  value={formData.stockQuantity}
+                  onChange={handleInputChange}
+                  onWheel={(e) => e.target.blur()}
+                  style={styles.input}
+                  placeholder="e.g. 100"
+                />
+              </div>
+              <div style={styles.formGroup}>
+                <label style={styles.label}>Low Stock Alert</label>
+                <input
+                  type="number"
+                  name="lowStockAlert"
+                  value={formData.lowStockAlert}
+                  onChange={handleInputChange}
+                  onWheel={(e) => e.target.blur()}
+                  style={styles.input}
+                  placeholder="e.g. 10"
+                />
+                <p style={styles.inlineHint}>
+                  Ye threshold box equivalent me hota hai. Example: piece product me `10` ka matlab `10 boxes worth` stock.
+                </p>
+              </div>
+            </>
+          )}
           <div style={{ ...styles.formGroup, gridColumn: '1 / -1' }}>
             <label style={styles.label}>Product Images <span style={{ fontSize: 12, color: c.textSecondary, fontWeight: 400 }}>(max 4 — first image is required)</span></label>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 10 }}>
@@ -866,33 +1219,36 @@ const Products = () => {
               <option value="inactive">Inactive</option>
             </select>
           </div>
-          <div style={{ ...styles.formGroup, gridColumn: '1 / -1' }}>
-            <label style={styles.label}>Selling Options</label>
-            <div style={styles.checkboxRow}>
-              <label style={styles.checkboxLabel}>
-                <input
-                  type="checkbox"
-                  name="allowPiecePurchase"
-                  checked={Boolean(formData.allowPiecePurchase)}
-                  onChange={handleInputChange}
-                />
-                <span>Sell by Piece</span>
-              </label>
-              <label style={{ ...styles.checkboxLabel, opacity: formData.allowPiecePurchase ? 0.5 : 1 }}>
-                <input
-                  type="checkbox"
-                  name="allowHalfBox"
-                  checked={Boolean(formData.allowHalfBox)}
-                  onChange={handleInputChange}
-                  disabled={Boolean(formData.allowPiecePurchase)}
-                />
-                <span>Allow Half Box</span>
-              </label>
+          {/* Selling Options — HIDDEN in variants mode (per-variant toggles inside each variant row) */}
+          {!formData.hasVariants && (
+            <div style={{ ...styles.formGroup, gridColumn: '1 / -1' }}>
+              <label style={styles.label}>Selling Options</label>
+              <div style={styles.checkboxRow}>
+                <label style={styles.checkboxLabel}>
+                  <input
+                    type="checkbox"
+                    name="allowPiecePurchase"
+                    checked={Boolean(formData.allowPiecePurchase)}
+                    onChange={handleInputChange}
+                  />
+                  <span>Sell by Piece</span>
+                </label>
+                <label style={{ ...styles.checkboxLabel, opacity: formData.allowPiecePurchase ? 0.5 : 1 }}>
+                  <input
+                    type="checkbox"
+                    name="allowHalfBox"
+                    checked={Boolean(formData.allowHalfBox)}
+                    onChange={handleInputChange}
+                    disabled={Boolean(formData.allowPiecePurchase)}
+                  />
+                  <span>Allow Half Box</span>
+                </label>
+              </div>
+              <p style={styles.optionHint}>
+                `Sell by Piece` on hoga to product sirf piece mode me bikega. Agar off hai, to `Allow Half Box` se full box ke saath half box enable hoga.
+              </p>
             </div>
-            <p style={styles.optionHint}>
-              `Sell by Piece` on hoga to product sirf piece mode me bikega. Agar off hai, to `Allow Half Box` se full box ke saath half box enable hoga.
-            </p>
-          </div>
+          )}
 
           {/* Offer Section */}
           <div style={{ ...styles.formGroup, gridColumn: '1 / -1' }}>
@@ -1053,6 +1409,267 @@ const Products = () => {
               </div>
             )}
           </div>
+
+          {/* ─── Variants Editor (only shown when hasVariants=true) ─────────── */}
+          {formData.hasVariants && (
+            <div style={{ ...styles.formGroup, gridColumn: '1 / -1' }}>
+              <label style={styles.label}>
+                <span style={{ display: 'flex', alignItems: 'center', gap: 8, justifyContent: 'space-between' }}>
+                  <span>Variants ({(formData.variants || []).length})</span>
+                  <button
+                    type="button"
+                    onClick={addVariant}
+                    style={{
+                      background: '#f97316', color: '#fff', border: 'none',
+                      padding: '6px 14px', borderRadius: 8, cursor: 'pointer',
+                      fontSize: 13, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 6
+                    }}
+                  >
+                    <FaPlus size={11} /> Add Variant
+                  </button>
+                </span>
+              </label>
+
+              {variantAggregates && (
+                <div style={{
+                  display: 'flex', gap: 12, padding: 10, marginBottom: 12,
+                  background: c.bg, borderRadius: 8, fontSize: 12, flexWrap: 'wrap',
+                  color: c.text,
+                }}>
+                  <span><b>{variantAggregates.count}</b> variant{variantAggregates.count !== 1 ? 's' : ''}</span>
+                  <span>Price: ₹<b>{variantAggregates.minPrice}</b>–<b>{variantAggregates.maxPrice}</b></span>
+                  <span>Stock: <b>{Math.round(variantAggregates.totalStock * 100) / 100}</b> total</span>
+                  {variantAggregates.lowCount > 0 && (
+                    <span style={{ color: '#ef4444', fontWeight: 600 }}>{variantAggregates.lowCount} low stock</span>
+                  )}
+                </div>
+              )}
+
+              {(formData.variants || []).length === 0 && (
+                <div style={{ padding: 16, textAlign: 'center', color: c.textSecondary, fontSize: 13, border: `1px dashed ${c.border}`, borderRadius: 10 }}>
+                  No variants yet. Click "Add Variant" to add one.
+                </div>
+              )}
+
+              {(formData.variants || []).map((v, idx) => {
+                const stock = Number(v.stockQuantity) || 0
+                const threshold = Number(v.lowStockAlert) || 0
+                const stockDot = stock <= 0 ? '#ef4444' : stock <= threshold ? '#f59e0b' : '#22c55e'
+                return (
+                  <div key={idx} style={{
+                    padding: 12, marginBottom: 10, border: `1px solid ${c.border}`,
+                    borderRadius: 10, background: c.bg, color: c.text,
+                  }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+                      <span style={{ fontWeight: 600, fontSize: 13, display: 'flex', alignItems: 'center', gap: 8, color: c.text }}>
+                        <span style={{ width: 10, height: 10, borderRadius: '50%', background: stockDot, display: 'inline-block' }} />
+                        Variant #{idx + 1}{v.variantId ? ` (${v.variantId})` : ' (new)'}
+                      </span>
+                      <div style={{ display: 'flex', gap: 6 }}>
+                        <button type="button" onClick={() => duplicateVariant(idx)} title="Duplicate"
+                          style={{ padding: '4px 10px', fontSize: 11, background: c.surface, color: c.text, border: `1px solid ${c.border}`, borderRadius: 6, cursor: 'pointer' }}>
+                          Duplicate
+                        </button>
+                        <button type="button" onClick={() => removeVariant(idx)} title="Remove"
+                          style={{ padding: '4px 10px', fontSize: 11, background: '#fee2e2', color: '#b91c1c', border: '1px solid #fecaca', borderRadius: 6, cursor: 'pointer' }}>
+                          Remove
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Variant image slot — single image per variant (overrides product image when set) */}
+                    <div style={{ display: 'flex', gap: 12, marginBottom: 10, alignItems: 'flex-start' }}>
+                      <div style={{
+                        position: 'relative',
+                        width: 88, height: 88, flexShrink: 0,
+                        border: `2px dashed ${v.image ? 'transparent' : c.border}`,
+                        borderRadius: 10,
+                        background: v.image ? 'transparent' : c.surface,
+                        overflow: 'hidden',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      }}>
+                        {v.image ? (
+                          <>
+                            <img
+                              src={v.image}
+                              alt={`Variant ${idx + 1}`}
+                              style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                              onError={(e) => { e.target.src = '/images/placeholder-drink.svg' }}
+                            />
+                            <button
+                              type="button"
+                              onClick={() => handleVariantImageRemove(idx)}
+                              style={{
+                                position: 'absolute', top: 4, right: 4,
+                                background: 'rgba(239,68,68,0.85)', border: 'none', borderRadius: '50%',
+                                width: 22, height: 22, color: '#fff', fontSize: 10,
+                                cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                              }}
+                              title="Remove variant image"
+                            >
+                              <FaTrash style={{ fontSize: 9 }} />
+                            </button>
+                          </>
+                        ) : (
+                          <label htmlFor={`variant-image-${idx}`} style={{
+                            display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3,
+                            cursor: 'pointer', padding: 6, width: '100%', height: '100%',
+                            justifyContent: 'center',
+                          }}>
+                            <FaCloudUploadAlt style={{ fontSize: 18, color: c.textSecondary }} />
+                            <span style={{ fontSize: 10, color: c.textSecondary, fontWeight: 600, textAlign: 'center' }}>
+                              Variant Image
+                            </span>
+                          </label>
+                        )}
+                        <input
+                          type="file" accept="image/*"
+                          onChange={(e) => handleImageUpload(e, { type: 'variant', index: idx })}
+                          style={{ display: 'none' }}
+                          id={`variant-image-${idx}`}
+                        />
+                      </div>
+                      <div style={{ flex: 1, fontSize: 11, color: c.textSecondary, paddingTop: 4 }}>
+                        <strong style={{ color: c.text, display: 'block', marginBottom: 2 }}>Variant image (optional)</strong>
+                        Different flavors usually have different packaging. Customer ko alag image dikhana sales me help karta hai. Blank = product ke main image inherit karega.
+                      </div>
+                    </div>
+
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: 8 }}>
+                      <div>
+                        <label style={{ fontSize: 11, color: c.textSecondary, display: 'block', marginBottom: 2 }}>Flavor</label>
+                        <input type="text" value={v.flavor} placeholder="Original / Cherry"
+                          onChange={(e) => handleVariantChange(idx, 'flavor', e.target.value)}
+                          style={{ ...styles.input, padding: '6px 10px', fontSize: 13 }} />
+                      </div>
+                      <div>
+                        <label style={{ fontSize: 11, color: c.textSecondary, display: 'block', marginBottom: 2 }}>Volume *</label>
+                        <div style={{ display: 'flex', gap: 4 }}>
+                          <input type="number" value={v.volume} placeholder="250"
+                            onChange={(e) => handleVariantChange(idx, 'volume', e.target.value)}
+                            onWheel={(e) => e.target.blur()}
+                            style={{ ...styles.input, padding: '6px 10px', fontSize: 13, flex: 1 }} />
+                          <select value={v.volumeUnit}
+                            onChange={(e) => handleVariantChange(idx, 'volumeUnit', e.target.value)}
+                            style={{ ...styles.input, padding: '6px 10px', fontSize: 13, width: 60 }}>
+                            <option value="ml">ml</option>
+                            <option value="L">L</option>
+                          </select>
+                        </div>
+                      </div>
+                      <div>
+                        <label style={{ fontSize: 11, color: c.textSecondary, display: 'block', marginBottom: 2 }}>Price/Box *</label>
+                        <input type="number" value={v.pricePerBox} placeholder="450"
+                          onChange={(e) => handleVariantChange(idx, 'pricePerBox', e.target.value)}
+                          onWheel={(e) => e.target.blur()}
+                          style={{ ...styles.input, padding: '6px 10px', fontSize: 13 }} />
+                      </div>
+                      <div>
+                        <label style={{ fontSize: 11, color: c.textSecondary, display: 'block', marginBottom: 2 }}>MRP</label>
+                        <input type="number" value={v.mrp} placeholder="500"
+                          onChange={(e) => handleVariantChange(idx, 'mrp', e.target.value)}
+                          onWheel={(e) => e.target.blur()}
+                          style={{ ...styles.input, padding: '6px 10px', fontSize: 13 }} />
+                      </div>
+                      <div>
+                        <label style={{ fontSize: 11, color: c.textSecondary, display: 'block', marginBottom: 2 }}>Cost/Box</label>
+                        <input type="number" value={v.costPricePerBox} placeholder="300"
+                          onChange={(e) => handleVariantChange(idx, 'costPricePerBox', e.target.value)}
+                          onWheel={(e) => e.target.blur()}
+                          style={{ ...styles.input, padding: '6px 10px', fontSize: 13 }} />
+                      </div>
+                      <div>
+                        <label style={{ fontSize: 11, color: c.textSecondary, display: 'block', marginBottom: 2 }}>Stock</label>
+                        <input type="number" value={v.stockQuantity} placeholder="0"
+                          onChange={(e) => handleVariantChange(idx, 'stockQuantity', e.target.value)}
+                          onWheel={(e) => e.target.blur()}
+                          style={{ ...styles.input, padding: '6px 10px', fontSize: 13 }} />
+                      </div>
+                      <div>
+                        <label style={{ fontSize: 11, color: c.textSecondary, display: 'block', marginBottom: 2 }}>Low Alert</label>
+                        <input type="number" value={v.lowStockAlert} placeholder="5"
+                          onChange={(e) => handleVariantChange(idx, 'lowStockAlert', e.target.value)}
+                          onWheel={(e) => e.target.blur()}
+                          style={{ ...styles.input, padding: '6px 10px', fontSize: 13 }} />
+                      </div>
+                      <div>
+                        <label style={{ fontSize: 11, color: c.textSecondary, display: 'block', marginBottom: 2 }}>Box Qty</label>
+                        <input type="number" value={v.boxQuantity} placeholder="24"
+                          onChange={(e) => handleVariantChange(idx, 'boxQuantity', e.target.value)}
+                          onWheel={(e) => e.target.blur()}
+                          style={{ ...styles.input, padding: '6px 10px', fontSize: 13 }} />
+                      </div>
+                    </div>
+                    <div style={{ display: 'flex', gap: 16, marginTop: 10, flexWrap: 'wrap', fontSize: 12, color: c.text }}>
+                      <label style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer', color: c.text }}>
+                        <input type="checkbox" checked={Boolean(v.allowPiecePurchase)}
+                          onChange={(e) => handleVariantChange(idx, 'allowPiecePurchase', e.target.checked)} />
+                        Sell by Piece
+                      </label>
+                      <label style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer', opacity: v.allowPiecePurchase ? 0.5 : 1, color: c.text }}>
+                        <input type="checkbox" checked={Boolean(v.allowHalfBox)} disabled={Boolean(v.allowPiecePurchase)}
+                          onChange={(e) => handleVariantChange(idx, 'allowHalfBox', e.target.checked)} />
+                        Allow Half Box
+                      </label>
+                      <label style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer', color: c.text }}>
+                        <input type="checkbox" checked={v.isActive !== false}
+                          onChange={(e) => handleVariantChange(idx, 'isActive', e.target.checked)} />
+                        Active
+                      </label>
+                      <label style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer', color: v.offer?.enabled ? '#22c55e' : c.textSecondary }}>
+                        <input
+                          type="checkbox"
+                          checked={Boolean(v.offer?.enabled)}
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              handleVariantChange(idx, 'offer', { enabled: true, buyQty: 2, freeProductId: '', freeVariantId: null, freeQty: 1, label: '' })
+                            } else {
+                              handleVariantChange(idx, 'offer', null)
+                            }
+                          }}
+                        />
+                        Custom Offer
+                      </label>
+                    </div>
+
+                    {/* Per-variant offer override panel (inline, collapsible) */}
+                    {v.offer?.enabled && (
+                      <div style={{
+                        marginTop: 10, padding: 10, background: c.surface,
+                        borderRadius: 8, border: `1px dashed ${c.border}`,
+                        color: c.text,
+                      }}>
+                        <div style={{ fontSize: 11, color: c.textSecondary, marginBottom: 8, fontWeight: 600 }}>
+                          🎁 Offer for this variant only (overrides product offer)
+                        </div>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: 8 }}>
+                          <div>
+                            <label style={{ fontSize: 11, color: c.textSecondary, display: 'block', marginBottom: 2 }}>Buy Qty</label>
+                            <input type="number" min="1" value={v.offer.buyQty || ''}
+                              onChange={(e) => handleVariantChange(idx, 'offer', { ...v.offer, buyQty: e.target.value })}
+                              style={{ ...styles.input, padding: '6px 10px', fontSize: 13 }} />
+                          </div>
+                          <div>
+                            <label style={{ fontSize: 11, color: c.textSecondary, display: 'block', marginBottom: 2 }}>Free Qty</label>
+                            <input type="number" min="1" value={v.offer.freeQty || ''}
+                              onChange={(e) => handleVariantChange(idx, 'offer', { ...v.offer, freeQty: e.target.value })}
+                              style={{ ...styles.input, padding: '6px 10px', fontSize: 13 }} />
+                          </div>
+                          <div style={{ gridColumn: '1 / -1' }}>
+                            <label style={{ fontSize: 11, color: c.textSecondary, display: 'block', marginBottom: 2 }}>Customer label</label>
+                            <input type="text" value={v.offer.label || ''}
+                              placeholder={`e.g. Buy ${v.offer.buyQty || 2}, Get ${v.offer.freeQty || 1} Free!`}
+                              onChange={(e) => handleVariantChange(idx, 'offer', { ...v.offer, label: e.target.value })}
+                              style={{ ...styles.input, padding: '6px 10px', fontSize: 13 }} />
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )
+              })}
+            </div>
+          )}
         </div>
         <div style={styles.modalFooter}>
           <button style={styles.cancelBtn} onClick={() => setShowModal(false)}>
@@ -1085,6 +1702,173 @@ const Products = () => {
       </Modal>
 
       <ImageCropModal isOpen={showCrop} onClose={() => setShowCrop(false)} imageSrc={cropSrc} onCropDone={handleCropDone} aspect={1} />
+
+      {/* Variants Quick-View Popover Modal — admin view + quick restock per variant */}
+      <Modal
+        isOpen={Boolean(variantsViewTarget)}
+        onClose={() => { setVariantsViewTarget(null); setRestockTargetVariant(null) }}
+        title={variantsViewTarget ? `${variantsViewTarget.name} — Variants (${(variantsViewTarget.variants || []).length})` : 'Variants'}
+      >
+        <div style={{ padding: '4px 4px 12px', color: c.text }}>
+          {variantsViewTarget && (
+            <>
+              <div style={{
+                display: 'flex', flexWrap: 'wrap', gap: 12, padding: 12, marginBottom: 14,
+                background: c.bg, borderRadius: 10, fontSize: 12, color: c.text,
+              }}>
+                <span><strong>{(variantsViewTarget.variants || []).length}</strong> variants</span>
+                <span>Price: ₹<strong>{variantsViewTarget.minPrice || 0}</strong>–<strong>{variantsViewTarget.maxPrice || 0}</strong></span>
+                <span>Total stock: <strong>{variantsViewTarget.totalStock || 0}</strong></span>
+                {variantsViewTarget.hasLowStock && (
+                  <span style={{ color: '#ef4444', fontWeight: 700 }}>⚠ Low stock alert</span>
+                )}
+              </div>
+
+              <div style={{ maxHeight: '60vh', overflowY: 'auto', paddingRight: 4 }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+                  <thead>
+                    <tr style={{ borderBottom: `1px solid ${c.border}` }}>
+                      <th style={{ textAlign: 'left', padding: '8px 6px', fontSize: 11, fontWeight: 700, color: c.textSecondary, textTransform: 'uppercase', letterSpacing: 0.04 }}>Variant</th>
+                      <th style={{ textAlign: 'right', padding: '8px 6px', fontSize: 11, fontWeight: 700, color: c.textSecondary, textTransform: 'uppercase', letterSpacing: 0.04 }}>Price</th>
+                      <th style={{ textAlign: 'right', padding: '8px 6px', fontSize: 11, fontWeight: 700, color: c.textSecondary, textTransform: 'uppercase', letterSpacing: 0.04 }}>Stock</th>
+                      <th style={{ textAlign: 'right', padding: '8px 6px', fontSize: 11, fontWeight: 700, color: c.textSecondary, textTransform: 'uppercase', letterSpacing: 0.04 }}>Status</th>
+                      <th style={{ textAlign: 'right', padding: '8px 6px', fontSize: 11, fontWeight: 700, color: c.textSecondary, textTransform: 'uppercase', letterSpacing: 0.04 }}>Action</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {(variantsViewTarget.variants || []).map((v) => {
+                      const stock = Number(v.stockQuantity) || 0
+                      const threshold = Number(v.lowStockAlert) || 0
+                      const isLow = stock <= threshold
+                      const isOut = stock <= 0
+                      const dot = isOut ? '#ef4444' : isLow ? '#f59e0b' : '#22c55e'
+                      const label = `${v.flavor ? v.flavor + ' ' : ''}${v.volume}${v.volumeUnit || ''}`.trim()
+                      return (
+                        <tr key={v.variantId} style={{ borderBottom: `1px solid ${c.border}` }}>
+                          <td style={{ padding: '10px 6px', color: c.text }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                              {v.image && (
+                                <img src={v.image} alt={label}
+                                  style={{ width: 36, height: 36, borderRadius: 6, objectFit: 'cover', flexShrink: 0 }}
+                                  onError={(e) => { e.target.style.display = 'none' }} />
+                              )}
+                              <div>
+                                <div style={{ fontWeight: 700, color: c.text }}>{label || '—'}</div>
+                                <div style={{ fontSize: 10, color: c.textSecondary }}>{v.variantId}</div>
+                              </div>
+                            </div>
+                          </td>
+                          <td style={{ padding: '10px 6px', textAlign: 'right', color: c.text }}>
+                            <div style={{ fontWeight: 700 }}>{formatCurrency(v.pricePerBox)}</div>
+                            {v.mrp > 0 && v.mrp > v.pricePerBox && (
+                              <div style={{ fontSize: 10, color: c.textSecondary, textDecoration: 'line-through' }}>{formatCurrency(v.mrp)}</div>
+                            )}
+                          </td>
+                          <td style={{ padding: '10px 6px', textAlign: 'right' }}>
+                            <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, justifyContent: 'flex-end' }}>
+                              <span style={{ width: 8, height: 8, borderRadius: '50%', background: dot }} />
+                              <span style={{ fontWeight: 700, color: dot }}>{stock}</span>
+                              <span style={{ fontSize: 10, color: c.textSecondary }}>/ alert {threshold}</span>
+                            </div>
+                          </td>
+                          <td style={{ padding: '10px 6px', textAlign: 'right', fontSize: 11 }}>
+                            <span style={{
+                              padding: '3px 9px', borderRadius: 999, fontWeight: 700,
+                              background: isOut ? 'rgba(239,68,68,0.12)' : isLow ? 'rgba(245,158,11,0.14)' : 'rgba(34,197,94,0.14)',
+                              color: isOut ? '#ef4444' : isLow ? '#f59e0b' : '#22c55e',
+                            }}>
+                              {isOut ? 'OUT' : isLow ? 'LOW' : 'OK'}
+                            </span>
+                          </td>
+                          <td style={{ padding: '10px 6px', textAlign: 'right' }}>
+                            <button
+                              onClick={() => { setRestockTargetVariant({ productId: variantsViewTarget.id, variantId: v.variantId, label }); setRestockQty('') }}
+                              style={{
+                                padding: '5px 10px', borderRadius: 6, border: 'none',
+                                background: '#f97316', color: '#fff',
+                                fontWeight: 700, fontSize: 11, cursor: 'pointer',
+                                display: 'inline-flex', alignItems: 'center', gap: 4,
+                              }}
+                            >
+                              <FaPlus style={{ fontSize: 9 }} /> Restock
+                            </button>
+                          </td>
+                        </tr>
+                      )
+                    })}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Inline restock form when admin clicks Restock */}
+              {restockTargetVariant && (
+                <div style={{
+                  marginTop: 14, padding: 12, background: c.surface,
+                  borderRadius: 10, border: `1px solid ${c.border}`, color: c.text,
+                }}>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: c.text, marginBottom: 8 }}>
+                    Add stock to <span style={{ color: '#f97316' }}>{restockTargetVariant.label}</span>
+                  </div>
+                  <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+                    <input
+                      type="number"
+                      value={restockQty}
+                      onChange={(e) => setRestockQty(e.target.value)}
+                      placeholder="Quantity (boxes)"
+                      style={{ ...styles.input, padding: '7px 10px', fontSize: 13, flex: 1, minWidth: 140 }}
+                      autoFocus
+                    />
+                    <button
+                      style={{
+                        padding: '8px 16px', borderRadius: 8, border: 'none',
+                        background: '#f97316', color: '#fff',
+                        fontWeight: 700, fontSize: 12, cursor: 'pointer',
+                      }}
+                      disabled={restocking || !restockQty}
+                      onClick={async () => {
+                        const qty = Number(restockQty)
+                        if (!qty || qty <= 0) { toast.error('Valid quantity enter karo'); return }
+                        try {
+                          setRestocking(true)
+                          await API.put(`/products/${restockTargetVariant.productId}/restock`, {
+                            quantity: qty,
+                            variantId: restockTargetVariant.variantId,
+                          })
+                          toast.success(`Restocked ${restockTargetVariant.label} (+${qty})`)
+                          setRestockTargetVariant(null)
+                          setRestockQty('')
+                          // Refresh products to reflect new stock
+                          await fetchProducts()
+                          // Refresh the popover with latest product variants
+                          const refreshed = (await API.get(`/products/${restockTargetVariant.productId}`)).data
+                          if (refreshed) setVariantsViewTarget(refreshed)
+                        } catch (err) {
+                          toast.error(err.response?.data?.message || 'Restock failed')
+                        } finally {
+                          setRestocking(false)
+                        }
+                      }}
+                    >
+                      {restocking ? 'Adding...' : 'Add Stock'}
+                    </button>
+                    <button
+                      style={{
+                        padding: '8px 12px', borderRadius: 8, border: `1px solid ${c.border}`,
+                        background: 'transparent', color: c.textSecondary,
+                        fontWeight: 600, fontSize: 12, cursor: 'pointer',
+                      }}
+                      onClick={() => { setRestockTargetVariant(null); setRestockQty('') }}
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              )}
+            </>
+          )}
+        </div>
+      </Modal>
+
       <style>{spinnerKeyframes}</style>
     </AdminLayout>
   )

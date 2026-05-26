@@ -164,6 +164,27 @@ async function health() {
   }
 }
 
+// Startup health log — non-blocking. Surfaces invalid_grant/missing-cred problems
+// at boot so the admin sees them in the server console instead of mid-upload.
+if (drive) {
+  health()
+    .then((h) => {
+      if (h.ok) {
+        console.log(`[Drive] Auth OK — uploads available as ${h.account || 'unknown'}`);
+      } else {
+        console.warn('[Drive] Auth FAILED —', h.error);
+        if (h.error && h.error.toLowerCase().includes('invalid_grant')) {
+          console.warn('[Drive] Token expired or revoked. Run: node scripts/generate-drive-token.js');
+        }
+      }
+    })
+    .catch((err) => {
+      console.warn('[Drive] Startup health check threw:', err && err.message);
+    });
+} else {
+  console.warn('[Drive] Disabled —', disabledError);
+}
+
 module.exports = {
   MAIN_FOLDER_ID,
   ensureSubfolder,

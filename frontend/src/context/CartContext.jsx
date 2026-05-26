@@ -36,7 +36,8 @@ const getCustomerCartKey = (userId) => `${CUSTOMER_CART_KEY_PREFIX}${userId}`
 
 const normalizeCartItem = (item) => ({
   ...item,
-  cartItemId: item?.cartItemId || getCartItemId(item?.productId, item?.purchaseMode || getDefaultPurchaseMode(item)),
+  cartItemId: item?.cartItemId
+    || getCartItemId(item?.productId, item?.purchaseMode || getDefaultPurchaseMode(item), item?.variantId),
 })
 
 const normalizeCartItems = (value) => (
@@ -150,6 +151,10 @@ const serializeRegularItems = (value) => JSON.stringify(
   stripGeneratedItems(value).map((item) => ({
     cartItemId: item.cartItemId,
     productId: item.productId,
+    variantId: item.variantId || null,
+    flavor: item.flavor ?? null,
+    volume: item.volume ?? null,
+    volumeUnit: item.volumeUnit ?? null,
     quantity: item.quantity,
     purchaseMode: item.purchaseMode || 'full_box',
     price: item.price,
@@ -351,18 +356,26 @@ export const CartProvider = ({ children }) => {
     }
   }
 
-  const addToCart = useCallback((product, quantity = 1, purchaseMode = getDefaultPurchaseMode(product)) => {
+  const addToCart = useCallback((product, quantity = 1, purchaseMode, variantId = null) => {
     setItems((prevItems) => {
       const regularItems = prevItems.filter((item) => !item.isFreeItem)
       const pid = product._id || product.id
-      const cartItemId = getCartItemId(pid, purchaseMode)
+
+      // Resolve variant + mode (variant has its own piece/half_box flags)
+      const variant = variantId && product?.hasVariants
+        ? (product.variants || []).find(v => v.variantId === variantId)
+        : null
+      const stockable = variant || product
+      const mode = purchaseMode || getDefaultPurchaseMode(stockable)
+
+      const cartItemId = getCartItemId(pid, mode, variantId)
       const existingIndex = regularItems.findIndex((item) => item.cartItemId === cartItemId)
-      const normalizedQuantity = purchaseMode === 'half_box' ? 1 : quantity
-      const newItem = buildCartItem(product, normalizedQuantity, purchaseMode)
+      const normalizedQuantity = mode === 'half_box' ? 1 : quantity
+      const newItem = buildCartItem(product, normalizedQuantity, mode, variantId)
       let updatedItems
 
       if (existingIndex > -1) {
-        if (purchaseMode === 'half_box') {
+        if (mode === 'half_box') {
           updatedItems = regularItems
         } else {
           updatedItems = regularItems.map((item, index) => (

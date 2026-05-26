@@ -10,6 +10,20 @@ const path = require('path');
 const crypto = require('crypto');
 const nodemailer = require('nodemailer');
 const driveHelper = require('./helpers/drive');
+const {
+  resolveVariant,
+  getEffectiveStockable,
+  recomputeAggregates,
+  nextVariantId,
+  validateVariant,
+  normalizeVariant,
+  backfillVariantIdsOnItems,
+} = require('./helpers/variants');
+const {
+  snapshotLineItem,
+  snapshotInventoryMovement,
+  makeCartItemId,
+} = require('./helpers/lineItemSnapshot');
 
 const envPath = path.join(__dirname, '.env');
 if (fs.existsSync(envPath)) {
@@ -102,10 +116,65 @@ const fsGetDoc = (ref) => ref.get();
 // ─── Configuration ───────────────────────────────────────────────────────────
 
 const PORT = Number(process.env.PORT) || 8000;
-const JWT_SECRET = 'cold_drinks_shop_secret_key_2024';
+const JWT_SECRET = process.env.JWT_SECRET;
+if (!JWT_SECRET || JWT_SECRET.length < 32) {
+  console.error('FATAL: JWT_SECRET env var missing or shorter than 32 chars.');
+  console.error('Generate a strong secret: node -e "console.log(require(\'crypto\').randomBytes(48).toString(\'hex\'))"');
+  console.error('Local dev: add JWT_SECRET=<value> to backend/.env');
+  console.error('Production: set JWT_SECRET in Render dashboard (already declared in render.yaml)');
+  process.exit(1);
+}
 const DB_DIR = path.join(__dirname, 'database');
 const TAX_RATE = 0.18;
 const MIN_WEB_ORDER_AMOUNT = 1000;
+const JSON_FALLBACK_DISABLED = process.env.JSON_FALLBACK_DISABLED === '1';
+
+// ─── Error helper with statusCode property ─────────────────────────────────
+// Allows handlers to throw with a specific HTTP status; global handler reads
+// e.statusCode instead of fragile string matching on the message.
+function makeError(message, statusCode = 500) {
+  return Object.assign(new Error(message), { statusCode });
+}
+
+// ─── Rate Limiting (in-memory token bucket) ────────────────────────────────
+// Per-key counters with auto-expiry. Survives Render dyno lifetime; resets on
+// restart (acceptable for emergency stabilization). On Render's load balancer,
+// trust x-forwarded-for[0] for the real client IP.
+const rateLimitBuckets = new Map();
+
+function getClientIp(req) {
+  const xff = req.headers && req.headers['x-forwarded-for'];
+  if (xff) return String(xff).split(',')[0].trim();
+  return (req.socket && req.socket.remoteAddress) || 'unknown';
+}
+
+function checkRateLimit(key, maxAttempts, windowMs) {
+  const now = Date.now();
+  const bucket = rateLimitBuckets.get(key);
+  if (!bucket || now > bucket.resetAt) {
+    rateLimitBuckets.set(key, { count: 1, resetAt: now + windowMs });
+    return true;
+  }
+  if (bucket.count >= maxAttempts) return false;
+  bucket.count++;
+  return true;
+}
+
+setInterval(() => {
+  const now = Date.now();
+  for (const [k, v] of rateLimitBuckets) {
+    if (now > v.resetAt) rateLimitBuckets.delete(k);
+  }
+}, 60_000).unref();
+
+// Surface unhandled promise rejections loudly so missed-await bugs are
+// visible in production logs instead of silently failing.
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('[FATAL] Unhandled promise rejection:', reason);
+});
+process.on('uncaughtException', (err) => {
+  console.error('[FATAL] Uncaught exception:', err);
+});
 
 // ─── Firestore Collection Mapping ───────────────────────────────────────────
 
@@ -285,7 +354,7 @@ function getReadableStockText(product, stockValue) {
   return `${stock} boxes`;
 }
 
-function createInventoryMovement(entry) {
+async function createInventoryMovement(entry) {
   const movements = readDB('inventory-movements.json');
   const maxId = movements.reduce((max, item) => {
     const num = parseInt(String(item.id || '').replace('MOV-', ''));
@@ -299,11 +368,11 @@ function createInventoryMovement(entry) {
   };
 
   movements.push(movement);
-  writeDB('inventory-movements.json', movements);
+  await writeDB('inventory-movements.json', movements);
   return movement;
 }
 
-function applyInventoryDelta({ productId, deltaBoxes, movement }) {
+async function applyInventoryDelta({ productId, variantId = null, deltaBoxes, movement }) {
   const products = readDB('products.json');
   const index = products.findIndex(p => p.id === productId);
   if (index === -1) {
@@ -311,42 +380,68 @@ function applyInventoryDelta({ productId, deltaBoxes, movement }) {
   }
 
   const product = products[index];
-  const currentStock = Number(product.stockQuantity || 0);
-  const nextStock = roundCurrency(currentStock + Number(deltaBoxes || 0));
+  const delta = Number(deltaBoxes || 0);
+  const variant = resolveVariant(product, variantId);
 
-  if (nextStock < 0) {
-    return { ok: false, message: `${product.name}: insufficient stock` };
+  if (variant) {
+    // Variant-aware path: mutate variant stock, recompute aggregates
+    const currentStock = Number(variant.stockQuantity || 0);
+    const nextStock = roundCurrency(currentStock + delta);
+    if (nextStock < 0) {
+      const label = `${product.name}${variant.flavor ? ' ' + variant.flavor : ''} ${variant.volume}${variant.volumeUnit || ''}`;
+      return { ok: false, message: `${label}: insufficient stock` };
+    }
+    variant.stockQuantity = nextStock;
+    if (nextStock === 0) {
+      variant.status = 'out_of_stock';
+    } else if (variant.status === 'out_of_stock') {
+      variant.status = 'active';
+    }
+    recomputeAggregates(product);
+  } else {
+    // Legacy top-level path (single-SKU products or variantId not provided)
+    const currentStock = Number(product.stockQuantity || 0);
+    const nextStock = roundCurrency(currentStock + delta);
+    if (nextStock < 0) {
+      return { ok: false, message: `${product.name}: insufficient stock` };
+    }
+    product.stockQuantity = nextStock;
+    if (nextStock === 0) {
+      product.status = 'out_of_stock';
+    } else if (product.status === 'out_of_stock') {
+      product.status = 'active';
+    }
+    recomputeAggregates(product);   // keeps aggregates consistent for future variant flip
   }
 
-  products[index].stockQuantity = nextStock;
-  if (nextStock === 0) {
-    products[index].status = 'out_of_stock';
-  } else if (products[index].status === 'out_of_stock') {
-    products[index].status = 'active';
-  }
-
-  writeDB('products.json', products);
+  await writeDB('products.json', products);
 
   if (movement) {
-    createInventoryMovement({
-      productId,
-      productName: product.name,
-      quantity: movement.quantity,
-      purchaseMode: movement.purchaseMode || 'full_box',
-      boxEquivalent: roundCurrency(Math.abs(Number(deltaBoxes || 0))),
-      direction: Number(deltaBoxes || 0) >= 0 ? 'in' : 'out',
-      type: movement.type || 'adjustment',
-      referenceType: movement.referenceType || null,
-      referenceId: movement.referenceId || null,
-      note: movement.note || '',
-      createdBy: movement.createdBy || 'system',
-    });
+    // Build movement via single source of truth — preserves productName composition rules
+    const direction = delta >= 0 ? 'in' : 'out';
+    const movementSnap = snapshotInventoryMovement(
+      product,
+      variantId,
+      movement.quantity,
+      movement.purchaseMode || 'full_box',
+      direction,
+      movement.type || 'adjustment',
+      {
+        referenceType: movement.referenceType || null,
+        referenceId: movement.referenceId || null,
+        note: movement.note || '',
+        createdBy: movement.createdBy || 'system',
+      }
+    );
+    // Preserve historical field shape (some callers expect boxEquivalent to be the absolute delta)
+    movementSnap.boxEquivalent = roundCurrency(Math.abs(delta));
+    await createInventoryMovement(movementSnap);
   }
 
-  return { ok: true, product: products[index] };
+  return { ok: true, product };
 }
 
-function createBillRecord({
+async function createBillRecord({
   sourceType = 'order',
   sourceId,
   orderNumber,
@@ -418,7 +513,7 @@ function createBillRecord({
   };
 
   bills.push(newBill);
-  writeDB('bills.json', bills);
+  await writeDB('bills.json', bills);
   return newBill;
 }
 
@@ -439,45 +534,49 @@ function normalizeData(obj) {
 
 // ─── Firestore Sync ─────────────────────────────────────────────────────────
 
+// Durable Firestore sync. Throws on failure so callers can surface 500/503
+// to the client instead of silently losing data. Caller is responsible for
+// only invoking this when Firestore is the source of truth (writeDB gates by
+// COLL_MAP + serviceAccount).
 async function syncToFirestore(file, newData, prevData, force) {
   const collName = COLL_MAP[file];
-  if (!collName || (!firestoreReady && !force)) return;
+  if (!collName) return;   // Not a Firestore-backed collection
+  if (!fsDb) throw makeError('Firestore not configured', 503);
+  if (!firestoreReady && !force) {
+    throw makeError('Database is starting up, please retry in a few seconds', 503);
+  }
 
-  try {
-    const prevIds = new Set((prevData || []).map(i => getDocId(i, file)).filter(Boolean));
-    const newMap = new Map();
-    for (const item of newData) {
-      const id = getDocId(item, file);
-      if (id) newMap.set(id, item);
+  const prevIds = new Set((prevData || []).map(i => getDocId(i, file)).filter(Boolean));
+  const newMap = new Map();
+  for (const item of newData) {
+    const id = getDocId(item, file);
+    if (id) newMap.set(id, item);
+  }
+
+  const ops = [];
+
+  // Detect deletions
+  for (const id of prevIds) {
+    if (!newMap.has(id)) {
+      ops.push({ type: 'delete', id });
     }
+  }
 
-    const ops = [];
+  // Set all current documents
+  for (const [id, item] of newMap) {
+    ops.push({ type: 'set', id, data: cleanForFirestore(item) });
+  }
 
-    // Detect deletions
-    for (const id of prevIds) {
-      if (!newMap.has(id)) {
-        ops.push({ type: 'delete', id });
-      }
+  // Execute in batches of 450 (Firestore limit is 500). Errors propagate.
+  for (let i = 0; i < ops.length; i += 450) {
+    const batch = writeBatch(fsDb);
+    const chunk = ops.slice(i, i + 450);
+    for (const op of chunk) {
+      const ref = fsDoc(fsDb, collName, op.id);
+      if (op.type === 'delete') batch.delete(ref);
+      else batch.set(ref, op.data);
     }
-
-    // Set all current documents
-    for (const [id, item] of newMap) {
-      ops.push({ type: 'set', id, data: cleanForFirestore(item) });
-    }
-
-    // Execute in batches of 450 (Firestore limit is 500)
-    for (let i = 0; i < ops.length; i += 450) {
-      const batch = writeBatch(fsDb);
-      const chunk = ops.slice(i, i + 450);
-      for (const op of chunk) {
-        const ref = fsDoc(fsDb, collName, op.id);
-        if (op.type === 'delete') batch.delete(ref);
-        else batch.set(ref, op.data);
-      }
-      await batch.commit();
-    }
-  } catch (err) {
-    console.error(`  Firestore sync error (${collName}):`, err.message);
+    await batch.commit();
   }
 }
 
@@ -496,6 +595,7 @@ function readJSONSettings() {
 }
 
 function writeJSONFile(file, data) {
+  if (JSON_FALLBACK_DISABLED) return;   // Render production — Firestore is single source of truth
   try {
     fs.writeFileSync(path.join(DB_DIR, file), JSON.stringify(data, null, 2));
   } catch (err) {
@@ -504,6 +604,7 @@ function writeJSONFile(file, data) {
 }
 
 function writeJSONSettings(data) {
+  if (JSON_FALLBACK_DISABLED) return;
   try {
     fs.writeFileSync(path.join(DB_DIR, 'settings.json'), JSON.stringify(data, null, 2));
   } catch (err) {
@@ -647,14 +748,16 @@ function readDB(file) {
   return readJSONFile(file);
 }
 
-function writeDB(file, data) {
+// Durable write: Firestore first (if configured), then cache + JSON.
+// On Firestore failure, cache stays untouched → no ghost data. Caller's
+// async chain receives the throw; global handler maps to a 5xx response.
+async function writeDB(file, data) {
   const prev = cache[file] || [];
+  if (COLL_MAP[file] && serviceAccount) {
+    await syncToFirestore(file, data, prev);
+  }
   cache[file] = data;
   writeJSONFile(file, data);
-  // Async sync to Firestore
-  syncToFirestore(file, data, prev).catch(err =>
-    console.error(`Firestore write error (${COLL_MAP[file] || file}):`, err.message)
-  );
 }
 
 function readSettings() {
@@ -662,23 +765,35 @@ function readSettings() {
   return readJSONSettings();
 }
 
-function writeSettings(data) {
+async function writeSettings(data) {
+  if (serviceAccount && fsDb) {
+    if (!firestoreReady) throw makeError('Settings store is starting up, please retry', 503);
+    await fsSetDoc(fsDoc(fsDb, 'settings', 'app'), cleanForFirestore(data), { merge: true });
+  }
   cache['settings.json'] = data;
   writeJSONSettings(data);
-  if (firestoreReady) {
-    fsSetDoc(fsDoc(fsDb, 'settings', 'app'), cleanForFirestore(data), { merge: true })
-      .catch(err => console.error('Settings sync error:', err.message));
-  }
 }
 
 // ─── Password Hashing ───────────────────────────────────────────────────────
+// bcryptjs (pure JS — no native compile). Backward-compatible with legacy
+// SHA-256 hashes (64 hex chars) so existing users keep logging in. Login
+// handler auto-migrates by re-hashing with bcrypt on successful legacy verify.
 
-function hashPassword(password) {
-  return crypto.createHash('sha256').update(password).digest('hex');
+const bcrypt = require('bcryptjs');
+const BCRYPT_ROUNDS = 10;
+
+async function hashPassword(password) {
+  return await bcrypt.hash(password, BCRYPT_ROUNDS);
 }
 
-function verifyPassword(password, hash) {
-  return hashPassword(password) === hash;
+async function verifyPassword(password, hash) {
+  if (!hash) return false;
+  if (typeof hash === 'string' && hash.startsWith('$2')) {
+    return await bcrypt.compare(password, hash);
+  }
+  // Legacy SHA-256 fallback — caller responsible for re-hashing on success
+  const legacy = crypto.createHash('sha256').update(password).digest('hex');
+  return legacy === hash;
 }
 
 // ─── JWT Implementation ─────────────────────────────────────────────────────
@@ -774,7 +889,14 @@ function requireAuth(req, res) {
 
 function requireAdmin(req, res) {
   const user = requireAuth(req, res);
-  if (user && user.role !== 'admin') { error(res, 'Admin access required', 403); return null; }
+  if (!user) return null;
+  if (user.role !== 'admin') { error(res, 'Admin access required', 403); return null; }
+  // Guard against the init-failure window — admin would otherwise see a stale
+  // local cache and writes would silently fail later. 503 is honest.
+  if (serviceAccount && !firestoreReady) {
+    error(res, 'Database is not ready yet. Please retry in a few seconds.', 503);
+    return null;
+  }
   return user;
 }
 
@@ -811,9 +933,9 @@ async function addOutstandingForDeliveredOrder(order, deliveredBy) {
   const uIdx = users.findIndex(u => u.id === order.userId);
   if (uIdx !== -1) {
     users[uIdx].outstanding = (users[uIdx].outstanding || 0) + (order.total || 0);
-    writeDB('users.json', users);
-    addPaymentHistory(order.userId, 'debit', order.total || 0, `Order ${order.orderNumber} delivered (COD) - added to outstanding`, order.id);
-    createNotification('payment', 'Baaki Rakam Update', `Order ${order.orderNumber} (COD) ke liye ₹${(order.total || 0).toFixed(2)} aapke baaki mein add ho gaya hai.`, order.userId);
+    await writeDB('users.json', users);
+    await addPaymentHistory(order.userId, 'debit', order.total || 0, `Order ${order.orderNumber} delivered (COD) - added to outstanding`, order.id);
+    await createNotification('payment', 'Baaki Rakam Update', `Order ${order.orderNumber} (COD) ke liye ₹${(order.total || 0).toFixed(2)} aapke baaki mein add ho gaya hai.`, order.userId);
     await sendPushToUser(order.userId, '📊 Baaki Rakam Update', `Order ${order.orderNumber} (COD) ke liye ₹${(order.total || 0).toFixed(2)} aapke baaki mein add ho gaya hai.`, { type: 'payment', link: '/profile' });
   }
 
@@ -906,7 +1028,7 @@ async function sendPasswordResetEmail({ req, email, name, token }) {
 
 // ─── Notification Helper ─────────────────────────────────────────────────────
 
-function createNotification(type, title, message, targetUserId) {
+async function createNotification(type, title, message, targetUserId) {
   const notifications = readDB('notifications.json');
   const maxId = notifications.reduce((max, n) => {
     const num = parseInt(n.id.replace('NOTIF-', ''));
@@ -923,7 +1045,7 @@ function createNotification(type, title, message, targetUserId) {
     createdAt: new Date().toISOString()
   };
   notifications.push(newNotification);
-  writeDB('notifications.json', notifications);
+  await writeDB('notifications.json', notifications);
   return newNotification;
 }
 
@@ -958,7 +1080,7 @@ async function sendPush(token, title, body, data = {}) {
       const userIdx = users.findIndex(u => u.fcmToken === token);
       if (userIdx !== -1) {
         users[userIdx].fcmToken = null;
-        writeDB('users.json', users);
+        await writeDB('users.json', users);
         console.log('[FCM] Removed stale token for user', users[userIdx].id);
       }
     }
@@ -992,7 +1114,7 @@ async function sendPushToAll(title, body, data = {}) {
 
 // ─── Payment History Helper ──────────────────────────────────────────────────
 
-function addPaymentHistory(userId, type, amount, description, orderId, method) {
+async function addPaymentHistory(userId, type, amount, description, orderId, method) {
   const history = readDB('payment-history.json');
   const maxId = history.reduce((max, h) => {
     const num = parseInt(h.id.replace('PH-', ''));
@@ -1009,7 +1131,7 @@ function addPaymentHistory(userId, type, amount, description, orderId, method) {
     createdAt: new Date().toISOString()
   };
   history.push(entry);
-  writeDB('payment-history.json', history);
+  await writeDB('payment-history.json', history);
   return entry;
 }
 
@@ -1022,6 +1144,10 @@ async function handleCheckPhone(req, res) {
   const { phone } = body;
 
   if (!phone) return error(res, 'Phone number is required');
+
+  if (!checkRateLimit(`phone-check:${phone}`, 30, 60_000)) {
+    return error(res, 'Too many phone-check requests. Please wait a minute.', 429);
+  }
 
   const normalizePhone = (p) => {
     if (!p) return ''
@@ -1076,13 +1202,15 @@ async function handleAuthRegister(req, res) {
     return error(res, 'Name is required');
   }
 
+  const hashedPassword = await hashPassword(password);
+
   const newUser = {
     id: `USR-${String(maxId + 1).padStart(3, '0')}`,
     name: trimmedName,
     email: body.email || '',
     phone: normalized,
-    password: hashPassword(password),
-    role: body.role || 'customer',
+    password: hashedPassword,
+    role: 'customer',
     addresses: body.addresses || (body.address ? [body.address] : []),
     wallet: 0,
     fcmToken: body.fcmToken || null,
@@ -1091,11 +1219,11 @@ async function handleAuthRegister(req, res) {
   };
 
   users.push(newUser);
-  writeDB('users.json', users);
+  await writeDB('users.json', users);
 
   if (newUser.role === 'customer') {
     const refreshToken = startCustomerSession(newUser);
-    writeDB('users.json', users);
+    await writeDB('users.json', users);
     return success(res, buildAuthResponse(newUser, refreshToken), 'Registration successful', 201);
   }
 
@@ -1108,6 +1236,14 @@ async function handleAuthLogin(req, res) {
 
   if ((!email && !phone) || !password) {
     return error(res, 'Email/phone and password are required');
+  }
+
+  const identifier = phone || email || 'unknown';
+  if (!checkRateLimit(`login:${identifier}`, 10, 60_000)) {
+    return error(res, 'Too many login attempts. Please try again in a minute.', 429);
+  }
+  if (!checkRateLimit(`login-ip:${getClientIp(req)}`, 50, 60_000)) {
+    return error(res, 'Too many login attempts from this network. Please try again shortly.', 429);
   }
 
   const normalizePhone = (p) => {
@@ -1126,13 +1262,30 @@ async function handleAuthLogin(req, res) {
   );
 
   if (!user) return error(res, 'Invalid credentials', 401);
-  if (!verifyPassword(password, user.password)) return error(res, 'Invalid credentials', 401);
+  const isLegacyHash = typeof user.password === 'string' && !user.password.startsWith('$2');
+  if (!(await verifyPassword(password, user.password))) return error(res, 'Invalid credentials', 401);
   if (user.status !== 'active') return error(res, 'Account is inactive', 403);
+
+  // Auto-migrate legacy SHA-256 password to bcrypt on successful login.
+  // Best-effort: if this fails (e.g., Firestore blip), user can still login
+  // next time using the original SHA-256 hash; we'll retry the migration.
+  if (isLegacyHash) {
+    try {
+      const userIdx = users.findIndex(u => u.id === user.id);
+      if (userIdx !== -1) {
+        users[userIdx].password = await hashPassword(password);
+        await writeDB('users.json', users);
+        user.password = users[userIdx].password;
+      }
+    } catch (rehashErr) {
+      console.warn('[auth] Password rehash failed for', user.id, '—', rehashErr.message);
+    }
+  }
 
   if (user.role === 'customer') {
     const index = users.findIndex(u => u.id === user.id);
     const refreshToken = startCustomerSession(users[index]);
-    writeDB('users.json', users);
+    await writeDB('users.json', users);
     return success(res, buildAuthResponse(users[index], refreshToken), 'Login successful');
   }
 
@@ -1158,7 +1311,7 @@ async function handleAuthRefresh(req, res) {
   if (user.status !== 'active') return error(res, 'Account is inactive', 403);
 
   const nextRefreshToken = startCustomerSession(users[index], true);
-  writeDB('users.json', users);
+  await writeDB('users.json', users);
 
   return success(res, buildAuthResponse(users[index], nextRefreshToken), 'Session refreshed');
 }
@@ -1178,7 +1331,7 @@ async function handleAuthLogout(req, res) {
 
   if (index >= 0) {
     clearCustomerSession(users[index]);
-    writeDB('users.json', users);
+    await writeDB('users.json', users);
   }
 
   return success(res, null, 'Logged out successfully');
@@ -1207,7 +1360,7 @@ async function handleAuthProfile(req, res) {
     users[index].addresses = [body.address];
   }
 
-  writeDB('users.json', users);
+  await writeDB('users.json', users);
   return success(res, { user: sanitizeUser(users[index]) }, 'Profile updated');
 }
 
@@ -1219,14 +1372,14 @@ async function handleAuthChangePassword(req, res) {
   const { currentPassword, newPassword } = body;
 
   if (!currentPassword || !newPassword) return error(res, 'Current and new password required');
-  if (!verifyPassword(currentPassword, user.password)) return error(res, 'Current password is incorrect', 401);
+  if (!(await verifyPassword(currentPassword, user.password))) return error(res, 'Current password is incorrect', 401);
   if (newPassword.length < 6) return error(res, 'New password must be at least 6 characters');
 
   const users = readDB('users.json');
   const index = users.findIndex(u => u.id === user.id);
-  users[index].password = hashPassword(newPassword);
+  users[index].password = await hashPassword(newPassword);
   if (users[index].role === 'customer') clearCustomerSession(users[index]);
-  writeDB('users.json', users);
+  await writeDB('users.json', users);
 
   return success(res, null, 'Password changed successfully');
 }
@@ -1257,7 +1410,7 @@ async function handleFCMTokenSave(req, res) {
   }
 
   users[index].fcmToken = fcmToken;
-  writeDB('users.json', users);
+  await writeDB('users.json', users);
 
   return success(res, null, fcmToken ? 'FCM token saved' : 'FCM token cleared');
 }
@@ -1272,6 +1425,10 @@ async function handleForgotPassword(req, res) {
     return error(res, 'Email is required');
   }
 
+  if (!checkRateLimit(`forgot:${email.toLowerCase()}`, 3, 3_600_000)) {
+    return error(res, 'Too many reset requests for this email. Please wait an hour.', 429);
+  }
+
   const users = readDB('users.json');
   const index = users.findIndex(u => (u.email || '').toLowerCase() === email.toLowerCase());
   const genericMessage = 'If an account exists for this email, a reset link has been sent.';
@@ -1284,7 +1441,7 @@ async function handleForgotPassword(req, res) {
   users[index].resetTokenHash = hashResetToken(token);
   users[index].resetTokenExpiry = new Date(Date.now() + 15 * 60 * 1000).toISOString();
   users[index].resetRequestedAt = new Date().toISOString();
-  writeDB('users.json', users);
+  await writeDB('users.json', users);
 
   const resetLink = `${getFrontendBaseUrl(req)}/reset-password?token=${encodeURIComponent(token)}`;
 
@@ -1305,7 +1462,7 @@ async function handleForgotPassword(req, res) {
     users[index].resetTokenHash = null;
     users[index].resetTokenExpiry = null;
     users[index].resetRequestedAt = null;
-    writeDB('users.json', users);
+    await writeDB('users.json', users);
     return error(res, 'Password reset email service is not available right now', 503);
   }
 
@@ -1347,12 +1504,12 @@ async function handleResetPassword(req, res) {
     return error(res, 'This reset link is invalid or expired', 400);
   }
 
-  users[index].password = hashPassword(newPassword);
+  users[index].password = await hashPassword(newPassword);
   users[index].resetTokenHash = null;
   users[index].resetTokenExpiry = null;
   users[index].resetRequestedAt = null;
   if (users[index].role === 'customer') clearCustomerSession(users[index]);
-  writeDB('users.json', users);
+  await writeDB('users.json', users);
 
   return success(res, { role: users[index].role }, 'Password reset successfully. You can now login with your new password.');
 }
@@ -1400,7 +1557,7 @@ async function handleUserAction(req, res, userId, action) {
     return error(res, 'Invalid action');
   }
 
-  writeDB('users.json', users);
+  await writeDB('users.json', users);
   return success(res, sanitizeUser(users[index]), `User ${action}ed successfully`);
 }
 
@@ -1418,11 +1575,38 @@ async function handleProducts(req, res) {
     products = products.filter(p => p.category.toLowerCase() === query.category.toLowerCase());
   }
   if (query.search) {
-    const s = query.search.toLowerCase();
-    products = products.filter(p => p.name.toLowerCase().includes(s) || p.description.toLowerCase().includes(s));
+    const s = String(query.search || '').toLowerCase();
+    products = products.filter(p => {
+      const name = String(p.name || '').toLowerCase();
+      const desc = String(p.description || '').toLowerCase();
+      const brand = String(p.brand || '').toLowerCase();
+      const flavors = (p.availableFlavors || []).map(f => String(f || '').toLowerCase());
+      return name.includes(s) || desc.includes(s) || brand.includes(s) || flavors.some(f => f.includes(s));
+    });
   }
   if (query.status) {
     products = products.filter(p => p.status === query.status);
+  }
+  if (query.flavor) {
+    const f = String(query.flavor).toLowerCase();
+    products = products.filter(p =>
+      (p.availableFlavors || []).some(x => String(x).toLowerCase() === f) ||
+      String(p.flavor || '').toLowerCase() === f
+    );
+  }
+  if (query.volume) {
+    const v = Number(query.volume);
+    products = products.filter(p =>
+      (p.availableVolumes || []).includes(v) ||
+      Number(p.volume) === v
+    );
+  }
+  if (query.volumeUnit) {
+    const u = String(query.volumeUnit);
+    products = products.filter(p => p.volumeUnit === u);
+  }
+  if (query.hasLowStock === 'true') {
+    products = products.filter(p => p.hasLowStock === true);
   }
 
   return success(res, products);
@@ -1442,18 +1626,54 @@ async function handleProductById(req, res, productId) {
     const admin = requireAdmin(req, res);
     if (!admin) return;
 
-    const body = await parseBody(req);
+    const raw = await parseBody(req);
+    const body = stripServerFields(raw);
     const index = products.findIndex(p => p.id === productId);
     const oldProduct = products[index];
-    const { id, _id, ...updates } = body;
-    products[index] = { ...oldProduct, ...updates };
-    writeDB('products.json', products);
+    const { id, _id, variants: incomingVariants, ...updates } = body;
+
+    // Detect mode flip (variants → single, or single → variants)
+    const oldHadVariants = oldProduct.hasVariants === true && Array.isArray(oldProduct.variants) && oldProduct.variants.length > 0;
+    const newWillHaveVariants = Array.isArray(incomingVariants) && incomingVariants.length > 0;
+
+    // Merge top-level fields first
+    const merged = { ...oldProduct, ...updates };
+
+    // Process variants (if present in body); reuses oldProduct's _variantCounter
+    if (Array.isArray(incomingVariants)) {
+      // Preserve the variant counter from existing product so V-NNN ids never reuse
+      merged._variantCounter = oldProduct._variantCounter || 0;
+      // Validate + assign variantIds (preserve existing ones where matched)
+      const { variants, error: vErr } = processVariantsBody(incomingVariants, merged, { isCreate: false });
+      if (vErr) return error(res, vErr, 400);
+      merged.variants = variants;
+
+      // Mode flip: single → variants. Auto-backfill variantId on existing orders/cart for this product.
+      if (!oldHadVariants && newWillHaveVariants) {
+        await backfillReferencesForProduct(merged);
+      }
+    }
+
+    // Mode flip safety: variants → single requires explicit confirmation (no stock loss)
+    if (oldHadVariants && !newWillHaveVariants && Array.isArray(incomingVariants)) {
+      // incomingVariants is an empty array — admin wants to clear variants
+      const remainingStock = oldProduct.variants.reduce((s, v) => s + (Number(v.stockQuantity) || 0), 0);
+      if (remainingStock > 0 && !raw.confirmModeFlipDestroy) {
+        return error(res, `Variants have ${remainingStock} units of stock. Set confirmModeFlipDestroy=true to discard.`, 400);
+      }
+    }
+
+    products[index] = merged;
+    recomputeAggregates(products[index]);
+
+    await writeDB('products.json', products);
 
     // Drive cleanup: any old image URL not in the new payload is now orphaned.
-    const removedUrls = diffRemovedImageUrls(
-      [...(oldProduct.images || []), oldProduct.image],
-      [...(products[index].images || []), products[index].image]
-    );
+    const oldImageUrls = [...(oldProduct.images || []), oldProduct.image,
+      ...(oldProduct.variants || []).flatMap(v => [...(v.images || []), v.image])].filter(Boolean);
+    const newImageUrls = [...(products[index].images || []), products[index].image,
+      ...(products[index].variants || []).flatMap(v => [...(v.images || []), v.image])].filter(Boolean);
+    const removedUrls = diffRemovedImageUrls(oldImageUrls, newImageUrls);
     await deleteDriveFilesFromUrls(removedUrls);
 
     return success(res, products[index], 'Product updated successfully');
@@ -1466,7 +1686,7 @@ async function handleProductById(req, res, productId) {
 
     const index = products.findIndex(p => p.id === productId);
     const removed = products.splice(index, 1)[0];
-    writeDB('products.json', products);
+    await writeDB('products.json', products);
 
     // Drive cleanup: every image attached to this product is now orphaned.
     await deleteDriveFilesFromUrls([...(removed.images || []), removed.image]);
@@ -1484,17 +1704,154 @@ async function handleProductRestock(req, res, productId) {
   const index = products.findIndex(p => p.id === productId);
   if (index === -1) return error(res, 'Product not found', 404);
 
-  products[index].stockQuantity = (products[index].stockQuantity || 0) + (body.quantity || 50);
-  if (products[index].status === 'out_of_stock') products[index].status = 'active';
-  writeDB('products.json', products);
-  return success(res, products[index], 'Product restocked');
+  const product = products[index];
+  const qty = Number(body.quantity || 50);
+  const variantId = body.variantId || null;
+
+  if (product.hasVariants === true) {
+    if (!variantId) return error(res, 'variantId required for products with variants', 400);
+    const variant = (product.variants || []).find(v => v.variantId === variantId);
+    if (!variant) return error(res, 'Variant not found', 404);
+    variant.stockQuantity = roundCurrency((Number(variant.stockQuantity) || 0) + qty);
+    if (variant.stockQuantity > 0 && variant.status === 'out_of_stock') variant.status = 'active';
+    recomputeAggregates(product);
+  } else {
+    product.stockQuantity = (product.stockQuantity || 0) + qty;
+    if (product.status === 'out_of_stock') product.status = 'active';
+    recomputeAggregates(product);
+  }
+
+  await writeDB('products.json', products);
+  return success(res, product, 'Product restocked');
+}
+
+// Server-controlled fields — admin cannot override these via POST/PUT body
+const PRODUCT_SERVER_FIELDS = new Set([
+  'hasVariants', 'availableFlavors', 'availableVolumes',
+  'minPrice', 'maxPrice', 'totalStock', 'hasLowStock', 'outOfStock',
+  '_variantCounter'
+]);
+
+/**
+ * R3 Layer 1 — backfill variantId on existing order/cart items + bills when a product
+ * is flipped from single-SKU to variants mode. Called inline on the flip (not as a
+ * deploy-time script). Idempotent — items already having variantId are skipped.
+ */
+async function backfillReferencesForProduct(product) {
+  if (!product?.hasVariants || !Array.isArray(product.variants) || product.variants.length === 0) return;
+  const defaultVariant = product.variants[0];
+  if (!defaultVariant) return;
+
+  const lookup = (pid) => (pid === product.id ? product : null);
+
+  // Orders
+  try {
+    const orders = readDB('orders.json');
+    let ordersModified = 0;
+    for (const order of orders) {
+      if (!Array.isArray(order.items)) continue;
+      const m = backfillVariantIdsOnItems(
+        order.items.filter(i => i?.productId === product.id),
+        lookup
+      );
+      if (m > 0) ordersModified++;
+    }
+    if (ordersModified > 0) {
+      await writeDB('orders.json', orders);
+      console.log(`[backfill] Updated variantId on ${ordersModified} orders for product ${product.id}`);
+    }
+  } catch (e) {
+    console.warn('[backfill] orders backfill failed:', e.message);
+  }
+
+  // Cart
+  try {
+    const carts = readDB('cart.json');
+    let cartsModified = 0;
+    for (const cart of carts) {
+      if (!Array.isArray(cart.items)) continue;
+      const m = backfillVariantIdsOnItems(
+        cart.items.filter(i => i?.productId === product.id),
+        lookup
+      );
+      if (m > 0) cartsModified++;
+    }
+    if (cartsModified > 0) {
+      await writeDB('cart.json', carts);
+      console.log(`[backfill] Updated variantId on ${cartsModified} carts for product ${product.id}`);
+    }
+  } catch (e) {
+    console.warn('[backfill] cart backfill failed:', e.message);
+  }
+
+  // Bills (offline-sale receipts may also reference this product)
+  try {
+    const bills = readDB('bills.json');
+    let billsModified = 0;
+    for (const bill of bills) {
+      if (!Array.isArray(bill.items)) continue;
+      const m = backfillVariantIdsOnItems(
+        bill.items.filter(i => i?.productId === product.id),
+        lookup
+      );
+      if (m > 0) billsModified++;
+    }
+    if (billsModified > 0) {
+      await writeDB('bills.json', bills);
+      console.log(`[backfill] Updated variantId on ${billsModified} bills for product ${product.id}`);
+    }
+  } catch (e) {
+    console.warn('[backfill] bills backfill failed:', e.message);
+  }
+}
+
+function stripServerFields(body) {
+  const out = {};
+  for (const k of Object.keys(body || {})) {
+    if (!PRODUCT_SERVER_FIELDS.has(k)) out[k] = body[k];
+  }
+  return out;
+}
+
+// Process incoming variants array — assign variantIds, validate, normalize.
+// Returns { variants, error } — caller short-circuits on error.
+function processVariantsBody(rawVariants, hostProduct, { isCreate = false } = {}) {
+  if (!Array.isArray(rawVariants)) return { variants: [], error: null };
+  if (rawVariants.length === 0) return { variants: [], error: null };
+  if (rawVariants.length > 20) return { variants: null, error: 'Maximum 20 variants per product' };
+
+  const processed = [];
+  for (let i = 0; i < rawVariants.length; i++) {
+    const raw = { ...rawVariants[i] };
+    // On CREATE, ALL variants get new IDs. On UPDATE, preserve existing variantId if matches one in product.
+    if (isCreate || !raw.variantId) {
+      raw.variantId = nextVariantId(hostProduct);
+    } else {
+      // Verify the supplied variantId exists in the current product variants
+      const existing = (hostProduct.variants || []).find(v => v.variantId === raw.variantId);
+      if (!existing) {
+        // Treat unknown variantId on update as a new variant — assign fresh id
+        raw.variantId = nextVariantId(hostProduct);
+      }
+    }
+
+    // Normalize first so unique-constraint checks see coerced values
+    normalizeVariant(raw, { isNew: !hostProduct.variants?.find(v => v.variantId === raw.variantId) });
+
+    // Validate against already-processed entries (catches duplicates within request)
+    const validation = validateVariant(raw, { existingVariants: processed });
+    if (!validation.ok) return { variants: null, error: validation.error };
+
+    processed.push(raw);
+  }
+  return { variants: processed, error: null };
 }
 
 async function handleProductsAdd(req, res) {
   const admin = requireAdmin(req, res);
   if (!admin) return;
 
-  const body = await parseBody(req);
+  const body = stripServerFields(await parseBody(req));
   const products = readDB('products.json');
 
   const maxId = products.reduce((max, p) => {
@@ -1506,6 +1863,7 @@ async function handleProductsAdd(req, res) {
     id: `PRD-${String(maxId + 1).padStart(3, '0')}`,
     name: body.name || '',
     category: body.category || '',
+    brand: body.brand || null,
     description: body.description || '',
     boxQuantity: body.boxQuantity || body.bottlesPerBox || 24,
     pricePerBox: body.pricePerBox || body.price || 0,
@@ -1520,14 +1878,26 @@ async function handleProductsAdd(req, res) {
     gstPercent: body.gstPercent !== undefined ? Number(body.gstPercent) : null,
     deliveryCharge: body.deliveryCharge !== undefined ? Number(body.deliveryCharge) : null,
     volume: body.volume ? Number(body.volume) : null,
+    volumeUnit: body.volumeUnit || null,
     allowPiecePurchase: body.allowPiecePurchase !== undefined ? Boolean(body.allowPiecePurchase) : undefined,
     allowHalfBox: body.allowHalfBox !== undefined ? Boolean(body.allowHalfBox) : undefined,
     costPricePerBox: body.costPricePerBox !== undefined ? Number(body.costPricePerBox) : 0,
-    offer: body.offer || null
+    offer: body.offer || null,
+    variants: [],
+    _variantCounter: 0,
   };
 
+  // If body includes variants, process them (host counter starts at 0 since this is CREATE)
+  if (Array.isArray(body.variants) && body.variants.length > 0) {
+    const { variants, error: vErr } = processVariantsBody(body.variants, newProduct, { isCreate: true });
+    if (vErr) return error(res, vErr, 400);
+    newProduct.variants = variants;
+  }
+
+  recomputeAggregates(newProduct);
+
   products.push(newProduct);
-  writeDB('products.json', products);
+  await writeDB('products.json', products);
   return success(res, newProduct, 'Product added successfully', 201);
 }
 
@@ -1535,22 +1905,47 @@ async function handleProductsUpdate(req, res) {
   const admin = requireAdmin(req, res);
   if (!admin) return;
 
-  const body = await parseBody(req);
-  if (!body.id) return error(res, 'Product ID is required');
+  const raw = await parseBody(req);
+  if (!raw.id) return error(res, 'Product ID is required');
+  const body = stripServerFields(raw);
 
   const products = readDB('products.json');
   const index = products.findIndex(p => p.id === body.id);
   if (index === -1) return error(res, 'Product not found', 404);
 
   const oldProduct = products[index];
-  const { id, ...updates } = body;
-  products[index] = { ...oldProduct, ...updates };
-  writeDB('products.json', products);
+  const oldHadVariants = oldProduct.hasVariants === true && Array.isArray(oldProduct.variants) && oldProduct.variants.length > 0;
+  const { id, variants: incomingVariants, ...updates } = body;
 
-  const removedUrls = diffRemovedImageUrls(
-    [...(oldProduct.images || []), oldProduct.image],
-    [...(products[index].images || []), products[index].image]
-  );
+  const merged = { ...oldProduct, ...updates };
+
+  if (Array.isArray(incomingVariants)) {
+    merged._variantCounter = oldProduct._variantCounter || 0;
+    const { variants, error: vErr } = processVariantsBody(incomingVariants, merged, { isCreate: false });
+    if (vErr) return error(res, vErr, 400);
+    merged.variants = variants;
+
+    const newWillHaveVariants = variants.length > 0;
+    if (!oldHadVariants && newWillHaveVariants) {
+      await backfillReferencesForProduct(merged);
+    }
+    if (oldHadVariants && !newWillHaveVariants) {
+      const remainingStock = oldProduct.variants.reduce((s, v) => s + (Number(v.stockQuantity) || 0), 0);
+      if (remainingStock > 0 && !raw.confirmModeFlipDestroy) {
+        return error(res, `Variants have ${remainingStock} units of stock. Set confirmModeFlipDestroy=true to discard.`, 400);
+      }
+    }
+  }
+
+  products[index] = merged;
+  recomputeAggregates(products[index]);
+  await writeDB('products.json', products);
+
+  const oldImageUrls = [...(oldProduct.images || []), oldProduct.image,
+    ...(oldProduct.variants || []).flatMap(v => [...(v.images || []), v.image])].filter(Boolean);
+  const newImageUrls = [...(products[index].images || []), products[index].image,
+    ...(products[index].variants || []).flatMap(v => [...(v.images || []), v.image])].filter(Boolean);
+  const removedUrls = diffRemovedImageUrls(oldImageUrls, newImageUrls);
   await deleteDriveFilesFromUrls(removedUrls);
 
   return success(res, products[index], 'Product updated successfully');
@@ -1571,11 +1966,183 @@ async function handleProductsDelete(req, res) {
   if (index === -1) return error(res, 'Product not found', 404);
 
   const removed = products.splice(index, 1)[0];
-  writeDB('products.json', products);
+  await writeDB('products.json', products);
 
-  await deleteDriveFilesFromUrls([...(removed.images || []), removed.image]);
+  // Drive cleanup — includes variant image overrides
+  const allImageUrls = [
+    ...(removed.images || []),
+    removed.image,
+    ...(removed.variants || []).flatMap(v => [...(v.images || []), v.image])
+  ].filter(Boolean);
+  await deleteDriveFilesFromUrls(allImageUrls);
 
   return success(res, removed, 'Product deleted successfully');
+}
+
+/**
+ * GET /api/products/:id/suggestions
+ * Returns the product (with variants array) + related category fallback.
+ * Customer detail page reads variants/flavors from product.variants directly.
+ */
+async function handleProductSuggestions(req, res, productId) {
+  const products = readDB('products.json');
+  const product = products.find(p => p.id === productId);
+  if (!product) return error(res, 'Product not found', 404);
+
+  const currentMinPrice = Number(product.minPrice ?? product.pricePerBox ?? 0);
+  const related = products
+    .filter(p => p.id !== productId && p.category === product.category && p.status === 'active')
+    .map(p => ({
+      id: p.id,
+      name: p.name,
+      brand: p.brand || null,
+      category: p.category,
+      image: p.image || (Array.isArray(p.images) ? p.images[0] : null),
+      minPrice: Number(p.minPrice ?? p.pricePerBox ?? 0),
+      maxPrice: Number(p.maxPrice ?? p.pricePerBox ?? 0),
+      hasVariants: p.hasVariants === true,
+      hasLowStock: p.hasLowStock === true,
+      outOfStock: p.outOfStock === true || p.status === 'out_of_stock',
+      availableFlavors: p.availableFlavors || [],
+      availableVolumes: p.availableVolumes || [],
+      volumeUnit: p.volumeUnit || null
+    }))
+    .sort((a, b) => Math.abs(a.minPrice - currentMinPrice) - Math.abs(b.minPrice - currentMinPrice))
+    .slice(0, 6);
+
+  return success(res, { product, related });
+}
+
+/**
+ * GET /api/admin/low-stock
+ * Returns all products with at least one variant (or top-level stock for legacy)
+ * below lowStockAlert threshold. Used by admin Low Stock Report page.
+ */
+async function handleAdminLowStock(req, res) {
+  const admin = requireAdmin(req, res);
+  if (!admin) return;
+
+  const products = readDB('products.json');
+  const result = [];
+
+  for (const product of products) {
+    if (product.hasVariants === true && Array.isArray(product.variants)) {
+      const lowVariants = product.variants.filter(v => {
+        if (v.status === 'discontinued' || v.isActive === false) return false;
+        const stock = Number(v.stockQuantity) || 0;
+        const threshold = Number(v.lowStockAlert) || 0;
+        return stock <= threshold;
+      });
+      if (lowVariants.length > 0) {
+        result.push({
+          productId: product.id,
+          productName: product.name,
+          brand: product.brand || null,
+          image: product.image,
+          category: product.category,
+          lowVariants: lowVariants.map(v => ({
+            variantId: v.variantId,
+            flavor: v.flavor || null,
+            volume: v.volume,
+            volumeUnit: v.volumeUnit || null,
+            stockQuantity: Number(v.stockQuantity) || 0,
+            lowStockAlert: Number(v.lowStockAlert) || 0,
+            status: v.status || 'active'
+          }))
+        });
+      }
+    } else {
+      // Legacy single-SKU path
+      const stock = Number(product.stockQuantity) || 0;
+      const threshold = Number(product.lowStockAlert) || 0;
+      if (stock <= threshold) {
+        result.push({
+          productId: product.id,
+          productName: product.name,
+          brand: product.brand || null,
+          image: product.image,
+          category: product.category,
+          lowVariants: [{
+            variantId: null,
+            flavor: null,
+            volume: product.volume || null,
+            volumeUnit: product.volumeUnit || null,
+            stockQuantity: stock,
+            lowStockAlert: threshold,
+            status: product.status || 'active'
+          }]
+        });
+      }
+    }
+  }
+
+  return success(res, result);
+}
+
+/**
+ * POST /api/orders/:id/reorder — R3 Layer 2 lazy variant resolver
+ * Builds a fresh cart from an old order's line items. For variants products
+ * where the referenced variantId is missing, resolves to current default variant.
+ * Returns the resolved cart preview — customer reviews + confirms before placing.
+ */
+async function handleOrderReorder(req, res, orderId) {
+  const user = requireAuth(req, res);
+  if (!user) return;
+
+  const orders = readDB('orders.json');
+  const order = orders.find(o => (o.id === orderId || o.orderNumber === orderId) && o.userId === user.id);
+  if (!order) return error(res, 'Order not found or access denied', 404);
+
+  const products = readDB('products.json');
+  const resolvedItems = [];
+  const skipped = [];
+
+  for (const item of (order.items || [])) {
+    const product = products.find(p => p.id === item.productId);
+    if (!product || product.status !== 'active') {
+      skipped.push({ name: item.name, reason: 'Product no longer available' });
+      continue;
+    }
+
+    let resolvedVariantId = item.variantId || null;
+
+    // If product has variants but item doesn't reference one (legacy), resolve to default
+    if (product.hasVariants === true) {
+      if (!resolvedVariantId) {
+        // Try to match by snapshot fields (volume + flavor)
+        const match = (product.variants || []).find(v =>
+          (item.volume == null || Number(v.volume) === Number(item.volume)) &&
+          (item.flavor == null || v.flavor === item.flavor) &&
+          (Number(v.stockQuantity) || 0) > 0
+        );
+        resolvedVariantId = match?.variantId || product.variants[0]?.variantId || null;
+      } else {
+        // Verify variantId still exists
+        const exists = (product.variants || []).some(v => v.variantId === resolvedVariantId);
+        if (!exists) {
+          resolvedVariantId = product.variants[0]?.variantId || null;
+        }
+      }
+
+      if (!resolvedVariantId) {
+        skipped.push({ name: item.name, reason: 'No available variant' });
+        continue;
+      }
+    }
+
+    const snap = snapshotLineItem(product, resolvedVariantId, item.quantity, item.purchaseMode);
+    if (snap.unavailable) {
+      skipped.push({ name: snap.name, reason: snap.unavailableReason });
+      continue;
+    }
+    resolvedItems.push(snap);
+  }
+
+  return success(res, {
+    items: resolvedItems,
+    skipped,
+    note: 'Coupons and free items not pre-applied — re-apply at checkout.'
+  });
 }
 
 // ─── ORDERS ──────────────────────────────────────────────────────────────────
@@ -1639,39 +2206,41 @@ async function handleOrdersCreate(req, res) {
   const products = readDB('products.json');
   const orders = readDB('orders.json');
 
-  // Check stock before creating order
+  // Check stock before creating order. Stock check + snapshot both flow through
+  // the variant-aware resolveVariant — variantId optional (legacy items have none).
   const stockErrors = [];
   const orderItems = items.map(item => {
     const product = products.find(p => p.id === item.productId);
     if (!product) return null;
-    const purchaseMode = normalizePurchaseMode(product, item.purchaseMode);
+
+    const variant = resolveVariant(product, item.variantId);
+    const stockable = variant || product;
+
+    const purchaseMode = normalizePurchaseMode(stockable, item.purchaseMode);
     const requestedQuantity = purchaseMode === 'half_box' ? 1 : Number(item.quantity);
     if (!requestedQuantity || requestedQuantity <= 0) return null;
-    const maxQuantity = getMaxPurchaseQuantity(product, purchaseMode);
-    const unitBoxEquivalent = getUnitBoxEquivalent(product, purchaseMode);
+    const maxQuantity = getMaxPurchaseQuantity(stockable, purchaseMode);
+    const unitBoxEquivalent = getUnitBoxEquivalent(stockable, purchaseMode);
     const boxEquivalent = roundCurrency(requestedQuantity * unitBoxEquivalent);
+    const stockOnHand = Number(stockable.stockQuantity || 0);
 
-    if (requestedQuantity > maxQuantity || Number(product.stockQuantity || 0) < boxEquivalent) {
-      const availableLabel = allowPiecePurchase(product) && purchaseMode === 'piece'
+    if (requestedQuantity > maxQuantity || stockOnHand < boxEquivalent) {
+      const availableLabel = allowPiecePurchase(stockable) && purchaseMode === 'piece'
         ? `${maxQuantity} ${getPurchaseLabel(purchaseMode, maxQuantity)}`
-        : `${roundCurrency(Number(product.stockQuantity || 0))} boxes equivalent`;
-      stockErrors.push(`${product.name}: only ${availableLabel} available, you requested ${requestedQuantity} ${getPurchaseLabel(purchaseMode, requestedQuantity)}`);
+        : `${roundCurrency(stockOnHand)} boxes equivalent`;
+      const label = variant
+        ? `${product.name}${variant.flavor ? ' ' + variant.flavor : ''} ${variant.volume}${variant.volumeUnit || ''}`
+        : product.name;
+      stockErrors.push(`${label}: only ${availableLabel} available, you requested ${requestedQuantity} ${getPurchaseLabel(purchaseMode, requestedQuantity)}`);
       return null;
     }
-    return {
-      productId: item.productId,
-      name: product.name,
-      image: product.image || '',
-      quantity: requestedQuantity,
-      purchaseMode,
-      unitLabel: getPurchaseLabel(purchaseMode, requestedQuantity),
-      boxQuantity: getProductBoxQuantity(product),
-      boxEquivalent,
-      price: getUnitPrice(product, purchaseMode),
-      pricePerBox: roundCurrency(product.pricePerBox),
-      gstPercent: product.gstPercent != null ? product.gstPercent : null,
-      deliveryCharge: product.deliveryCharge != null ? product.deliveryCharge : null
-    };
+
+    // Build order line item via single source of truth — keeps cart/order/inventory shape consistent
+    const snap = snapshotLineItem(product, item.variantId, requestedQuantity, purchaseMode);
+    // Order item shape historically uses 'gstPercent: null' fallback (not 0). Preserve that semantic.
+    snap.gstPercent = stockable.gstPercent != null ? Number(stockable.gstPercent) : null;
+    snap.deliveryCharge = stockable.deliveryCharge != null ? Number(stockable.deliveryCharge) : null;
+    return snap;
   }).filter(Boolean);
 
   if (stockErrors.length > 0) return error(res, `Insufficient stock: ${stockErrors.join(', ')}`);
@@ -1731,23 +2300,23 @@ async function handleOrdersCreate(req, res) {
   };
 
   orders.push(newOrder);
-  writeDB('orders.json', orders);
+  await writeDB('orders.json', orders);
 
   // Stock is NOT reduced here — it will be reduced when admin confirms the order
 
   // Notifications + FCM Push
   if (paymentMethod === 'Online') {
     // Notify admin to verify online payment
-    createNotification('payment', 'Payment Verification Required', `${user.name} placed order ${newOrder.orderNumber} with an online payment of ₹${total.toFixed(2)}. Verification is pending.`, null);
-    createNotification('order', 'Order Placed', `Your order ${newOrder.orderNumber} has been placed successfully. Online payment verification is in progress.`, user.id);
+    await createNotification('payment', 'Payment Verification Required', `${user.name} placed order ${newOrder.orderNumber} with an online payment of ₹${total.toFixed(2)}. Verification is pending.`, null);
+    await createNotification('order', 'Order Placed', `Your order ${newOrder.orderNumber} has been placed successfully. Online payment verification is in progress.`, user.id);
     // FCM Push to admin
     await sendPushToAdmin('💳 Payment Verification Required', `${user.name} placed order ${newOrder.orderNumber} with an online payment of ₹${total.toFixed(2)}.`, { type: 'new_order', orderId: newOrder.id, link: '/admin/orders' });
     // FCM Push to customer
     await sendPushToUser(user.id, '✅ Order Placed', `Your order ${newOrder.orderNumber} has been placed successfully. Payment verification is in progress.`, { type: 'order', orderId: newOrder.id, link: '/my-orders' });
   } else {
     // COD - outstanding will be added when admin marks as Delivered
-    createNotification('order', 'New Order Received', `${user.name} placed order ${newOrder.orderNumber} for ₹${total.toFixed(2)} (COD).`, null);
-    createNotification('order', 'Order Placed', `Your order ${newOrder.orderNumber} has been placed successfully.`, user.id);
+    await createNotification('order', 'New Order Received', `${user.name} placed order ${newOrder.orderNumber} for ₹${total.toFixed(2)} (COD).`, null);
+    await createNotification('order', 'Order Placed', `Your order ${newOrder.orderNumber} has been placed successfully.`, user.id);
     // FCM Push to admin
     await sendPushToAdmin('🛒 New Order Received', `${user.name} placed order ${newOrder.orderNumber} for ₹${total.toFixed(2)} (COD).`, { type: 'new_order', orderId: newOrder.id, link: '/admin/orders' });
     // FCM Push to customer
@@ -1795,9 +2364,10 @@ async function handleOrdersStatus(req, res, orderId) {
 
   // When admin confirms order → reduce stock from inventory
   if (newStatus === 'confirmed' && prevStatus === 'placed') {
-    (orders[index].items || []).forEach(item => {
-      applyInventoryDelta({
+    for (const item of (orders[index].items || [])) {
+      await applyInventoryDelta({
         productId: item.productId,
+        variantId: item.variantId || null,
         deltaBoxes: -getStockDeduction(item),
         movement: {
           quantity: item.quantity,
@@ -1809,26 +2379,31 @@ async function handleOrdersStatus(req, res, orderId) {
           createdBy: admin.id
         }
       });
-    });
+    }
 
-    // Check for low stock and send notifications
+    // Check for low stock and send notifications (variant-aware)
     const products = readDB('products.json');
-    (orders[index].items || []).forEach(item => {
+    for (const item of (orders[index].items || [])) {
       const pIdx = products.findIndex(p => p.id === item.productId);
-      if (pIdx !== -1) {
-        const p = products[pIdx];
-        const threshold = p.lowStockAlert || 10;
-        if (p.stockQuantity === 0) {
-          createNotification('stock', 'Stock Khatam', `${p.name} ka stock khatam ho gaya hai!`, null);
-          sendPushToAdmin('Stock Khatam', `${p.name} ka stock khatam!`, { type: 'stock' });
-        } else if (p.stockQuantity <= threshold) {
-          const readableStock = getReadableStockText(p, p.stockQuantity);
-          const readableThreshold = getReadableStockText(p, threshold);
-          createNotification('stock', 'Stock Kam Hai', `${p.name} ka stock kam hai: ${readableStock} bacha hai (alert ${readableThreshold} pe).`, null);
-          sendPushToAdmin('Stock Kam Hai', `${p.name}: sirf ${readableStock} bacha hai`, { type: 'stock' });
-        }
+      if (pIdx === -1) continue;
+      const p = products[pIdx];
+      const variant = resolveVariant(p, item.variantId);
+      const stockable = variant || p;
+      const threshold = Number(stockable.lowStockAlert) || 10;
+      const stock = Number(stockable.stockQuantity) || 0;
+      const label = variant
+        ? `${p.name}${variant.flavor ? ' ' + variant.flavor : ''} ${variant.volume}${variant.volumeUnit || ''}`
+        : p.name;
+      if (stock === 0) {
+        await createNotification('stock', 'Stock Khatam', `${label} ka stock khatam ho gaya hai!`, null);
+        await sendPushToAdmin('Stock Khatam', `${label} ka stock khatam!`, { type: 'stock' });
+      } else if (stock <= threshold) {
+        const readableStock = getReadableStockText(stockable, stock);
+        const readableThreshold = getReadableStockText(stockable, threshold);
+        await createNotification('stock', 'Stock Kam Hai', `${label} ka stock kam hai: ${readableStock} bacha hai (alert ${readableThreshold} pe).`, null);
+        await sendPushToAdmin('Stock Kam Hai', `${label}: sirf ${readableStock} bacha hai`, { type: 'stock' });
       }
-    });
+    }
   }
 
   // Manual admin fallback: if delivered directly, add COD outstanding once.
@@ -1842,8 +2417,8 @@ async function handleOrdersStatus(req, res, orderId) {
   if (paymentStatus === 'Paid' && prevPaymentStatus === 'Verification Pending') {
     orders[index].paymentVerifiedAt = now;
     orders[index].paymentActionBy = 'admin';
-    addPaymentHistory(orders[index].userId, 'credit', orders[index].total || 0, `Online payment verified for order ${orders[index].orderNumber}`, orders[index].id, 'Online');
-    createNotification('payment', 'Payment Verified', `Your online payment of ₹${(orders[index].total || 0).toFixed(2)} for order ${orders[index].orderNumber} has been verified successfully.`, orders[index].userId);
+    await addPaymentHistory(orders[index].userId, 'credit', orders[index].total || 0, `Online payment verified for order ${orders[index].orderNumber}`, orders[index].id, 'Online');
+    await createNotification('payment', 'Payment Verified', `Your online payment of ₹${(orders[index].total || 0).toFixed(2)} for order ${orders[index].orderNumber} has been verified successfully.`, orders[index].userId);
     await sendPushToUser(orders[index].userId, '✅ Payment Verified', `Your online payment of ₹${(orders[index].total || 0).toFixed(2)} for order ${orders[index].orderNumber} has been verified successfully.`, { type: 'payment', link: '/my-orders' });
   }
 
@@ -1858,37 +2433,47 @@ async function handleOrdersStatus(req, res, orderId) {
     orders[index].cancelReason = 'Online payment rejected';
     if (!orders[index].statusHistory) orders[index].statusHistory = [];
     orders[index].statusHistory.push({ status: 'cancelled', timestamp: now, note: 'Auto-cancelled: online payment rejected' });
-    // Restore stock if it was reduced during confirm
-    const products = readDB('products.json');
-    (orders[index].items || []).forEach(item => {
-      const pIdx = products.findIndex(p => p.id === item.productId);
-      if (pIdx !== -1) {
-        products[pIdx].stockQuantity = (products[pIdx].stockQuantity || 0) + (item.boxEquivalent || item.quantity || 0);
-      }
-    });
-    writeDB('products.json', products);
+    // Restore stock if it was reduced during confirm (variant-aware)
+    for (const item of (orders[index].items || [])) {
+      const restoreQty = Number(item.boxEquivalent || item.quantity || 0);
+      if (restoreQty <= 0) continue;
+      await applyInventoryDelta({
+        productId: item.productId,
+        variantId: item.variantId || null,
+        deltaBoxes: restoreQty,
+        movement: {
+          quantity: item.quantity,
+          purchaseMode: item.purchaseMode,
+          type: 'order_payment_rejected',
+          referenceType: 'order',
+          referenceId: orders[index].id,
+          note: `Stock restored on payment rejection ${orders[index].orderNumber}`,
+          createdBy: admin.id
+        }
+      });
+    }
     // Restore coupon usage if used
     if (orders[index].couponCode) {
       const coupons = readDB('coupons.json');
       const cIdx = coupons.findIndex(c => c.code === orders[index].couponCode);
       if (cIdx !== -1 && (coupons[cIdx].usedCount || 0) > 0) {
         coupons[cIdx].usedCount = (coupons[cIdx].usedCount || 0) - 1;
-        writeDB('coupons.json', coupons);
+        await writeDB('coupons.json', coupons);
       }
     }
     // NO outstanding added — user ko product mila hi nahi
-    createNotification('payment', 'Payment Rejected', `Your online payment for order ${orders[index].orderNumber} was rejected. The order has been cancelled automatically.`, orders[index].userId);
+    await createNotification('payment', 'Payment Rejected', `Your online payment for order ${orders[index].orderNumber} was rejected. The order has been cancelled automatically.`, orders[index].userId);
     await sendPushToUser(orders[index].userId, '❌ Payment Rejected', `Your online payment for order ${orders[index].orderNumber} was rejected, so the order has been cancelled automatically.`, { type: 'payment', link: '/my-orders' });
     // Notify admin too
-    createNotification('order', 'Order Cancelled Automatically', `Order ${orders[index].orderNumber} was cancelled automatically because the online payment was rejected.`, null);
+    await createNotification('order', 'Order Cancelled Automatically', `Order ${orders[index].orderNumber} was cancelled automatically because the online payment was rejected.`, null);
   }
 
   // Persist all order modifications (status, paymentVerifiedAt, paymentRejectedAt, etc.)
-  writeDB('orders.json', orders);
+  await writeDB('orders.json', orders);
 
   // Notify user about status update
   if (status && orders[index].userId) {
-    createNotification('order', 'Order Update', `Aapke order ${orders[index].orderNumber} ka status ab "${status}" ho gaya hai.`, orders[index].userId);
+    await createNotification('order', 'Order Update', `Aapke order ${orders[index].orderNumber} ka status ab "${status}" ho gaya hai.`, orders[index].userId);
     await sendPushToUser(orders[index].userId, '📦 Order Update', `Aapka order ${orders[index].orderNumber} ab "${status}" hai.`, { type: 'order', orderId: orders[index].id, link: '/my-orders' });
   }
 
@@ -1924,9 +2509,9 @@ async function handleOrderRequestDeliveryConfirmation(req, res, orderId) {
     timestamp: now,
     note: 'Customer delivery confirmation requested by admin'
   });
-  writeDB('orders.json', orders);
+  await writeDB('orders.json', orders);
 
-  createNotification('order', 'Delivery Confirm Karo', `Order ${orders[index].orderNumber} ka saman milne ke baad delivery confirm kar dijiye.`, orders[index].userId);
+  await createNotification('order', 'Delivery Confirm Karo', `Order ${orders[index].orderNumber} ka saman milne ke baad delivery confirm kar dijiye.`, orders[index].userId);
   await sendPushToUser(orders[index].userId, '📦 Delivery Confirm Karo', `Order ${orders[index].orderNumber} ka saman milne ke baad delivery confirm kar dijiye.`, { type: 'order', orderId: orders[index].id, link: `/order/${orders[index].id}` });
 
   return success(res, orders[index], 'Customer delivery confirmation requested');
@@ -1965,10 +2550,10 @@ async function handleOrderConfirmDelivery(req, res, orderId) {
   if (!order.statusHistory) order.statusHistory = [];
   order.statusHistory.push({ status: 'Delivered', timestamp: now, note: 'Confirmed by customer' });
   orders[index] = await addOutstandingForDeliveredOrder(order, 'customer');
-  writeDB('orders.json', orders);
+  await writeDB('orders.json', orders);
 
-  createNotification('order', 'Delivery Confirm Hua', `Customer ne order ${order.orderNumber} ki delivery confirm kar di.`, null);
-  createNotification('order', 'Delivery Confirm Hua', `Aapne order ${order.orderNumber} ki delivery confirm kar di hai.`, order.userId);
+  await createNotification('order', 'Delivery Confirm Hua', `Customer ne order ${order.orderNumber} ki delivery confirm kar di.`, null);
+  await createNotification('order', 'Delivery Confirm Hua', `Aapne order ${order.orderNumber} ki delivery confirm kar di hai.`, order.userId);
   await sendPushToAdmin('✅ Delivery Confirm Hua', `Customer ne order ${order.orderNumber} ki delivery confirm kar di.`, { type: 'order', orderId: order.id, link: '/admin/orders' });
   await sendPushToUser(order.userId, '✅ Delivery Confirm Hua', `Aapne order ${order.orderNumber} ki delivery confirm kar di hai.`, { type: 'order', orderId: order.id, link: `/order/${order.id}` });
 
@@ -2035,35 +2620,32 @@ async function handleOfflineSalesCreate(req, res) {
       return null;
     }
 
-    const purchaseMode = normalizePurchaseMode(product, item.purchaseMode);
+    const variant = resolveVariant(product, item.variantId);
+    const stockable = variant || product;
+
+    const purchaseMode = normalizePurchaseMode(stockable, item.purchaseMode);
     const requestedQuantity = purchaseMode === 'half_box' ? 1 : Number(item.quantity);
     if (!requestedQuantity || requestedQuantity <= 0) {
       stockErrors.push(`${product.name}: invalid quantity`);
       return null;
     }
 
-    const maxQuantity = getMaxPurchaseQuantity(product, purchaseMode);
-    const unitBoxEquivalent = getUnitBoxEquivalent(product, purchaseMode);
+    const maxQuantity = getMaxPurchaseQuantity(stockable, purchaseMode);
+    const unitBoxEquivalent = getUnitBoxEquivalent(stockable, purchaseMode);
     const boxEquivalent = roundCurrency(requestedQuantity * unitBoxEquivalent);
 
-    if (requestedQuantity > maxQuantity || Number(product.stockQuantity || 0) < boxEquivalent) {
-      stockErrors.push(`${product.name}: only ${maxQuantity} ${getPurchaseLabel(purchaseMode, maxQuantity)} available`);
+    if (requestedQuantity > maxQuantity || Number(stockable.stockQuantity || 0) < boxEquivalent) {
+      const label = variant
+        ? `${product.name} ${variant.flavor || ''} ${variant.volume}${variant.volumeUnit || ''}`.replace(/\s+/g, ' ').trim()
+        : product.name;
+      stockErrors.push(`${label}: only ${maxQuantity} ${getPurchaseLabel(purchaseMode, maxQuantity)} available`);
       return null;
     }
 
-    return {
-      productId: item.productId,
-      name: product.name,
-      image: product.image || '',
-      quantity: requestedQuantity,
-      purchaseMode,
-      unitLabel: getPurchaseLabel(purchaseMode, requestedQuantity),
-      boxQuantity: getProductBoxQuantity(product),
-      boxEquivalent,
-      price: getUnitPrice(product, purchaseMode),
-      pricePerBox: roundCurrency(product.pricePerBox),
-      gstPercent: product.gstPercent != null ? product.gstPercent : null,
-    };
+    // Build sale line item via single source of truth
+    const snap = snapshotLineItem(product, item.variantId, requestedQuantity, purchaseMode);
+    snap.gstPercent = stockable.gstPercent != null ? Number(stockable.gstPercent) : null;
+    return snap;
   }).filter(Boolean);
 
   if (stockErrors.length > 0) return error(res, `Invalid sale: ${stockErrors.join(', ')}`);
@@ -2106,8 +2688,9 @@ async function handleOfflineSalesCreate(req, res) {
   };
 
   for (const item of saleItems) {
-    const result = applyInventoryDelta({
+    const result = await applyInventoryDelta({
       productId: item.productId,
+      variantId: item.variantId || null,
       deltaBoxes: -getStockDeduction(item),
       movement: {
         quantity: item.quantity,
@@ -2129,19 +2712,19 @@ async function handleOfflineSalesCreate(req, res) {
     const uIdx = users.findIndex(u => u.id === linkedCustomer.id);
     if (uIdx !== -1) {
       users[uIdx].outstanding = roundCurrency((users[uIdx].outstanding || 0) + total);
-      writeDB('users.json', users);
-      addPaymentHistory(linkedCustomer.id, 'debit', total, `Offline udhar sale ${sale.saleNumber}`, sale.id, 'Udhar');
+      await writeDB('users.json', users);
+      await addPaymentHistory(linkedCustomer.id, 'debit', total, `Offline udhar sale ${sale.saleNumber}`, sale.id, 'Udhar');
       sale.outstandingAdded = true;
       sale.outstandingAddedAt = now;
     }
   } else if (linkedCustomer) {
-    addPaymentHistory(linkedCustomer.id, 'credit', total, `Offline paid sale ${sale.saleNumber}`, sale.id, normalizedPaymentMethod);
+    await addPaymentHistory(linkedCustomer.id, 'credit', total, `Offline paid sale ${sale.saleNumber}`, sale.id, normalizedPaymentMethod);
   }
 
   sales.push(sale);
-  writeDB('offline-sales.json', sales);
+  await writeDB('offline-sales.json', sales);
 
-  const bill = createBillRecord({
+  const bill = await createBillRecord({
     sourceType: 'offline_sale',
     sourceId: sale.id,
     orderNumber: sale.saleNumber,
@@ -2159,7 +2742,7 @@ async function handleOfflineSalesCreate(req, res) {
     orderStatus: 'Completed'
   });
 
-  createNotification(
+  await createNotification(
     'order',
     'Offline Sale Recorded',
     `${sale.saleNumber} recorded for ${sale.customerName} worth ₹${sale.total.toFixed(2)}.`,
@@ -2185,27 +2768,19 @@ function getCartOffer(product, rawItem) {
 function buildCartRecord(rawItem, product) {
   if (!rawItem?.productId || !product) return null;
 
-  const purchaseMode = normalizePurchaseMode(product, rawItem.purchaseMode);
+  // Resolve variant from raw item (variantId may be in rawItem); falls back to product top-level
+  const variant = resolveVariant(product, rawItem.variantId);
+  const stockable = variant || product;
+  const purchaseMode = normalizePurchaseMode(stockable, rawItem.purchaseMode);
   const quantity = normalizeCartQuantity(rawItem.quantity, purchaseMode);
-  const boxEquivalent = roundCurrency(quantity * getUnitBoxEquivalent(product, purchaseMode));
 
-  return {
-    cartItemId: rawItem.cartItemId || `${product.id}:${purchaseMode}`,
-    productId: product.id,
-    name: product.name,
-    image: product.image || rawItem.image || '',
-    category: product.category || rawItem.category || '',
-    quantity,
-    purchaseMode,
-    price: getUnitPrice(product, purchaseMode),
-    pricePerBox: roundCurrency(Number(product.pricePerBox || product.price || rawItem.pricePerBox || rawItem.price || 0)),
-    boxQuantity: getProductBoxQuantity(product),
-    boxEquivalent,
-    stock: roundCurrency(Number(product.stockQuantity ?? product.stock ?? rawItem.stock ?? 0)),
-    maxQuantity: getMaxPurchaseQuantity(product, purchaseMode),
-    deliveryCharge: roundCurrency(Number(product.deliveryCharge ?? rawItem.deliveryCharge ?? 0)),
-    offer: getCartOffer(product, rawItem)
-  };
+  // Build the snapshot using the single source of truth helper
+  const snapshot = snapshotLineItem(product, rawItem.variantId, quantity, purchaseMode);
+  // Extend with cart-specific fields not in snapshot helper (maxQuantity, offer merge with rawItem)
+  snapshot.cartItemId = rawItem.cartItemId || makeCartItemId(product.id, snapshot.variantId, purchaseMode);
+  snapshot.maxQuantity = getMaxPurchaseQuantity(stockable, purchaseMode);
+  snapshot.offer = getCartOffer(product, rawItem);
+  return snapshot;
 }
 
 function normalizeCartItems(items, products) {
@@ -2237,7 +2812,7 @@ async function handleCartGet(req, res) {
   const normalizedItems = normalizeCartItems(carts[cartIndex].items, products);
   if (JSON.stringify(carts[cartIndex].items || []) !== JSON.stringify(normalizedItems)) {
     carts[cartIndex].items = normalizedItems;
-    writeDB('cart.json', carts);
+    await writeDB('cart.json', carts);
   }
 
   return success(res, { ...carts[cartIndex], items: normalizedItems });
@@ -2289,7 +2864,7 @@ async function handleCartAdd(req, res) {
 
   carts[cartIndex].items = normalizeCartItems(carts[cartIndex].items, products);
 
-  writeDB('cart.json', carts);
+  await writeDB('cart.json', carts);
   return success(res, carts[cartIndex], 'Cart updated');
 }
 
@@ -2312,7 +2887,7 @@ async function handleCartSync(req, res) {
     carts[cartIndex].items = normalizedItems;
   }
 
-  writeDB('cart.json', carts);
+  await writeDB('cart.json', carts);
   return success(res, carts[cartIndex], 'Cart synced');
 }
 
@@ -2323,15 +2898,31 @@ async function handleCartRemove(req, res) {
   const query = getQueryParams(req);
   const body = await parseBody(req);
   const productId = query.productId || body.productId;
+  const cartItemId = query.cartItemId || body.cartItemId;
+  const variantId = query.variantId || body.variantId;
+  const purchaseMode = query.purchaseMode || body.purchaseMode;
 
-  if (!productId) return error(res, 'Product ID is required');
+  if (!productId && !cartItemId) return error(res, 'Product ID or cartItemId is required');
 
   const carts = readDB('cart.json');
   const cartIndex = carts.findIndex(c => c.userId === user.id);
   if (cartIndex === -1) return error(res, 'Cart not found', 404);
 
-  carts[cartIndex].items = carts[cartIndex].items.filter(i => i.productId !== productId);
-  writeDB('cart.json', carts);
+  // Precedence: cartItemId (exact match) > (productId + variantId + purchaseMode) > productId (legacy, removes all variants)
+  if (cartItemId) {
+    carts[cartIndex].items = carts[cartIndex].items.filter(i => i.cartItemId !== cartItemId);
+  } else if (variantId || purchaseMode) {
+    carts[cartIndex].items = carts[cartIndex].items.filter(i =>
+      !(i.productId === productId &&
+        (i.variantId || null) === (variantId || null) &&
+        (!purchaseMode || i.purchaseMode === purchaseMode))
+    );
+  } else {
+    // Legacy: remove all items for this productId (preserves old client behavior)
+    carts[cartIndex].items = carts[cartIndex].items.filter(i => i.productId !== productId);
+  }
+
+  await writeDB('cart.json', carts);
   return success(res, carts[cartIndex], 'Item removed from cart');
 }
 
@@ -2344,7 +2935,7 @@ async function handleCartClear(req, res) {
 
   if (cartIndex !== -1) {
     carts[cartIndex].items = [];
-    writeDB('cart.json', carts);
+    await writeDB('cart.json', carts);
   }
 
   return success(res, { userId: user.id, items: [] }, 'Cart cleared');
@@ -2373,7 +2964,7 @@ async function handleBillsGenerate(req, res, orderIdFromUrl) {
   const order = orders.find(o => o.id === orderId || o.orderNumber === orderId);
   if (!order) return error(res, 'Order not found', 404);
 
-  const newBill = createBillRecord({
+  const newBill = await createBillRecord({
     sourceType: 'order',
     sourceId: order.id,
     orderNumber: order.orderNumber,
@@ -2606,7 +3197,7 @@ async function handleNotificationsSend(req, res) {
   };
 
   notifications.push(newNotification);
-  writeDB('notifications.json', notifications);
+  await writeDB('notifications.json', notifications);
 
   // FCM Push for admin-sent notifications (announcements)
   if (targetUserId) {
@@ -2646,7 +3237,7 @@ async function handleNotificationsMarkRead(req, res, notifId) {
     return error(res, 'Provide notificationId or markAll: true');
   }
 
-  writeDB('notifications.json', notifications);
+  await writeDB('notifications.json', notifications);
   return success(res, null, 'Notifications marked as read');
 }
 
@@ -2661,7 +3252,7 @@ async function handleNotificationsReadAll(req, res) {
     }
   });
 
-  writeDB('notifications.json', notifications);
+  await writeDB('notifications.json', notifications);
   return success(res, null, 'All notifications marked as read');
 }
 
@@ -2769,7 +3360,7 @@ async function handlePaymentsRecord(req, res) {
     orders[index].paymentStatus = 'Paid';
     orders[index].paymentMethod = method || orders[index].paymentMethod;
     orders[index].updatedAt = new Date().toISOString();
-    writeDB('orders.json', orders);
+    await writeDB('orders.json', orders);
 
     // Reduce outstanding for user
     if (orders[index].userId) {
@@ -2777,10 +3368,10 @@ async function handlePaymentsRecord(req, res) {
       const uIdx = users.findIndex(u => u.id === orders[index].userId);
       if (uIdx !== -1) {
         users[uIdx].outstanding = Math.max(0, (users[uIdx].outstanding || 0) - (orders[index].total || 0));
-        writeDB('users.json', users);
+        await writeDB('users.json', users);
       }
-      addPaymentHistory(orders[index].userId, 'credit', orders[index].total || 0, `Payment recorded for order ${orders[index].orderNumber}`, orders[index].id, method || orders[index].paymentMethod);
-      createNotification('payment', 'Payment Recorded', `A payment of ₹${(orders[index].total || 0).toFixed(2)} for order ${orders[index].orderNumber} has been recorded successfully.`, orders[index].userId);
+      await addPaymentHistory(orders[index].userId, 'credit', orders[index].total || 0, `Payment recorded for order ${orders[index].orderNumber}`, orders[index].id, method || orders[index].paymentMethod);
+      await createNotification('payment', 'Payment Recorded', `A payment of ₹${(orders[index].total || 0).toFixed(2)} for order ${orders[index].orderNumber} has been recorded successfully.`, orders[index].userId);
       await sendPushToUser(orders[index].userId, '💰 Payment Recorded', `A payment of ₹${(orders[index].total || 0).toFixed(2)} for order ${orders[index].orderNumber} has been recorded successfully.`, { type: 'payment', link: '/my-orders' });
     }
 
@@ -2793,9 +3384,9 @@ async function handlePaymentsRecord(req, res) {
     const uIdx = users.findIndex(u => u.id === customerId);
     if (uIdx !== -1) {
       users[uIdx].outstanding = Math.max(0, (users[uIdx].outstanding || 0) - Number(amount));
-      writeDB('users.json', users);
-      addPaymentHistory(customerId, 'credit', Number(amount), `Payment of ₹${Number(amount).toFixed(2)} recorded by admin`, null, method);
-      createNotification('payment', 'Payment Recorded', `A payment of ₹${Number(amount).toFixed(2)} has been recorded successfully.`, customerId);
+      await writeDB('users.json', users);
+      await addPaymentHistory(customerId, 'credit', Number(amount), `Payment of ₹${Number(amount).toFixed(2)} recorded by admin`, null, method);
+      await createNotification('payment', 'Payment Recorded', `A payment of ₹${Number(amount).toFixed(2)} has been recorded successfully.`, customerId);
       await sendPushToUser(customerId, '💰 Payment Recorded', `A payment of ₹${Number(amount).toFixed(2)} has been recorded successfully.`, { type: 'payment', link: '/profile' });
     }
   }
@@ -2871,20 +3462,29 @@ async function handleOrderCancel(req, res, orderId) {
   if (!orders[index].statusHistory) orders[index].statusHistory = [];
   orders[index].statusHistory.push({ status: 'Cancelled', timestamp: now, note: 'Cancelled by customer' });
   orders[index].updatedAt = now;
-  writeDB('orders.json', orders);
+  await writeDB('orders.json', orders);
 
-  // Restore product stock only if order was confirmed (stock reduced on confirm)
-  const wasConfirmed = (order.statusHistory || []).some(s => s.status.toLowerCase() === 'confirmed');
+  // Restore product stock only if order was confirmed (stock reduced on confirm) — variant-aware
+  const wasConfirmed = (order.statusHistory || []).some(s => String(s.status || '').toLowerCase() === 'confirmed');
   if (wasConfirmed) {
-    const products = readDB('products.json');
-    (order.items || []).forEach(item => {
-      const pIdx = products.findIndex(p => p.id === item.productId);
-      if (pIdx !== -1) {
-        products[pIdx].stockQuantity = roundCurrency((products[pIdx].stockQuantity || 0) + getStockDeduction(item));
-        if (products[pIdx].status === 'out_of_stock') products[pIdx].status = 'active';
-      }
-    });
-    writeDB('products.json', products);
+    for (const item of (order.items || [])) {
+      const restoreQty = getStockDeduction(item);
+      if (restoreQty <= 0) continue;
+      await applyInventoryDelta({
+        productId: item.productId,
+        variantId: item.variantId || null,
+        deltaBoxes: restoreQty,
+        movement: {
+          quantity: item.quantity,
+          purchaseMode: item.purchaseMode,
+          type: 'order_cancelled',
+          referenceType: 'order',
+          referenceId: order.id,
+          note: `Stock restored on cancellation ${order.orderNumber}`,
+          createdBy: user.id
+        }
+      });
+    }
   }
 
   // If COD and already delivered (outstanding was added), reduce outstanding on cancel
@@ -2894,8 +3494,8 @@ async function handleOrderCancel(req, res, orderId) {
     const uIdx = users.findIndex(u => u.id === order.userId);
     if (uIdx !== -1) {
       users[uIdx].outstanding = Math.max(0, (users[uIdx].outstanding || 0) - (order.total || 0));
-      writeDB('users.json', users);
-      addPaymentHistory(order.userId, 'credit', order.total || 0, `Order ${order.orderNumber} cancelled - outstanding reduced`, order.id);
+      await writeDB('users.json', users);
+      await addPaymentHistory(order.userId, 'credit', order.total || 0, `Order ${order.orderNumber} cancelled - outstanding reduced`, order.id);
     }
   }
 
@@ -2905,13 +3505,13 @@ async function handleOrderCancel(req, res, orderId) {
     const cIdx = coupons.findIndex(c => c.code === order.couponCode);
     if (cIdx !== -1 && (coupons[cIdx].usedCount || 0) > 0) {
       coupons[cIdx].usedCount = (coupons[cIdx].usedCount || 0) - 1;
-      writeDB('coupons.json', coupons);
+      await writeDB('coupons.json', coupons);
     }
   }
 
   // Notifications + FCM Push
-  createNotification('order', 'Order Cancelled', `${user.name} cancelled order ${order.orderNumber}.`, null);
-  createNotification('order', 'Order Cancelled', `Your order ${order.orderNumber} has been cancelled successfully.`, order.userId);
+  await createNotification('order', 'Order Cancelled', `${user.name} cancelled order ${order.orderNumber}.`, null);
+  await createNotification('order', 'Order Cancelled', `Your order ${order.orderNumber} has been cancelled successfully.`, order.userId);
   await sendPushToAdmin('🚫 Order Cancelled', `${user.name} cancelled order ${order.orderNumber}.`, { type: 'order', link: '/admin/orders' });
   await sendPushToUser(order.userId, '🚫 Order Cancelled', `Your order ${order.orderNumber} has been cancelled successfully.`, { type: 'order', link: '/my-orders' });
 
@@ -2987,10 +3587,10 @@ async function handlePaymentClearRequest(req, res) {
   };
 
   requests.push(newRequest);
-  writeDB('payment-requests.json', requests);
+  await writeDB('payment-requests.json', requests);
 
   // Notify admin
-  createNotification('payment', 'Payment Clearance Request', `${user.name} requested payment clearance for ₹${(body.amount || 0).toFixed(2)}.`, null);
+  await createNotification('payment', 'Payment Clearance Request', `${user.name} requested payment clearance for ₹${(body.amount || 0).toFixed(2)}.`, null);
   // FCM Push to admin
   await sendPushToAdmin('💰 Payment Clearance Request', `${user.name} requested payment clearance for ₹${(body.amount || 0).toFixed(2)}.`, { type: 'payment', link: '/admin/payments' });
 
@@ -3046,17 +3646,17 @@ async function handlePaymentClearRequestAction(req, res, requestId) {
     const uIdx = users.findIndex(u => u.id === requests[index].userId);
     if (uIdx !== -1) {
       users[uIdx].outstanding = Math.max(0, (users[uIdx].outstanding || 0) - (requests[index].amount || 0));
-      writeDB('users.json', users);
+      await writeDB('users.json', users);
     }
-    addPaymentHistory(requests[index].userId, 'credit', requests[index].amount || 0, `Payment clearance approved - ₹${(requests[index].amount || 0).toFixed(2)} cleared`, null, 'Clearance');
-    createNotification('payment', 'Payment Clear Hua', `Aapki ₹${(requests[index].amount || 0).toFixed(2)} ki payment clearance approve ho gayi hai.`, requests[index].userId);
+    await addPaymentHistory(requests[index].userId, 'credit', requests[index].amount || 0, `Payment clearance approved - ₹${(requests[index].amount || 0).toFixed(2)} cleared`, null, 'Clearance');
+    await createNotification('payment', 'Payment Clear Hua', `Aapki ₹${(requests[index].amount || 0).toFixed(2)} ki payment clearance approve ho gayi hai.`, requests[index].userId);
     await sendPushToUser(requests[index].userId, '✅ Payment Clear Hua', `Aapki ₹${(requests[index].amount || 0).toFixed(2)} ki payment clearance approve ho gayi hai.`, { type: 'payment', link: '/profile' });
   } else {
-    createNotification('payment', 'Payment Clear Nahi Hua', `Aapki ₹${(requests[index].amount || 0).toFixed(2)} ki payment clearance reject ho gayi hai.`, requests[index].userId);
+    await createNotification('payment', 'Payment Clear Nahi Hua', `Aapki ₹${(requests[index].amount || 0).toFixed(2)} ki payment clearance reject ho gayi hai.`, requests[index].userId);
     await sendPushToUser(requests[index].userId, '❌ Payment Clear Nahi Hua', `Aapki ₹${(requests[index].amount || 0).toFixed(2)} ki payment clearance reject ho gayi hai.`, { type: 'payment', link: '/profile' });
   }
 
-  writeDB('payment-requests.json', requests);
+  await writeDB('payment-requests.json', requests);
   return success(res, requests[index], `Request ${action}d`);
 }
 
@@ -3137,7 +3737,7 @@ async function handleSlidersAdd(req, res) {
   };
 
   sliders.push(newSlider);
-  writeDB('sliders.json', sliders);
+  await writeDB('sliders.json', sliders);
   return success(res, newSlider, 'Slider added successfully', 201);
 }
 
@@ -3153,7 +3753,7 @@ async function handleSliderUpdate(req, res, sliderId) {
   const oldSlider = sliders[index];
   const { id, ...updates } = body;
   sliders[index] = { ...oldSlider, ...updates };
-  writeDB('sliders.json', sliders);
+  await writeDB('sliders.json', sliders);
 
   const removedUrls = diffRemovedImageUrls(oldSlider.image, sliders[index].image);
   await deleteDriveFilesFromUrls(removedUrls);
@@ -3170,7 +3770,7 @@ async function handleSliderDelete(req, res, sliderId) {
   if (index === -1) return error(res, 'Slider not found', 404);
 
   const removed = sliders.splice(index, 1)[0];
-  writeDB('sliders.json', sliders);
+  await writeDB('sliders.json', sliders);
 
   await deleteDriveFilesFromUrls(removed.image);
 
@@ -3206,7 +3806,7 @@ async function handleSettingsUpdate(req, res) {
   }
 
   const merged = deepMerge(current, body);
-  writeSettings(merged);
+  await writeSettings(merged);
 
   // Drive cleanup: image fields (logo, paymentQr) replaced or cleared.
   const replaced = [];
@@ -3247,7 +3847,7 @@ async function handleCategoriesCreate(req, res) {
   };
 
   categories.push(newCategory);
-  writeDB('categories.json', categories);
+  await writeDB('categories.json', categories);
   return success(res, newCategory, 'Category created', 201);
 }
 
@@ -3263,7 +3863,7 @@ async function handleCategoriesUpdate(req, res, catId) {
   if (body.name) categories[index].name = body.name;
   if (body.status) categories[index].status = body.status;
 
-  writeDB('categories.json', categories);
+  await writeDB('categories.json', categories);
   return success(res, categories[index], 'Category updated');
 }
 
@@ -3276,7 +3876,7 @@ async function handleCategoriesDelete(req, res, catId) {
   if (index === -1) return error(res, 'Category not found', 404);
 
   const removed = categories.splice(index, 1)[0];
-  writeDB('categories.json', categories);
+  await writeDB('categories.json', categories);
   return success(res, removed, 'Category deleted');
 }
 
@@ -3292,12 +3892,21 @@ async function handleWishlistGet(req, res) {
     .filter(w => w.userId === user.id)
     .map(w => {
       const product = products.find(p => p.id === w.productId);
+      // For variants products, show aggregate price/stock; for legacy, top-level
+      const isVariants = product?.hasVariants === true;
       return {
         ...w,
         productName: product?.name || w.productName || 'Cold Drink',
         productImage: product?.image || w.productImage || '',
-        productPrice: product?.pricePerBox || product?.price || w.productPrice || 0,
-        productStock: product?.stockQuantity ?? product?.stock ?? w.productStock ?? 0
+        productPrice: isVariants
+          ? (product?.minPrice ?? w.productPrice ?? 0)
+          : (product?.pricePerBox || product?.price || w.productPrice || 0),
+        productStock: isVariants
+          ? (product?.totalStock ?? w.productStock ?? 0)
+          : (product?.stockQuantity ?? product?.stock ?? w.productStock ?? 0),
+        hasVariants: isVariants,
+        availableFlavors: product?.availableFlavors || [],
+        availableVolumes: product?.availableVolumes || []
       };
     });
   return success(res, userWishlist);
@@ -3322,7 +3931,7 @@ async function handleWishlistToggle(req, res) {
   if (existingIndex !== -1) {
     // Remove from wishlist (toggle off)
     wishlist.splice(existingIndex, 1);
-    writeDB('wishlist.json', wishlist);
+    await writeDB('wishlist.json', wishlist);
     return success(res, { inWishlist: false }, 'Product removed from wishlist');
   }
 
@@ -3340,7 +3949,7 @@ async function handleWishlistToggle(req, res) {
   };
 
   wishlist.push(newItem);
-  writeDB('wishlist.json', wishlist);
+  await writeDB('wishlist.json', wishlist);
   return success(res, { inWishlist: true }, 'Product added to wishlist');
 }
 
@@ -3376,7 +3985,7 @@ async function handleSupplierAdd(req, res) {
   const maxId = suppliers.reduce((max, s) => { const n = parseInt(s.id.replace('SUP-', '')); return n > max ? n : max; }, 0);
   const supplier = { id: `SUP-${String(maxId + 1).padStart(3, '0')}`, name: body.name, phone: body.phone || '', address: body.address || '', createdAt: new Date().toISOString() };
   suppliers.push(supplier);
-  writeDB('suppliers.json', suppliers);
+  await writeDB('suppliers.json', suppliers);
   return success(res, supplier, 'Supplier added', 201);
 }
 
@@ -3387,7 +3996,7 @@ async function handleSupplierUpdate(req, res, id) {
   const idx = suppliers.findIndex(s => s.id === id);
   if (idx === -1) return error(res, 'Supplier not found', 404);
   suppliers[idx] = { ...suppliers[idx], ...body, id };
-  writeDB('suppliers.json', suppliers);
+  await writeDB('suppliers.json', suppliers);
   return success(res, suppliers[idx]);
 }
 
@@ -3397,7 +4006,7 @@ async function handleSupplierDelete(req, res, id) {
   const idx = suppliers.findIndex(s => s.id === id);
   if (idx === -1) return error(res, 'Supplier not found', 404);
   suppliers.splice(idx, 1);
-  writeDB('suppliers.json', suppliers);
+  await writeDB('suppliers.json', suppliers);
   return success(res, null, 'Supplier deleted');
 }
 
@@ -3414,37 +4023,57 @@ async function handleSupplierPurchaseAdd(req, res, supplierId) {
   const purchases = readDB('supplier-purchases.json');
   const products = readDB('products.json');
   const product = body.productId ? products.find(p => p.id === body.productId) : null;
+  const variant = product && body.variantId ? resolveVariant(product, body.variantId) : null;
+  const stockable = variant || product;
+
   const maxId = purchases.reduce((max, p) => { const n = parseInt(p.id.replace('SPUR-', '')); return n > max ? n : max; }, 0);
   const qty = Number(body.quantity) || 0;
   const unit = body.unit || 'box';
+
+  // Variant label for purchase ledger clarity
+  const variantLabel = variant
+    ? `${variant.flavor || ''} ${variant.volume}${variant.volumeUnit || ''}`.trim()
+    : null;
+
   const entry = {
     id: `SPUR-${String(maxId + 1).padStart(4, '0')}`, supplierId,
-    productId: body.productId || '', productName: product?.name || body.productName || '',
+    productId: body.productId || '',
+    variantId: variant?.variantId || null,
+    productName: product?.name || body.productName || '',
+    variantLabel,
     quantity: qty, unit, amount: Number(body.amount) || 0,
     date: body.date || new Date().toISOString().split('T')[0],
     notes: body.notes || '', createdAt: new Date().toISOString()
   };
   purchases.push(entry);
-  writeDB('supplier-purchases.json', purchases);
+  await writeDB('supplier-purchases.json', purchases);
 
   // Auto update stock + product details
   if (product) {
     if (qty > 0) {
-      const boxQty = Number(product.boxQuantity) || 24;
+      const boxQty = Number(stockable?.boxQuantity) || 24;
       const stockAdd = unit === 'piece' ? qty / boxQty : qty;
-      product.stockQuantity = Math.round(((Number(product.stockQuantity) || 0) + stockAdd) * 100) / 100;
+      if (variant) {
+        variant.stockQuantity = Math.round(((Number(variant.stockQuantity) || 0) + stockAdd) * 100) / 100;
+        if (variant.stockQuantity > 0 && variant.status === 'out_of_stock') variant.status = 'active';
+      } else {
+        product.stockQuantity = Math.round(((Number(product.stockQuantity) || 0) + stockAdd) * 100) / 100;
+        if (product.status === 'out_of_stock') product.status = 'active';
+      }
     }
-    // Update product details (price, mrp, selling options)
+    // Update product details (price, mrp, selling options) — target variant if specified
     if (body.productUpdate) {
       const u = body.productUpdate;
-      if (u.pricePerBox !== undefined) product.pricePerBox = Number(u.pricePerBox) || 0;
-      if (u.costPricePerBox !== undefined) product.costPricePerBox = Number(u.costPricePerBox) || 0;
-      if (u.mrp !== undefined) product.mrp = Number(u.mrp) || 0;
-      if (u.boxQuantity !== undefined) product.boxQuantity = Number(u.boxQuantity) || 24;
-      if (u.allowPiecePurchase !== undefined) product.allowPiecePurchase = Boolean(u.allowPiecePurchase);
-      if (u.allowHalfBox !== undefined) product.allowHalfBox = Boolean(u.allowHalfBox);
+      const target = variant || product;
+      if (u.pricePerBox !== undefined) target.pricePerBox = Number(u.pricePerBox) || 0;
+      if (u.costPricePerBox !== undefined) target.costPricePerBox = Number(u.costPricePerBox) || 0;
+      if (u.mrp !== undefined) target.mrp = Number(u.mrp) || 0;
+      if (u.boxQuantity !== undefined) target.boxQuantity = Number(u.boxQuantity) || 24;
+      if (u.allowPiecePurchase !== undefined) target.allowPiecePurchase = Boolean(u.allowPiecePurchase);
+      if (u.allowHalfBox !== undefined) target.allowHalfBox = Boolean(u.allowHalfBox);
     }
-    writeDB('products.json', products);
+    recomputeAggregates(product);
+    await writeDB('products.json', products);
   }
 
   return success(res, entry, 'Purchase added', 201);
@@ -3469,7 +4098,7 @@ async function handleSupplierPaymentAdd(req, res, supplierId) {
     notes: body.notes || '', createdAt: new Date().toISOString()
   };
   payments.push(entry);
-  writeDB('supplier-payments.json', payments);
+  await writeDB('supplier-payments.json', payments);
   return success(res, entry, 'Payment added', 201);
 }
 
@@ -3540,7 +4169,7 @@ async function handleCouponsCreate(req, res) {
   };
 
   coupons.push(newCoupon);
-  writeDB('coupons.json', coupons);
+  await writeDB('coupons.json', coupons);
   return success(res, newCoupon, 'Coupon created successfully', 201);
 }
 
@@ -3572,7 +4201,7 @@ async function handleCouponsUpdate(req, res, couponId) {
   if (updates.usageLimit !== undefined) updates.usageLimit = updates.usageLimit ? Number(updates.usageLimit) : null;
 
   coupons[index] = { ...coupons[index], ...updates };
-  writeDB('coupons.json', coupons);
+  await writeDB('coupons.json', coupons);
   return success(res, coupons[index], 'Coupon updated successfully');
 }
 
@@ -3585,7 +4214,7 @@ async function handleCouponsDelete(req, res, couponId) {
   if (index === -1) return error(res, 'Coupon not found', 404);
 
   const removed = coupons.splice(index, 1)[0];
-  writeDB('coupons.json', coupons);
+  await writeDB('coupons.json', coupons);
   return success(res, removed, 'Coupon deleted successfully');
 }
 
@@ -3645,7 +4274,7 @@ async function handleCouponsApply(req, res) {
   // Increment usage count
   const couponIndex = coupons.findIndex(c => c.id === coupon.id);
   coupons[couponIndex].usedCount = (coupons[couponIndex].usedCount || 0) + 1;
-  writeDB('coupons.json', coupons);
+  await writeDB('coupons.json', coupons);
 
   return success(res, { discount, finalAmount, couponId: coupon.id, code: coupon.code }, `Coupon applied! You saved ₹${discount.toFixed(2)}`);
 }
@@ -3692,7 +4321,7 @@ async function handleOrderRate(req, res, orderId) {
     ratedBy: user.id
   };
 
-  writeDB('orders.json', orders);
+  await writeDB('orders.json', orders);
   return success(res, orders[index], 'Order rated successfully');
 }
 
@@ -3775,7 +4404,16 @@ async function handleDriveUpload(req, res) {
     return success(res, { id, url }, 'Uploaded');
   } catch (err) {
     console.error('Drive upload error:', err.message);
-    return error(res, err.message || 'Drive upload failed', 500);
+    const raw = (err.message || '').toLowerCase();
+    let friendly = err.message || 'Drive upload failed';
+    if (raw.includes('invalid_grant')) {
+      friendly = 'Google Drive token expired or revoked. Admin: regenerate via scripts/generate-drive-token.js, then restart the server.';
+    } else if (raw.includes('invalid_client')) {
+      friendly = 'Google Drive OAuth client invalid. Check backend/oauth-client.json and Cloud Console credentials.';
+    } else if (raw.includes('credentials missing')) {
+      friendly = 'Google Drive credentials missing on server. Admin: place drive-credentials.json in backend/ and restart.';
+    }
+    return error(res, friendly, 500);
   }
 }
 
@@ -3787,7 +4425,11 @@ async function handleDriveDelete(req, res, fileId) {
     return success(res, result, 'Deleted');
   } catch (err) {
     console.error('Drive delete error:', err.message);
-    return error(res, err.message || 'Drive delete failed', 500);
+    const raw = (err.message || '').toLowerCase();
+    const friendly = raw.includes('invalid_grant')
+      ? 'Google Drive token expired or revoked. Admin: regenerate via scripts/generate-drive-token.js, then restart the server.'
+      : err.message || 'Drive delete failed';
+    return error(res, friendly, 500);
   }
 }
 
@@ -3837,9 +4479,15 @@ const server = http.createServer(async (req, res) => {
     // /api/products/:id/restock
     const restockMatch = pathname.match(/^\/api\/products\/(PRD-\d+)\/restock$/);
     if (restockMatch && method === 'PUT') return await handleProductRestock(req, res, restockMatch[1]);
+    // /api/products/:id/suggestions (variants + related fallback)
+    const suggestionsMatch = pathname.match(/^\/api\/products\/(PRD-\d+)\/suggestions$/);
+    if (suggestionsMatch && method === 'GET') return await handleProductSuggestions(req, res, suggestionsMatch[1]);
     // /api/products/:id (GET, PUT, DELETE)
     const productIdMatch = pathname.match(/^\/api\/products\/(PRD-\d+)$/);
     if (productIdMatch) return await handleProductById(req, res, productIdMatch[1]);
+
+    // ─── ADMIN low-stock report ───
+    if (pathname === '/api/admin/low-stock' && method === 'GET') return await handleAdminLowStock(req, res);
 
     // ─── ORDERS routes ───
     if (pathname === '/api/orders' && method === 'GET') return await handleOrders(req, res);
@@ -3860,6 +4508,9 @@ const server = http.createServer(async (req, res) => {
     // /api/orders/:id/rate
     const orderRateMatch = pathname.match(/^\/api\/orders\/(ORD-\d+)\/rate$/);
     if (orderRateMatch && method === 'POST') return await handleOrderRate(req, res, orderRateMatch[1]);
+    // /api/orders/:id/reorder — lazy variant resolver (R3 Layer 2)
+    const orderReorderMatch = pathname.match(/^\/api\/orders\/(ORD-\d+)\/reorder$/);
+    if (orderReorderMatch && method === 'POST') return await handleOrderReorder(req, res, orderReorderMatch[1]);
     // /api/orders/:id
     const orderIdMatch = pathname.match(/^\/api\/orders\/(ORD-\d+)$/);
     if (orderIdMatch && method === 'GET') return await handleOrderById(req, res, orderIdMatch[1]);
@@ -3975,7 +4626,15 @@ const server = http.createServer(async (req, res) => {
     error(res, `Endpoint not found: ${pathname}`, 404);
   } catch (e) {
     console.error(`Error handling ${method} ${pathname}:`, e);
-    error(res, 'Internal server error', 500);
+    const status = (e && typeof e.statusCode === 'number') ? e.statusCode : 500;
+    const msg = (e && e.message) || 'Internal server error';
+    // Generic 500 doesn't leak internals; explicit statusCode (503, 429, 400)
+    // gets to surface the helpful message authored in makeError(...).
+    if (status === 500) {
+      error(res, 'Internal server error', 500);
+    } else {
+      error(res, msg, status);
+    }
   }
 });
 

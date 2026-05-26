@@ -1,5 +1,25 @@
 const roundPrice = (value) => Math.round((Number(value) || 0) * 100) / 100
 
+/**
+ * Resolve a variant from a product. Returns null if product has no variants
+ * or no matching variantId. Callers pass this result alongside or in place
+ * of product to existing helpers — variants mirror product field names so
+ * helpers work transparently on either.
+ */
+export const resolveVariant = (product, variantId) => {
+  if (!product || product.hasVariants !== true) return null
+  if (!variantId) return null
+  return (product.variants || []).find(v => v && v.variantId === variantId) || null
+}
+
+/**
+ * Returns the variant (if resolvable) else product. Single read point for
+ * stockable fields.
+ */
+export const getEffectiveStockable = (product, variantId) => (
+  resolveVariant(product, variantId) || product
+)
+
 export const getBoxQuantity = (product) => {
   const qty = Number(product?.boxQuantity || product?.bottlesPerBox || product?.unitsPerBox || 24)
   return qty > 0 ? qty : 24
@@ -57,7 +77,9 @@ export const getModeShortLabel = (purchaseMode) => {
   return 'Full Box'
 }
 
-export const getCartItemId = (productId, purchaseMode) => `${productId}:${purchaseMode}`
+export const getCartItemId = (productId, purchaseMode, variantId) => (
+  `${productId}:${variantId || 'default'}:${purchaseMode || 'full_box'}`
+)
 
 export const getMaxPurchaseQuantity = (product, purchaseMode) => {
   const stockBoxes = Number(product?.stock ?? product?.stockQuantity ?? 0)
@@ -66,27 +88,42 @@ export const getMaxPurchaseQuantity = (product, purchaseMode) => {
   return Math.max(0, Math.floor(stockBoxes / unitBoxEquivalent))
 }
 
-export const buildCartItem = (product, quantity = 1, purchaseMode = getDefaultPurchaseMode(product)) => {
+export const buildCartItem = (product, quantity = 1, purchaseMode, variantId = null) => {
   const productId = product?._id || product?.id
-  const unitPrice = getUnitPrice(product, purchaseMode)
-  const unitBoxEquivalent = getUnitBoxEquivalent(product, purchaseMode)
-  const maxQuantity = getMaxPurchaseQuantity(product, purchaseMode)
+  const variant = resolveVariant(product, variantId)
+  const stockable = variant || product
+  const mode = purchaseMode || getDefaultPurchaseMode(stockable)
+  const unitPrice = getUnitPrice(stockable, mode)
+  const unitBoxEquivalent = getUnitBoxEquivalent(stockable, mode)
+  const maxQuantity = getMaxPurchaseQuantity(stockable, mode)
+
+  // Image precedence: variant image override > product image
+  const image = (variant?.image)
+    || (Array.isArray(variant?.images) && variant.images[0])
+    || product?.image
+    || (Array.isArray(product?.images) && product.images[0])
+    || ''
 
   return {
-    cartItemId: getCartItemId(productId, purchaseMode),
+    cartItemId: getCartItemId(productId, mode, variant?.variantId),
     productId,
+    variantId: variant?.variantId || null,
+    flavor: variant?.flavor ?? null,
+    volume: variant?.volume ?? product?.volume ?? null,
+    volumeUnit: variant?.volumeUnit ?? product?.volumeUnit ?? null,
     name: product?.name,
-    image: product?.image,
+    image,
     category: product?.category || '',
+    brand: product?.brand ?? null,
     quantity,
-    purchaseMode,
+    purchaseMode: mode,
     price: unitPrice,
-    pricePerBox: getPricePerBox(product),
-    boxQuantity: getBoxQuantity(product),
+    pricePerBox: getPricePerBox(stockable),
+    boxQuantity: getBoxQuantity(stockable),
     boxEquivalent: roundPrice(unitBoxEquivalent * quantity),
-    stock: Number(product?.stock ?? product?.stockQuantity ?? 0),
+    stock: Number(stockable?.stock ?? stockable?.stockQuantity ?? 0),
     maxQuantity,
-    deliveryCharge: Number(product?.deliveryCharge || 0),
+    deliveryCharge: Number(stockable?.deliveryCharge || 0),
     offer: product?.offer?.enabled ? product.offer : null,
   }
 }

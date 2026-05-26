@@ -32,9 +32,9 @@
   },
   "font": "Lato",
   "colors": {
-    "accent": "#5dfdeb",
     "primaryLight": "#fa000c",
     "primaryDark": "#e3e3e3",
-    "primary": "#ff293e"
+    "primary": "#ff293e",
+    "accent": "#62dffe"
   }
 }

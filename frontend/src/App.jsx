@@ -24,6 +24,7 @@ import BottomNav from './components/BottomNav'
 // Admin page imports
 import AdminDashboard from './admin/Dashboard'
 import AdminProducts from './admin/Products'
+import LowStockReport from './admin/LowStockReport'
 import AdminOrders from './admin/Orders'
 import AdminBills from './admin/Bills'
 import AdminPayments from './admin/Payments'
@@ -216,6 +217,14 @@ const AppRoutes = () => {
         element={
           <AdminRoute>
             <AdminProducts />
+          </AdminRoute>
+        }
+      />
+      <Route
+        path="/admin/inventory/low-stock"
+        element={
+          <AdminRoute>
+            <LowStockReport />
           </AdminRoute>
         }
       />

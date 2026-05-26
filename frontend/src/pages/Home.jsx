@@ -37,6 +37,8 @@ const Home = () => {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [activeCategory, setActiveCategory] = useState('all')
+  const [activeFlavor, setActiveFlavor] = useState('all')
+  const [activeVolume, setActiveVolume] = useState('all')
   const [searchQuery, setSearchQuery] = useState('')
   const [isSearchFocused, setIsSearchFocused] = useState(false)
   const [sliders, setSliders] = useState([])
@@ -121,7 +123,7 @@ const Home = () => {
 
   useEffect(() => {
     filterProducts()
-  }, [activeCategory, searchQuery, products])
+  }, [activeCategory, activeFlavor, activeVolume, searchQuery, products])
 
   const fetchProducts = async () => {
     try {
@@ -156,25 +158,74 @@ const Home = () => {
       )
     }
 
+    if (activeFlavor !== 'all') {
+      const target = activeFlavor.toLowerCase()
+      filtered = filtered.filter(p =>
+        (Array.isArray(p.availableFlavors) && p.availableFlavors.some(f => String(f).toLowerCase() === target)) ||
+        String(p.flavor || '').toLowerCase() === target
+      )
+    }
+
+    if (activeVolume !== 'all') {
+      const v = Number(activeVolume)
+      filtered = filtered.filter(p =>
+        (Array.isArray(p.availableVolumes) && p.availableVolumes.includes(v)) ||
+        Number(p.volume) === v
+      )
+    }
+
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase()
       filtered = filtered.filter(
         (p) =>
           p.name?.toLowerCase().includes(query) ||
           p.description?.toLowerCase().includes(query) ||
-          p.category?.toLowerCase().includes(query)
+          p.category?.toLowerCase().includes(query) ||
+          String(p.brand || '').toLowerCase().includes(query) ||
+          (Array.isArray(p.availableFlavors) && p.availableFlavors.some(f => String(f).toLowerCase().includes(query)))
       )
     }
 
     setFilteredProducts(filtered)
   }
 
+  // Derive available flavor + volume pills from CURRENT product set (post-category filter)
+  const visibleAfterCategory = activeCategory === 'all'
+    ? products
+    : products.filter(p => p.category?.toLowerCase() === activeCategory.toLowerCase())
+
+  const flavorOptions = (() => {
+    const set = new Set()
+    for (const p of visibleAfterCategory) {
+      if (Array.isArray(p.availableFlavors)) {
+        for (const f of p.availableFlavors) if (f) set.add(String(f))
+      } else if (p.flavor) {
+        set.add(String(p.flavor))
+      }
+    }
+    return Array.from(set).sort()
+  })()
+
+  const volumeOptions = (() => {
+    const set = new Set()
+    for (const p of visibleAfterCategory) {
+      if (Array.isArray(p.availableVolumes)) {
+        for (const v of p.availableVolumes) if (v != null) set.add(Number(v))
+      } else if (p.volume != null) {
+        set.add(Number(p.volume))
+      }
+    }
+    return Array.from(set).filter(Boolean).sort((a, b) => a - b)
+  })()
+
   const clearFilters = () => {
     setActiveCategory('all')
+    setActiveFlavor('all')
+    setActiveVolume('all')
     setSearchQuery('')
   }
 
-  const hasActiveFilters = activeCategory !== 'all' || searchQuery.trim()
+  const hasActiveFilters = activeCategory !== 'all' || activeFlavor !== 'all' || activeVolume !== 'all' || searchQuery.trim()
   const isMobileSearchMode = isSearchFocused || searchQuery.trim().length > 0
 
   return (
@@ -247,6 +298,71 @@ const Home = () => {
             </button>
           ))}
         </div>
+
+        {/* Smart Filter Bar — flavor + size (variants-aware, mobile-friendly) */}
+        {(flavorOptions.length > 0 || volumeOptions.length > 0) && !isMobileSearchMode && (
+          <div className="smart-filter-bar">
+            {flavorOptions.length > 0 && (
+              <div className="smart-filter-row">
+                <span className="smart-filter-label">Flavor</span>
+                <div className="smart-filter-chips">
+                  <button
+                    className={`smart-filter-chip smart-filter-chip-all${activeFlavor === 'all' ? ' active' : ''}`}
+                    onClick={() => setActiveFlavor('all')}
+                  >
+                    All
+                  </button>
+                  {flavorOptions.map(f => (
+                    <button
+                      key={f}
+                      className={`smart-filter-chip${activeFlavor === f ? ' active' : ''}`}
+                      onClick={() => setActiveFlavor(activeFlavor === f ? 'all' : f)}
+                    >
+                      {f}
+                    </button>
+                  ))}
+                </div>
+                {activeFlavor !== 'all' && (
+                  <button className="smart-filter-clear" onClick={() => setActiveFlavor('all')}>
+                    Clear
+                  </button>
+                )}
+              </div>
+            )}
+            {volumeOptions.length > 0 && (
+              <div className="smart-filter-row">
+                <span className="smart-filter-label">Size</span>
+                <div className="smart-filter-chips">
+                  <button
+                    className={`smart-filter-chip smart-filter-chip-all${activeVolume === 'all' ? ' active' : ''}`}
+                    onClick={() => setActiveVolume('all')}
+                  >
+                    All
+                  </button>
+                  {volumeOptions.map(v => {
+                    const unit = (visibleAfterCategory.find(p =>
+                      Array.isArray(p.availableVolumes) ? p.availableVolumes.includes(v) : Number(p.volume) === v
+                    )?.volumeUnit) || 'ml'
+                    return (
+                      <button
+                        key={v}
+                        className={`smart-filter-chip${String(activeVolume) === String(v) ? ' active' : ''}`}
+                        onClick={() => setActiveVolume(String(activeVolume) === String(v) ? 'all' : v)}
+                      >
+                        {v}{unit}
+                      </button>
+                    )
+                  })}
+                </div>
+                {activeVolume !== 'all' && (
+                  <button className="smart-filter-clear" onClick={() => setActiveVolume('all')}>
+                    Clear
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Filter Info */}
         {hasActiveFilters && (

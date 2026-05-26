@@ -27,6 +27,8 @@ import {
   getUnitBoxEquivalent,
   getUnitPrice,
   getMaxPurchaseQuantity,
+  resolveVariant,
+  getEffectiveStockable,
 } from '../utils/purchase'
 
 const PAYMENT_OPTIONS = [
@@ -38,6 +40,7 @@ const PAYMENT_OPTIONS = [
 
 const emptyDraft = {
   productId: '',
+  variantId: null,
   quantity: 1,
   purchaseMode: 'full_box',
 }
@@ -85,7 +88,7 @@ const preventStepperKeys = (event) => {
   }
 }
 
-const getSaleItemKey = (item) => `${item.productId}-${item.purchaseMode}`
+const getSaleItemKey = (item) => `${item.productId}-${item.variantId || 'default'}-${item.purchaseMode}`
 
 const OfflineSales = () => {
   const navigate = useNavigate()
@@ -142,7 +145,11 @@ const OfflineSales = () => {
       const customerList = Array.isArray(usersRes.data) ? usersRes.data : []
       const offlineSales = Array.isArray(salesRes.data) ? salesRes.data : []
 
-      setProducts(productList.filter((item) => Number(item.stock ?? item.stockQuantity ?? 0) > 0))
+      // Include variants products (stock lives on totalStock aggregate) as well as legacy single-SKU
+      setProducts(productList.filter((item) => {
+        if (item.hasVariants === true) return Number(item.totalStock || 0) > 0
+        return Number(item.stock ?? item.stockQuantity ?? 0) > 0
+      }))
       setCustomers(customerList.filter((user) => user.role === 'customer'))
       setSales(offlineSales)
     } catch (error) {
@@ -241,20 +248,22 @@ const OfflineSales = () => {
     setNote('')
   }
 
-  const quickAddItem = (product, mode, qty = 1) => {
+  const quickAddItem = (product, mode, qty = 1, variantId = null) => {
     if (!product) return
-    const useMode = mode || getDefaultPurchaseMode(product)
+    const variant = resolveVariant(product, variantId)
+    const stockable = variant || product
+    const useMode = mode || getDefaultPurchaseMode(stockable)
     const useQty = useMode === 'half_box' ? 1 : Math.max(1, Number(qty) || 1)
-    const maxQuantity = getMaxPurchaseQuantity(product, useMode)
+    const maxQuantity = getMaxPurchaseQuantity(stockable, useMode)
     if (useQty > maxQuantity) {
       toast.error(`Max ${maxQuantity} ${getModeShortLabel(useMode)} stock available`)
       return
     }
 
     const existingIndex = saleItems.findIndex(
-      (item) => item.productId === product.id && item.purchaseMode === useMode
+      (item) => item.productId === product.id && (item.variantId || null) === (variant?.variantId || null) && item.purchaseMode === useMode
     )
-    const unitBox = getUnitBoxEquivalent(product, useMode)
+    const unitBox = getUnitBoxEquivalent(stockable, useMode)
 
     if (existingIndex >= 0) {
       const merged = useMode === 'half_box' ? 1 : saleItems[existingIndex].quantity + useQty
@@ -268,29 +277,44 @@ const OfflineSales = () => {
         boxEquivalent: Number((unitBox * merged).toFixed(2)),
       } : it))
     } else {
+      const variantLabel = variant
+        ? `${variant.flavor ? variant.flavor + ' ' : ''}${variant.volume}${variant.volumeUnit || ''}`.trim()
+        : ''
       setSaleItems((prev) => [...prev, {
         productId: product.id,
-        name: product.name,
-        image: product.image || '',
+        variantId: variant?.variantId || null,
+        name: product.name + (variantLabel ? ` (${variantLabel})` : ''),
+        flavor: variant?.flavor ?? null,
+        volume: variant?.volume ?? product.volume ?? null,
+        volumeUnit: variant?.volumeUnit ?? product.volumeUnit ?? null,
+        image: variant?.image || product.image || '',
         quantity: useQty,
         purchaseMode: useMode,
-        price: getUnitPrice(product, useMode),
-        boxQuantity: Number(product.boxQuantity || product.bottlesPerBox || product.unitsPerBox || 24),
+        price: getUnitPrice(stockable, useMode),
+        boxQuantity: Number(stockable.boxQuantity || stockable.bottlesPerBox || stockable.unitsPerBox || 24),
         boxEquivalent: Number((unitBox * useQty).toFixed(2)),
-        stock: Number(product.stock ?? product.stockQuantity ?? 0),
+        stock: Number(stockable.stock ?? stockable.stockQuantity ?? 0),
         maxQuantity,
       }])
     }
   }
 
-  const inCartCount = (productId, mode) => {
-    const found = saleItems.find((it) => it.productId === productId && it.purchaseMode === mode)
+  const inCartCount = (productId, mode, variantId = null) => {
+    const found = saleItems.find((it) =>
+      it.productId === productId &&
+      (it.variantId || null) === (variantId || null) &&
+      it.purchaseMode === mode
+    )
     return found?.quantity || 0
   }
 
-  const updateQuantityById = (productId, mode, nextQty) => {
+  const updateQuantityById = (productId, mode, nextQty, variantId = null) => {
     setSaleItems((prev) => {
-      const idx = prev.findIndex((it) => it.productId === productId && it.purchaseMode === mode)
+      const idx = prev.findIndex((it) =>
+        it.productId === productId &&
+        (it.variantId || null) === (variantId || null) &&
+        it.purchaseMode === mode
+      )
       if (idx === -1) return prev
       const target = prev[idx]
       if (nextQty <= 0) return prev.filter((_, i) => i !== idx)
@@ -305,8 +329,12 @@ const OfflineSales = () => {
     })
   }
 
-  const removeByProductMode = (productId, mode) => {
-    setSaleItems((prev) => prev.filter((it) => !(it.productId === productId && it.purchaseMode === mode)))
+  const removeByProductMode = (productId, mode, variantId = null) => {
+    setSaleItems((prev) => prev.filter((it) => !(
+      it.productId === productId &&
+      (it.variantId || null) === (variantId || null) &&
+      it.purchaseMode === mode
+    )))
   }
 
   const addDraftItem = () => {
@@ -612,6 +640,7 @@ const OfflineSales = () => {
         note,
         items: saleItems.map((item) => ({
           productId: item.productId,
+          variantId: item.variantId || null,
           quantity: item.quantity,
           purchaseMode: item.purchaseMode,
         })),
@@ -1160,16 +1189,49 @@ const OfflineSales = () => {
 }
 
 const ProductPickRow = ({ product, c, onAdd, onUpdateQty, onRemove, formatCurrency, inCartCount }) => {
-  const modes = getAllowedPurchaseModes(product)
-  const defaultMode = getDefaultPurchaseMode(product)
+  const hasVariants = product?.hasVariants === true
+  const variants = Array.isArray(product?.variants) ? product.variants : []
+
+  // Variant selection state (only for variants products)
+  const firstAvailableVariant = variants.find(v => (Number(v.stockQuantity) || 0) > 0) || variants[0] || null
+  const [selectedFlavor, setSelectedFlavor] = useState(firstAvailableVariant?.flavor || null)
+  const [selectedVariantId, setSelectedVariantId] = useState(firstAvailableVariant?.variantId || null)
+
+  const selectedVariant = hasVariants
+    ? variants.find(v => v.variantId === selectedVariantId) || null
+    : null
+
+  // Stockable = variant if selected, else product top-level (for legacy single-SKU)
+  const stockable = selectedVariant
+    ? { ...product, ...selectedVariant }
+    : product
+
+  const modes = getAllowedPurchaseModes(stockable)
+  const defaultMode = getDefaultPurchaseMode(stockable)
   const [mode, setMode] = useState(defaultMode)
-  const stock = Number(product.stock ?? product.stockQuantity ?? 0)
-  const max = getMaxPurchaseQuantity(product, mode)
-  const price = getUnitPrice(product, mode)
-  const inCart = inCartCount(product.id, mode)
+  const stock = Number(stockable.stock ?? stockable.stockQuantity ?? 0)
+  const max = getMaxPurchaseQuantity(stockable, mode)
+  const price = getUnitPrice(stockable, mode)
+  const inCart = inCartCount(product.id, mode, selectedVariantId)
   const outOfStock = max < 1
   const lowStock = stock < 5
   const isHalfBox = mode === 'half_box'
+
+  // Sizes available for selected flavor
+  const sizesForFlavor = hasVariants
+    ? variants.filter(v => selectedFlavor ? v.flavor === selectedFlavor : (v.flavor || null) === null)
+    : []
+
+  const flavors = hasVariants ? (product.availableFlavors || []) : []
+
+  // When variant changes, reset mode to its default if current mode not allowed
+  useEffect(() => {
+    if (!selectedVariant) return
+    const allowed = getAllowedPurchaseModes(selectedVariant)
+    if (!allowed.includes(mode)) {
+      setMode(getDefaultPurchaseMode(selectedVariant))
+    }
+  }, [selectedVariantId])
 
   // Local draft so user can briefly empty the input via backspace.
   // Sync back from canonical state whenever cart count changes externally.
@@ -1178,17 +1240,20 @@ const ProductPickRow = ({ product, c, onAdd, onUpdateQty, onRemove, formatCurren
 
   return (
     <div style={{
-      display: 'flex', alignItems: 'center', gap: 12,
-      padding: '10px 14px',
       background: c.inputBg,
       border: `1px solid ${inCart > 0 ? (c.accent || '#0ea5e9') : c.border}`,
       borderRadius: 12,
       transition: 'border-color 0.18s ease, background 0.18s ease',
       opacity: outOfStock ? 0.55 : 1,
+      overflow: 'hidden',
     }}
       onMouseEnter={(e) => { if (!outOfStock && inCart === 0) e.currentTarget.style.borderColor = c.accent || '#0ea5e9' }}
       onMouseLeave={(e) => { if (inCart === 0) e.currentTarget.style.borderColor = c.border }}
     >
+    <div style={{
+      display: 'flex', alignItems: 'center', gap: 12,
+      padding: '10px 14px',
+    }}>
       {/* Image / Initial */}
       {product.image ? (
         <img src={product.image} alt={product.name}
@@ -1255,7 +1320,7 @@ const ProductPickRow = ({ product, c, onAdd, onUpdateQty, onRemove, formatCurren
         {inCart === 0 ? (
           <button
             type="button"
-            onClick={() => onAdd(product, mode, 1)}
+            onClick={() => onAdd(product, mode, 1, selectedVariantId)}
             disabled={outOfStock}
             style={{
               width: '100%', padding: '8px 14px', borderRadius: 8, border: 'none',
@@ -1284,6 +1349,59 @@ const ProductPickRow = ({ product, c, onAdd, onUpdateQty, onRemove, formatCurren
           </div>
         )}
       </div>
+    </div>
+    {/* Variant picker — visually inside the same product card (no margin, just a top divider) */}
+    {hasVariants && variants.length > 0 && (
+      <div style={{
+        display: 'flex', flexDirection: 'column', gap: 6,
+        padding: '8px 14px 10px',
+        background: 'rgba(249, 115, 22, 0.04)',
+        borderTop: `1px dashed ${c.border}`,
+      }}>
+        {flavors.length > 1 && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+            <span style={{ fontSize: 10, fontWeight: 700, color: c.textSecondary, letterSpacing: 0.05, minWidth: 44, textTransform: 'uppercase' }}>Flavor</span>
+            {flavors.map((f) => (
+              <button
+                key={f}
+                type="button"
+                className={`variant-card-chip flavor-chip${selectedFlavor === f ? ' active' : ''}`}
+                onClick={(e) => {
+                  e.stopPropagation()
+                  setSelectedFlavor(f)
+                  const cands = variants.filter(v => v.flavor === f)
+                  const inS = cands.find(v => (Number(v.stockQuantity) || 0) > 0)
+                  const tgt = inS || cands[0]
+                  if (tgt) setSelectedVariantId(tgt.variantId)
+                }}
+              >
+                {f}
+              </button>
+            ))}
+          </div>
+        )}
+        {sizesForFlavor.length > 1 && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+            <span style={{ fontSize: 10, fontWeight: 700, color: c.textSecondary, letterSpacing: 0.05, minWidth: 44, textTransform: 'uppercase' }}>Size</span>
+            {sizesForFlavor.sort((a, b) => (Number(a.volume) || 0) - (Number(b.volume) || 0)).map((v) => {
+              const isSel = v.variantId === selectedVariantId
+              const isOut = (Number(v.stockQuantity) || 0) <= 0
+              return (
+                <button
+                  key={v.variantId}
+                  type="button"
+                  disabled={isOut && !isSel}
+                  className={`variant-card-chip size-chip${isSel ? ' active' : ''}${isOut && !isSel ? ' disabled' : ''}`}
+                  onClick={(e) => { e.stopPropagation(); setSelectedVariantId(v.variantId) }}
+                >
+                  {v.volume}{v.volumeUnit || 'ml'}
+                </button>
+              )
+            })}
+          </div>
+        )}
+      </div>
+    )}
     </div>
   )
 }

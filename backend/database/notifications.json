@@ -6,7 +6,7 @@
     "message": "Customer placed order ORD-1001 for ₹18.75 (COD).",
     "image": "",
     "targetUserId": null,
-    "isRead": false,
+    "isRead": true,
     "createdAt": "2026-05-09T18:50:05.065Z"
   },
   {
@@ -26,7 +26,7 @@
     "message": "SALE-5001 recorded for Walk-in Customer worth ₹18.75.",
     "image": "",
     "targetUserId": null,
-    "isRead": false,
+    "isRead": true,
     "createdAt": "2026-05-09T18:58:30.358Z"
   },
   {
@@ -76,7 +76,7 @@
     "message": "Order ORD-1001 (COD) ke liye ₹18.75 aapke baaki mein add ho gaya hai.",
     "image": "",
     "targetUserId": "USR-002",
-    "isRead": false,
+    "isRead": true,
     "createdAt": "2026-05-09T19:09:21.124Z"
   },
   {
@@ -86,7 +86,7 @@
     "message": "Customer ne order ORD-1001 ki delivery confirm kar di.",
     "image": "",
     "targetUserId": null,
-    "isRead": false,
+    "isRead": true,
     "createdAt": "2026-05-09T19:09:21.137Z"
   },
   {
@@ -96,7 +96,7 @@
     "message": "Aapne order ORD-1001 ki delivery confirm kar di hai.",
     "image": "",
     "targetUserId": "USR-002",
-    "isRead": false,
+    "isRead": true,
     "createdAt": "2026-05-09T19:09:21.141Z"
   },
   {
@@ -106,7 +106,7 @@
     "message": "You have an outstanding balance of ₹18.75. Please make the payment at the earliest.",
     "image": "",
     "targetUserId": "USR-002",
-    "isRead": false,
+    "isRead": true,
     "createdAt": "2026-05-09T19:10:02.264Z"
   },
   {
@@ -116,7 +116,7 @@
     "message": "SALE-5002 recorded for Customer worth ₹18.75.",
     "image": "",
     "targetUserId": null,
-    "isRead": false,
+    "isRead": true,
     "createdAt": "2026-05-09T19:23:26.645Z"
   },
   {
@@ -126,7 +126,7 @@
     "message": "SALE-5003 recorded for Walk-in Customer worth ₹37.50.",
     "image": "",
     "targetUserId": null,
-    "isRead": false,
+    "isRead": true,
     "createdAt": "2026-05-09T19:28:34.690Z"
   },
   {
@@ -136,7 +136,7 @@
     "message": "SALE-5004 recorded for Walk-in Customer worth ₹18.75.",
     "image": "",
     "targetUserId": null,
-    "isRead": false,
+    "isRead": true,
     "createdAt": "2026-05-09T19:29:38.884Z"
   },
   {
@@ -146,7 +146,7 @@
     "message": "Customer placed order ORD-1002 with an online payment of ₹18.75. Verification is pending.",
     "image": "",
     "targetUserId": null,
-    "isRead": false,
+    "isRead": true,
     "createdAt": "2026-05-09T19:32:22.458Z"
   },
   {
@@ -156,7 +156,7 @@
     "message": "Your order ORD-1002 has been placed successfully. Online payment verification is in progress.",
     "image": "",
     "targetUserId": "USR-002",
-    "isRead": false,
+    "isRead": true,
     "createdAt": "2026-05-09T19:32:22.460Z"
   },
   {
@@ -166,7 +166,7 @@
     "message": "Your online payment of ₹18.75 for order ORD-1002 has been verified successfully.",
     "image": "",
     "targetUserId": "USR-002",
-    "isRead": false,
+    "isRead": true,
     "createdAt": "2026-05-09T19:33:03.922Z"
   },
   {
@@ -176,7 +176,7 @@
     "message": "Customer requested payment clearance for ₹7.50.",
     "image": "",
     "targetUserId": null,
-    "isRead": false,
+    "isRead": true,
     "createdAt": "2026-05-09T19:40:22.732Z"
   },
   {
@@ -186,7 +186,7 @@
     "message": "Aapki ₹7.50 ki payment clearance approve ho gayi hai.",
     "image": "",
     "targetUserId": "USR-002",
-    "isRead": false,
+    "isRead": true,
     "createdAt": "2026-05-09T19:40:36.489Z"
   },
   {
@@ -196,7 +196,7 @@
     "message": "SALE-5005 recorded for Walk-in Customer worth ₹18.75.",
     "image": "",
     "targetUserId": null,
-    "isRead": false,
+    "isRead": true,
     "createdAt": "2026-05-09T21:12:34.252Z"
   },
   {
@@ -206,7 +206,7 @@
     "message": "SALE-5006 recorded for Customer worth ₹468.75.",
     "image": "",
     "targetUserId": null,
-    "isRead": false,
+    "isRead": true,
     "createdAt": "2026-05-09T21:17:31.266Z"
   },
   {
@@ -216,7 +216,7 @@
     "message": "SALE-5008 recorded for Customer worth ₹18.75.",
     "image": "",
     "targetUserId": null,
-    "isRead": false,
+    "isRead": true,
     "createdAt": "2026-05-11T17:30:40.953Z"
   },
   {
@@ -226,7 +226,7 @@
     "message": "SALE-5009 recorded for reggeg worth ₹18.75.",
     "image": "",
     "targetUserId": null,
-    "isRead": false,
+    "isRead": true,
     "createdAt": "2026-05-11T17:39:01.931Z"
   },
   {
@@ -246,7 +246,7 @@
     "message": "SALE-5010 recorded for tterererre worth ₹450.00.",
     "image": "",
     "targetUserId": null,
-    "isRead": false,
+    "isRead": true,
     "createdAt": "2026-05-11T17:53:09.589Z"
   },
   {
@@ -266,7 +266,7 @@
     "message": "Roy Shaikh placed order ORD-1003 for ₹37.50 (COD).",
     "image": "",
     "targetUserId": null,
-    "isRead": false,
+    "isRead": true,
     "createdAt": "2026-05-12T03:58:49.578Z"
   },
   {
@@ -276,7 +276,7 @@
     "message": "Your order ORD-1003 has been placed successfully.",
     "image": "",
     "targetUserId": "USR-005",
-    "isRead": false,
+    "isRead": true,
     "createdAt": "2026-05-12T03:58:49.581Z"
   },
   {
@@ -286,7 +286,7 @@
     "message": "rweeew placed order ORD-1004 for ₹450.00 (COD).",
     "image": "",
     "targetUserId": null,
-    "isRead": false,
+    "isRead": true,
     "createdAt": "2026-05-12T03:59:30.112Z"
   },
   {
@@ -306,7 +306,7 @@
     "message": "Roy Shaikh cancelled order ORD-1003.",
     "image": "",
     "targetUserId": null,
-    "isRead": false,
+    "isRead": true,
     "createdAt": "2026-05-12T04:05:07.068Z"
   },
   {
@@ -316,7 +316,7 @@
     "message": "Your order ORD-1003 has been cancelled successfully.",
     "image": "",
     "targetUserId": "USR-005",
-    "isRead": false,
+    "isRead": true,
     "createdAt": "2026-05-12T04:05:07.071Z"
   }
 ]
