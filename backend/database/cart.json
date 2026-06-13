@@ -1,5 +1,36 @@
 [
   {
+    "userId": "USR-001",
+    "items": [
+      {
+        "productId": "PRD-004",
+        "variantId": "V-001",
+        "name": "Big",
+        "flavor": "Orange",
+        "volume": 450,
+        "volumeUnit": "ml",
+        "image": null,
+        "category": "Soft Drink",
+        "brand": null,
+        "quantity": 4,
+        "purchaseMode": "full_box",
+        "unitLabel": "4 boxes",
+        "boxQuantity": 5,
+        "boxEquivalent": 4,
+        "price": 450,
+        "pricePerBox": 450,
+        "mrp": 500,
+        "stock": 5,
+        "gstPercent": 0,
+        "deliveryCharge": 0,
+        "offer": null,
+        "snapshotAt": "2026-06-13T12:56:55.997Z",
+        "cartItemId": "PRD-004:V-001:full_box",
+        "maxQuantity": 5
+      }
+    ]
+  },
+  {
     "userId": "USR-002",
     "items": []
   },
@@ -10,7 +41,7 @@
         "cartItemId": "PRD-001:piece",
         "productId": "PRD-001",
         "name": "Sprite",
-        "image": "/api/drive/files/1mCaGdtic_tYwW5hmFPu93dMACMzTw_4r",
+        "image": "https://lh3.googleusercontent.com/d/13tRHdKemXwsWMLgN_bIZob1JJV0GHkLd",
         "category": "Soft Drink",
         "quantity": 1,
         "purchaseMode": "piece",
@@ -33,7 +64,7 @@
         "cartItemId": "PRD-002:full_box",
         "productId": "PRD-002",
         "name": "Coca Cola",
-        "image": "/api/drive/files/1_-_esvDiyhUXMwnyjkS9oFUIdlmJCLrT",
+        "image": "colddrinks/products/prd-002-main",
         "category": "Soft Drink",
         "quantity": 1,
         "purchaseMode": "full_box",

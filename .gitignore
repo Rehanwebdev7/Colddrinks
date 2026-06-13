@@ -25,3 +25,9 @@ Thumbs.db
 # Editor
 .vscode/
 .idea/
+
+# Operational artifacts (Cloudinary migration)
+backend/migration-mapping.json
+backend/migration-failures.json
+backend/database.backup-pre-migration-*/
+*.bak

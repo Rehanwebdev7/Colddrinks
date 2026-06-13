@@ -491,12 +491,23 @@ const Products = () => {
             }
           }
 
-          // Delete old Drive image if editing
-          if (editingProduct?.driveFileId) {
-            await deleteImage(editingProduct.driveFileId).catch(() => {})
+          // Delete replaced images on edit so Cloudinary doesn't accumulate orphans.
+          // Server's diffRemovedImageUrls also handles this defensively at write time;
+          // this client-side call is best-effort and idempotent (404 swallowed).
+          if (editingProduct) {
+            const oldRefs = [
+              editingProduct.image,
+              ...(Array.isArray(editingProduct.images) ? editingProduct.images : []),
+            ].filter(Boolean)
+            const newSet = new Set(finalImages.filter(Boolean))
+            for (const oldRef of oldRefs) {
+              if (!newSet.has(oldRef)) {
+                await deleteImage(oldRef).catch(() => {})
+              }
+            }
           }
         } catch (err) {
-          toast.error('Image upload failed: ' + (err.message || 'Drive error'))
+          toast.error('Image upload failed: ' + (err.message || 'upload error'))
           return
         } finally {
           setUploadingImage(false)
@@ -510,7 +521,7 @@ const Products = () => {
         return
       }
 
-      // Upload variant images to Drive (variant.image as base64 → Drive URL)
+      // Upload variant images to Cloudinary (variant.image as base64 → public_id)
       const variantsWithImages = [...(formData.variants || [])]
       if (formData.hasVariants && variantsWithImages.length > 0) {
         setUploadingImage(true)

@@ -36,7 +36,7 @@ const ThemeConfig = () => {
   const [form, setForm] = useState(settings)
   const [saving, setSaving] = useState(false)
   const [cropModal, setCropModal] = useState({ open: false, src: null, target: null, aspect: undefined, file: null })
-  const [uploadingTarget, setUploadingTarget] = useState(null) // which field is mid-upload to Drive
+  const [uploadingTarget, setUploadingTarget] = useState(null) // which field is mid-upload to Cloudinary
   const [lightboxSrc, setLightboxSrc] = useState(null) // full-screen preview
 
   useEffect(() => {
@@ -142,7 +142,7 @@ const ThemeConfig = () => {
                   borderRadius: '50%',
                   animation: 'theme-spin 0.9s linear infinite',
                 }} />
-                <span style={{ fontSize: '12px', fontWeight: 600, color: '#0e4166' }}>Uploading to Drive...</span>
+                <span style={{ fontSize: '12px', fontWeight: 600, color: '#0e4166' }}>Uploading...</span>
                 <span style={{ fontSize: '10px', color: '#64748b' }}>4-5 seconds usually</span>
               </div>
             ) : value ? (

@@ -119,17 +119,17 @@ const Sliders = () => {
     try {
       setSaving(true)
       let imageUrl = formData.image
-      let driveFileId = ''
+      const oldImageUrl = editingSlider?.image || ''
 
-      // Upload to Google Drive if file selected
+      // Upload to Cloudinary if file selected
       if (imageFile) {
         setUploadingImage(true)
         try {
           const fileName = `slider_${Date.now()}.jpg`
-          driveFileId = await uploadImage(imageFile, 'sliders', fileName)
-          imageUrl = getImageUrl(driveFileId)
+          const publicId = await uploadImage(imageFile, 'sliders', fileName)
+          imageUrl = getImageUrl(publicId)
         } catch (err) {
-          toast.error('Image upload failed: ' + (err.message || 'Drive error'))
+          toast.error('Image upload failed: ' + (err.message || 'upload error'))
           return
         } finally {
           setUploadingImage(false)
@@ -144,7 +144,6 @@ const Sliders = () => {
 
       const payload = {
         image: imageUrl,
-        driveFileId,
         title: formData.title,
         subtitle: formData.subtitle,
         link: formData.link,
@@ -154,6 +153,10 @@ const Sliders = () => {
       if (editingSlider) {
         await API.put(`/sliders/${editingSlider.id || editingSlider.sliderId}`, payload)
         toast.success('Slider updated!')
+        // Clean up the previous image if it was replaced.
+        if (oldImageUrl && oldImageUrl !== imageUrl) {
+          await deleteImage(oldImageUrl).catch(() => {})
+        }
       } else {
         await API.post('/sliders', payload)
         toast.success('Slider added!')
@@ -173,9 +176,9 @@ const Sliders = () => {
     if (!sliderId) return
 
     try {
-      // Delete from Google Drive if it has a driveFileId
-      if (slider.driveFileId) {
-        await deleteImage(slider.driveFileId).catch(() => {})
+      // Delete associated image from hosting backend (Cloudinary or legacy Drive).
+      if (slider.image) {
+        await deleteImage(slider.image).catch(() => {})
       }
       await API.delete(`/sliders/${sliderId}`)
       toast.success('Slider deleted successfully')

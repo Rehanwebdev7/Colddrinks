@@ -28,6 +28,16 @@ services:
       # CORS allow-list (comma-separated). Must include production frontend URL.
       - key: ALLOWED_ORIGINS
         sync: false
+      # === CLOUDINARY (image hosting, PRIMARY since 2026-06-13) ===
+      # Format: cloudinary://API_KEY:API_SECRET@CLOUD_NAME
+      # Set in Render dashboard, sync: false to keep secret out of git.
+      - key: CLOUDINARY_URL
+        sync: false
+      - key: CLOUDINARY_ROOT_FOLDER
+        value: colddrinks
+      # === GOOGLE DRIVE (LEGACY, kept for rollback only) ===
+      # If Cloudinary fails and Drive needs to be re-enabled, set these and
+      # run: node backend/scripts/toggle-drive-backend.js enable
       - key: DRIVE_CREDENTIALS_JSON
         sync: false
       - key: GOOGLE_DRIVE_MAIN_FOLDER_ID

@@ -10,7 +10,50 @@ const path = require('path');
 const crypto = require('crypto');
 const { pipeline } = require('stream/promises');
 const nodemailer = require('nodemailer');
-const driveHelper = require('./helpers/drive');
+
+// Load backend/.env BEFORE requiring helpers that read process.env at module-load time
+// (cloudinary.js reads CLOUDINARY_URL; drive.js reads DRIVE_CREDENTIALS_*).
+(function loadEnvEarly() {
+  const envPath = path.join(__dirname, '.env');
+  if (!fs.existsSync(envPath)) return;
+  for (const line of fs.readFileSync(envPath, 'utf8').split(/\r?\n/)) {
+    const trimmed = line.trim();
+    if (!trimmed || trimmed.startsWith('#')) continue;
+    const idx = trimmed.indexOf('=');
+    if (idx === -1) continue;
+    const key = trimmed.slice(0, idx).trim();
+    if (!key || process.env[key] !== undefined) continue;
+    let value = trimmed.slice(idx + 1).trim();
+    if ((value.startsWith('"') && value.endsWith('"')) || (value.startsWith("'") && value.endsWith("'"))) {
+      value = value.slice(1, -1);
+    }
+    process.env[key] = value;
+  }
+})();
+
+// =========================================================================
+// === DRIVE_LEGACY_BEGIN === Drive helper import (commented out 2026-06-13)
+// === To rollback to Drive backend:
+// ===   1. Uncomment the require() line below
+// ===   2. Comment out the stub driveHelper object
+// ===   3. Uncomment Drive endpoint handler bodies + routes (other DRIVE_LEGACY blocks)
+// ===   4. Set DRIVE_CREDENTIALS_JSON in env, restart server
+// =========================================================================
+// const driveHelper = require('./helpers/drive');
+// Stub so Drive endpoint handlers below compile but no-op safely if reached.
+const driveHelper = {
+  health: async () => ({ ok: false, error: 'Drive backend disabled (commented 2026-06-13)' }),
+  uploadBuffer: async () => { throw new Error('Drive backend disabled — use /api/images/upload (Cloudinary)'); },
+  downloadFile: async () => { throw new Error('Drive backend disabled'); },
+  deleteFile: async () => ({ ok: true, skipped: true }),
+};
+// =========================================================================
+// === DRIVE_LEGACY_END ===
+// =========================================================================
+// === CLOUDINARY_ACTIVE_BEGIN === Cloudinary helper (primary, since 2026-06-13)
+const cloudinaryHelper = require('./helpers/cloudinary');
+const imageBackend = require('./helpers/imageBackend');
+// === CLOUDINARY_ACTIVE_END ===
 const {
   resolveVariant,
   getEffectiveStockable,
@@ -26,23 +69,7 @@ const {
   makeCartItemId,
 } = require('./helpers/lineItemSnapshot');
 
-const envPath = path.join(__dirname, '.env');
-if (fs.existsSync(envPath)) {
-  const envLines = fs.readFileSync(envPath, 'utf8').split(/\r?\n/);
-  for (const line of envLines) {
-    const trimmed = line.trim();
-    if (!trimmed || trimmed.startsWith('#')) continue;
-    const separatorIndex = trimmed.indexOf('=');
-    if (separatorIndex === -1) continue;
-    const key = trimmed.slice(0, separatorIndex).trim();
-    if (!key || process.env[key] !== undefined) continue;
-    let value = trimmed.slice(separatorIndex + 1).trim();
-    if ((value.startsWith('"') && value.endsWith('"')) || (value.startsWith("'") && value.endsWith("'"))) {
-      value = value.slice(1, -1);
-    }
-    process.env[key] = value;
-  }
-}
+// .env already loaded earlier (loadEnvEarly IIFE above the helper imports).
 
 function parseJsonEnv(name) {
   const raw = process.env[name];
@@ -4342,9 +4369,19 @@ async function handleOrderRate(req, res, orderId) {
 }
 
 // ─── DRIVE HANDLERS (service-account uploads) ──────────────────────────────
+// =========================================================================
+// === DRIVE_LEGACY_BEGIN === Drive endpoint handlers (rollback target)
+// === Comment out via: node backend/scripts/toggle-drive-backend.js disable
+// =========================================================================
 
 const ALLOWED_DRIVE_FOLDERS = new Set(['products', 'sliders', 'logos', 'suppliers', 'theme', 'misc', 'favicons', 'payment-qr']);
 const MAX_DRIVE_B64_LEN = 14 * 1024 * 1024; // ≈ 10 MB binary after base64 decode
+
+// 1x1 grey PNG fallback when Drive proxy fails (token revoked etc.)
+const DRIVE_PLACEHOLDER_PNG = Buffer.from(
+  'iVBORw0KGgoAAAANSUhEUgAAAGQAAABkCAQAAAABxvq+AAAAQ0lEQVR42u3PMQEAAAgDoNm/9DI4QwBQQ5gOmIDgGzAH1xkmIE5J9wHQDoNkBjW3MnYwzakwAUkmpKpgAtIDLwClAFQEMzWnP0AAAAASUVORK5CYII=',
+  'base64'
+);
 
 // Parse Drive file ID from the public lh3 URL we generate at upload time.
 // Returns null for any URL we don't recognize (external URLs, blank, etc.).
@@ -4366,6 +4403,12 @@ function extractDriveFileId(url) {
 }
 
 function normalizeDriveImageUrl(url) {
+  if (!url || typeof url !== 'string') return url;
+  // === CLOUDINARY_ACTIVE_BEGIN === Cloudinary public_id → CDN URL
+  if (url.startsWith(`${cloudinaryHelper.ROOT_FOLDER}/`)) {
+    return cloudinaryHelper.buildUrl(url);
+  }
+  // === CLOUDINARY_ACTIVE_END ===
   const fileId = extractDriveFileId(url);
   return fileId ? `/api/drive/files/${encodeURIComponent(fileId)}` : url;
 }
@@ -4400,9 +4443,14 @@ function normalizeSliderDriveImage(slider) {
   return slider;
 }
 
+// Returns a list of "backend:id" tagged identifiers for the given image refs.
+// Handles both Cloudinary public_ids and legacy Drive fileIds/proxy URLs.
 function imageIdList(value) {
   const list = Array.isArray(value) ? value : (value ? [value] : []);
-  return list.map(extractDriveFileId).filter(Boolean);
+  return list.map((ref) => {
+    const extracted = imageBackend.extractRefIdentifier(ref);
+    return extracted ? `${extracted.backend}:${extracted.id}` : null;
+  }).filter(Boolean);
 }
 
 async function writeDBBestEffort(file, data, label = file) {
@@ -4417,23 +4465,39 @@ async function writeDBBestEffort(file, data, label = file) {
   }
 }
 
-// Best-effort cleanup. Logs and swallows individual failures so a Drive
+// Best-effort cleanup. Logs and swallows individual failures so a backend
 // hiccup never blocks the Firestore mutation that already succeeded.
-async function deleteDriveFilesFromUrls(urls) {
-  const list = Array.isArray(urls) ? urls : (urls ? [urls] : []);
-  const ids = list.map(extractDriveFileId).filter(Boolean);
-  if (ids.length === 0) return;
-  await Promise.all(ids.map(async (id) => {
-    try {
-      await driveHelper.deleteFile(id);
-    } catch (err) {
-      console.warn(`[drive] cleanup failed for ${id}:`, err && err.message);
+// Accepts mixed input: tagged keys "backend:id", raw fileIds, public_ids, full URLs.
+async function deleteDriveFilesFromUrls(input) {
+  const list = Array.isArray(input) ? input : (input ? [input] : []);
+  if (list.length === 0) return;
+  await Promise.all(list.map(async (item) => {
+    if (!item || typeof item !== 'string') return;
+    // Already a tagged key from diffRemovedImageUrls?
+    const tagMatch = item.match(/^(cloudinary|drive):(.+)$/);
+    if (tagMatch) {
+      const backend = tagMatch[1];
+      const id = tagMatch[2];
+      try {
+        if (backend === 'cloudinary') {
+          await cloudinaryHelper.deleteFile(id);
+        // === DRIVE_LEGACY_BEGIN === Drive cleanup path (rollback-only after CL-8)
+        } else if (backend === 'drive') {
+          await driveHelper.deleteFile(id);
+        // === DRIVE_LEGACY_END ===
+        }
+      } catch (err) {
+        console.warn(`[${backend}] cleanup failed for ${id}:`, err && err.message);
+      }
+      return;
     }
+    // Untagged — let imageBackend factory route it.
+    await imageBackend.deleteImageRef(item);
   }));
 }
 
-// Returns URLs that appear in oldImages but not in newImages (i.e. were
-// removed/replaced and need Drive cleanup). Accepts arrays or single strings.
+// Returns "backend:id" tagged keys present in oldImages but not in newImages
+// (i.e. were removed/replaced and need cleanup). Accepts arrays or single strings.
 function diffRemovedImageUrls(oldImages, newImages) {
   const oldSet = new Set(imageIdList(oldImages));
   const newSet = new Set(imageIdList(newImages));
@@ -4471,11 +4535,14 @@ async function handleDriveFile(req, res, fileId) {
     await pipeline(result.stream, res);
   } catch (err) {
     const raw = String(err?.message || '').toLowerCase();
-    if (raw.includes('not found') || err?.code === 404) {
-      return error(res, 'Drive file not found', 404);
-    }
-    console.error('Drive file proxy error:', err.message);
-    return error(res, err.message || 'Drive file fetch failed', 500);
+    // Drive token death / 404 → serve placeholder so customer pages don't break.
+    // Customers see grey box instead of broken icon icon. Logged for admin attention.
+    console.warn(`[drive] proxy fallback to placeholder for ${safeFileId}:`, err.message);
+    res.statusCode = 200;
+    res.setHeader('Content-Type', 'image/png');
+    res.setHeader('Cache-Control', 'public, max-age=3600');
+    res.setHeader('X-Drive-Fallback', '1');
+    return res.end(DRIVE_PLACEHOLDER_PNG);
   }
 }
 
@@ -4537,6 +4604,91 @@ async function handleDriveDelete(req, res, fileId) {
     return error(res, friendly, 500);
   }
 }
+// =========================================================================
+// === DRIVE_LEGACY_END ===
+// =========================================================================
+
+// ─── CLOUDINARY IMAGE HANDLERS (active backend since 2026-06-13) ────────────
+// =========================================================================
+// === CLOUDINARY_ACTIVE_BEGIN === parallel surface to Drive endpoints
+
+const ALLOWED_IMAGE_FOLDERS = new Set(['products', 'sliders', 'logos', 'suppliers', 'theme', 'misc', 'favicons', 'payment-qr']);
+const MAX_IMAGE_B64_LEN = 14 * 1024 * 1024; // ≈ 10 MB binary after base64 decode
+
+async function handleImageUpload(req, res) {
+  const user = requireAdmin(req, res);
+  if (!user) return;
+
+  const body = await parseBody(req);
+  const { filename, mimeType, dataB64, folder } = body || {};
+
+  if (!filename || typeof filename !== 'string') return error(res, 'filename is required', 400);
+  if (!mimeType || typeof mimeType !== 'string' || !mimeType.startsWith('image/')) {
+    return error(res, 'mimeType must be image/*', 400);
+  }
+  if (!dataB64 || typeof dataB64 !== 'string') return error(res, 'dataB64 is required', 400);
+  if (dataB64.length > MAX_IMAGE_B64_LEN) return error(res, 'File too large (max ~10 MB)', 413);
+
+  const folderName = (typeof folder === 'string' && ALLOWED_IMAGE_FOLDERS.has(folder)) ? folder : 'misc';
+
+  let buffer;
+  try {
+    buffer = Buffer.from(dataB64, 'base64');
+  } catch (e) {
+    return error(res, 'Invalid base64 payload', 400);
+  }
+  if (!buffer || buffer.length === 0) return error(res, 'Empty file payload', 400);
+
+  try {
+    const result = await cloudinaryHelper.uploadBuffer({ buffer, mimeType, filename, folderName });
+    // Shape matches legacy Drive upload response: { id, url } — frontend zero-change.
+    return success(res, {
+      id: result.id,                     // public_id (e.g., "colddrinks/products/coke-abc123")
+      url: result.url,                   // CDN URL with f_auto,q_auto
+      width: result.width,
+      height: result.height,
+      bytes: result.bytes,
+      format: result.format,
+    }, 'Uploaded');
+  } catch (err) {
+    console.error('Cloudinary upload error:', err.message);
+    const raw = (err.message || '').toLowerCase();
+    let friendly = err.message || 'Image upload failed';
+    if (raw.includes('credentials missing')) {
+      friendly = 'Cloudinary credentials missing on server. Admin: set CLOUDINARY_URL in env and restart.';
+    } else if (raw.includes('unauthorized') || raw.includes('401')) {
+      friendly = 'Cloudinary auth failed. Check CLOUDINARY_URL value.';
+    } else if (raw.includes('quota') || raw.includes('429')) {
+      friendly = 'Cloudinary usage limit reached. Admin: check dashboard.';
+    }
+    return error(res, friendly, 500);
+  }
+}
+
+async function handleImageDelete(req, res, publicId) {
+  const user = requireAdmin(req, res);
+  if (!user) return;
+  try {
+    const result = await cloudinaryHelper.deleteFile(decodeURIComponent(publicId));
+    return success(res, result, 'Deleted');
+  } catch (err) {
+    console.error('Cloudinary delete error:', err.message);
+    return error(res, err.message || 'Image delete failed', 500);
+  }
+}
+
+async function handleImageHealth(req, res) {
+  const user = requireAdmin(req, res);
+  if (!user) return;
+  try {
+    const result = await cloudinaryHelper.health();
+    return success(res, result, result.ok ? 'Cloudinary ready' : 'Cloudinary not reachable');
+  } catch (err) {
+    console.error('Cloudinary health error:', err.message);
+    return error(res, err.message || 'Cloudinary health check failed', 500);
+  }
+}
+// === CLOUDINARY_ACTIVE_END ===
 
 // ─── DYNAMIC ROUTER ─────────────────────────────────────────────────────────
 
@@ -4707,13 +4859,37 @@ const server = http.createServer(async (req, res) => {
     if (supPayMatch && method === 'GET') return await handleSupplierPaymentsGet(req, res, supPayMatch[1]);
     if (supPayMatch && method === 'POST') return await handleSupplierPaymentAdd(req, res, supPayMatch[1]);
 
-    // ─── DRIVE routes (service-account uploads) ───
-    if (pathname === '/api/drive/health' && method === 'GET') return await handleDriveHealth(req, res);
-    const driveFileMatch = pathname.match(/^\/api\/drive\/files\/([^/]+)$/);
-    if (driveFileMatch && (method === 'GET' || method === 'HEAD')) return await handleDriveFile(req, res, driveFileMatch[1]);
-    if (pathname === '/api/drive/upload' && method === 'POST') return await handleDriveUpload(req, res);
-    const driveDelMatch = pathname.match(/^\/api\/drive\/files\/([A-Za-z0-9_\-]+)$/);
-    if (driveDelMatch && method === 'DELETE') return await handleDriveDelete(req, res, driveDelMatch[1]);
+    // === CLOUDINARY_ACTIVE_BEGIN === image routes (primary backend)
+    if (pathname === '/api/images/health' && method === 'GET') return await handleImageHealth(req, res);
+    if (pathname === '/api/images/upload' && method === 'POST') return await handleImageUpload(req, res);
+    const imageDelMatch = pathname.match(/^\/api\/images\/(.+)$/);
+    if (imageDelMatch && method === 'DELETE') return await handleImageDelete(req, res, imageDelMatch[1]);
+    // === CLOUDINARY_ACTIVE_END ===
+
+    // ─── DRIVE routes (legacy, kept active for transition period) ───
+    // === DRIVE_LEGACY_BEGIN === Drive routes commented out 2026-06-13.
+    // === To rollback: uncomment these route entries + uncomment the require()
+    // === at top of file + uncomment the handler bodies below.
+    // if (pathname === '/api/drive/health' && method === 'GET') return await handleDriveHealth(req, res);
+    // const driveFileMatch = pathname.match(/^\/api\/drive\/files\/([^/]+)$/);
+    // if (driveFileMatch && (method === 'GET' || method === 'HEAD')) return await handleDriveFile(req, res, driveFileMatch[1]);
+    // if (pathname === '/api/drive/upload' && method === 'POST') return await handleDriveUpload(req, res);
+    // const driveDelMatch = pathname.match(/^\/api\/drive\/files\/([A-Za-z0-9_\-]+)$/);
+    // if (driveDelMatch && method === 'DELETE') return await handleDriveDelete(req, res, driveDelMatch[1]);
+    // === DRIVE_LEGACY_END ===
+
+    // Legacy-asset placeholder fallback — survives Drive commenting.
+    // Customers hitting /api/drive/files/* after Drive code is commented get a
+    // grey SVG placeholder (better than broken image icon). Admin should re-upload
+    // affected assets via the Cloudinary admin UI to fully retire these.
+    const legacyDriveProxyMatch = pathname.match(/^\/api\/drive\/files\/([^/]+)$/);
+    if (legacyDriveProxyMatch && (method === 'GET' || method === 'HEAD')) {
+      res.statusCode = 200;
+      res.setHeader('Content-Type', 'image/svg+xml');
+      res.setHeader('Cache-Control', 'public, max-age=3600');
+      res.setHeader('X-Legacy-Placeholder', '1');
+      return res.end('<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200" viewBox="0 0 200 200"><rect width="200" height="200" fill="#e5e7eb"/><text x="100" y="105" font-family="sans-serif" font-size="14" fill="#6b7280" text-anchor="middle">Image unavailable</text></svg>');
+    }
 
     // ─── COUPONS routes ───
     if (pathname === '/api/coupons' && method === 'GET') return await handleCouponsList(req, res);
