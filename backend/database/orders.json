@@ -11,7 +11,7 @@
       {
         "productId": "PRD-001",
         "name": "Sprite",
-        "image": "https://lh3.googleusercontent.com/d/13tRHdKemXwsWMLgN_bIZob1JJV0GHkLd",
+        "image": "/api/drive/files/1mCaGdtic_tYwW5hmFPu93dMACMzTw_4r",
         "quantity": 1,
         "purchaseMode": "piece",
         "unitLabel": "piece",
@@ -83,7 +83,7 @@
       {
         "productId": "PRD-001",
         "name": "Sprite",
-        "image": "https://lh3.googleusercontent.com/d/13tRHdKemXwsWMLgN_bIZob1JJV0GHkLd",
+        "image": "/api/drive/files/1mCaGdtic_tYwW5hmFPu93dMACMzTw_4r",
         "quantity": 1,
         "purchaseMode": "piece",
         "unitLabel": "piece",

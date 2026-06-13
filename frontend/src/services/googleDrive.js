@@ -1,9 +1,13 @@
 /**
  * Google Drive client — backend-proxied uploads.
  *
- * Backend uses a service account (no OAuth). All callers keep working:
+ * Backend stores files in Google Drive and serves them back through its own
+ * `/api/drive/files/:fileId` proxy so the UI never depends on Google's public
+ * `lh3` endpoint for rendering.
+ *
+ * All callers keep working:
  *   uploadImage(file, folderName, fileName?) -> returns Drive fileId (string)
- *   getImageUrl(fileId) -> returns public lh3 URL (unchanged format)
+ *   getImageUrl(fileIdOrUrl) -> returns backend proxy URL
  *   deleteImage(fileId) -> deletes from Drive
  *
  * Backward-compat stubs (initGoogleAuth / authorizeAndGetRefreshToken /
@@ -12,6 +16,26 @@
  */
 
 import API from '../config/api';
+
+const DRIVE_FILE_ID_REGEX = /\/d\/([A-Za-z0-9_-]+)(?:[/?#].*)?$/i;
+
+const getApiBaseUrl = () => API.defaults?.baseURL || '/api';
+
+const resolveDriveImageUrl = (value) => {
+  if (!value || typeof value !== 'string') return '';
+  const trimmed = value.trim();
+  if (!trimmed) return '';
+  if (trimmed.startsWith('data:')) return trimmed;
+  if (trimmed.startsWith('/api/drive/files/')) return trimmed;
+  if (/^[A-Za-z0-9_-]{20,}$/.test(trimmed) && !trimmed.includes('/') && !trimmed.includes(':')) {
+    return `${getApiBaseUrl()}/drive/files/${encodeURIComponent(trimmed)}`;
+  }
+  const match = trimmed.match(DRIVE_FILE_ID_REGEX);
+  if (match?.[1]) {
+    return `${getApiBaseUrl()}/drive/files/${encodeURIComponent(match[1])}`;
+  }
+  return trimmed;
+};
 
 const fileToBase64 = (file) => new Promise((resolve, reject) => {
   const reader = new FileReader();
@@ -59,7 +83,7 @@ export const deleteImage = async (fileId) => {
 
 export const getImageUrl = (fileId) => {
   if (!fileId) return '';
-  return `https://lh3.googleusercontent.com/d/${fileId}`;
+  return resolveDriveImageUrl(fileId);
 };
 
 // ─── Backward-compat stubs (no-op) ──────────────────────────────────────────
@@ -70,3 +94,5 @@ export const initGoogleAuth = async () => {};
 export const authorizeAndGetRefreshToken = async () => '';
 export const silentAuth = async () => '';
 export const isReady = () => true;
+
+export { resolveDriveImageUrl };

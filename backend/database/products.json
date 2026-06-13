@@ -10,9 +10,9 @@
     "stockQuantity": 24.6,
     "lowStockAlert": 5,
     "images": [
-      "https://lh3.googleusercontent.com/d/13tRHdKemXwsWMLgN_bIZob1JJV0GHkLd"
+      "/api/drive/files/1mCaGdtic_tYwW5hmFPu93dMACMzTw_4r"
     ],
-    "image": "https://lh3.googleusercontent.com/d/13tRHdKemXwsWMLgN_bIZob1JJV0GHkLd",
+    "image": "/api/drive/files/1mCaGdtic_tYwW5hmFPu93dMACMzTw_4r",
     "rating": 0,
     "totalReviews": 0,
     "status": "active",
@@ -26,9 +26,22 @@
       "enabled": true,
       "buyQty": 2,
       "freeProductId": "PRD-001",
+      "freeVariantId": null,
       "freeQty": 1,
       "label": "Buy 2, Get 1 Sprite Free!"
-    }
+    },
+    "brand": null,
+    "volumeUnit": "ml",
+    "_variantCounter": 0,
+    "variants": [],
+    "hasVariants": false,
+    "availableFlavors": [],
+    "availableVolumes": [],
+    "minPrice": 450,
+    "maxPrice": 450,
+    "totalStock": 24.6,
+    "hasLowStock": false,
+    "outOfStock": false
   },
   {
     "id": "PRD-002",
@@ -41,9 +54,9 @@
     "stockQuantity": 20,
     "lowStockAlert": 5,
     "images": [
-      "https://lh3.googleusercontent.com/d/1_-_esvDiyhUXMwnyjkS9oFUIdlmJCLrT"
+      "/api/drive/files/1_-_esvDiyhUXMwnyjkS9oFUIdlmJCLrT"
     ],
-    "image": "https://lh3.googleusercontent.com/d/1_-_esvDiyhUXMwnyjkS9oFUIdlmJCLrT",
+    "image": "/api/drive/files/1_-_esvDiyhUXMwnyjkS9oFUIdlmJCLrT",
     "rating": 0,
     "totalReviews": 0,
     "status": "active",
@@ -66,9 +79,9 @@
     "stockQuantity": 10,
     "lowStockAlert": 5,
     "images": [
-      "https://lh3.googleusercontent.com/d/1-Xq-mPnrXHd5Qx2OfxnBW2IHx3SqDPa9"
+      "/api/drive/files/1-Xq-mPnrXHd5Qx2OfxnBW2IHx3SqDPa9"
     ],
-    "image": "https://lh3.googleusercontent.com/d/1-Xq-mPnrXHd5Qx2OfxnBW2IHx3SqDPa9",
+    "image": "/api/drive/files/1-Xq-mPnrXHd5Qx2OfxnBW2IHx3SqDPa9",
     "rating": 0,
     "totalReviews": 0,
     "status": "active",
@@ -103,7 +116,7 @@
     "maxPrice": 850,
     "volume": 500,
     "images": [
-      "https://lh3.googleusercontent.com/d/157a9CsY-bLT8yRuhSqkNFVWw7mEyHxrx"
+      "/api/drive/files/157a9CsY-bLT8yRuhSqkNFVWw7mEyHxrx"
     ],
     "brand": null,
     "offer": null,
@@ -314,7 +327,7 @@
       }
     ],
     "allowHalfBox": true,
-    "image": "https://lh3.googleusercontent.com/d/157a9CsY-bLT8yRuhSqkNFVWw7mEyHxrx",
+    "image": "/api/drive/files/157a9CsY-bLT8yRuhSqkNFVWw7mEyHxrx",
     "hasVariants": true,
     "pricePerBox": 450,
     "category": "Soft Drink",

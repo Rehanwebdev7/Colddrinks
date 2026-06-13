@@ -54,6 +54,27 @@ function parseStoredUser(value) {
   }
 }
 
+const DRIVE_FILE_ID_REGEX = /\/d\/([A-Za-z0-9_-]+)(?:[/?#].*)?$/i
+
+function resolveDriveImageUrl(value) {
+  if (!value || typeof value !== 'string') return value
+  const trimmed = value.trim()
+  if (!trimmed) return value
+  if (trimmed.startsWith('data:')) return trimmed
+  if (trimmed.startsWith('/api/drive/files/')) return trimmed
+
+  const match = trimmed.match(DRIVE_FILE_ID_REGEX)
+  if (match?.[1]) {
+    return `${API_BASE_URL}/drive/files/${encodeURIComponent(match[1])}`
+  }
+
+  if (/^[A-Za-z0-9_-]{20,}$/.test(trimmed) && !trimmed.includes('/') && !trimmed.includes(':')) {
+    return `${API_BASE_URL}/drive/files/${encodeURIComponent(trimmed)}`
+  }
+
+  return trimmed
+}
+
 // Decode JWT payload
 export function decodeToken(token) {
   try {
@@ -205,7 +226,11 @@ export function revokeCustomerSession(refreshToken) {
 // Transform backend objects to match frontend expected fields
 function addCompatFields(obj) {
   if (!obj || typeof obj !== 'object') return obj
-  if (Array.isArray(obj)) return obj.map(addCompatFields)
+  if (Array.isArray(obj)) {
+    return obj.map((item) => (
+      typeof item === 'string' ? resolveDriveImageUrl(item) : addCompatFields(item)
+    ))
+  }
   const copy = { ...obj }
   // Map id -> _id
   if (copy.id && !copy._id) copy._id = copy.id
@@ -213,9 +238,20 @@ function addCompatFields(obj) {
   if (copy.pricePerBox !== undefined && copy.price === undefined) copy.price = copy.pricePerBox
   if (copy.stockQuantity !== undefined && copy.stock === undefined) copy.stock = copy.stockQuantity
   if (copy.totalReviews !== undefined && copy.numReviews === undefined) copy.numReviews = copy.totalReviews
-  // Map nested arrays
-  if (copy.items && Array.isArray(copy.items)) copy.items = copy.items.map(addCompatFields)
-  if (copy.statusHistory && Array.isArray(copy.statusHistory)) copy.statusHistory = copy.statusHistory.map(addCompatFields)
+  // Normalize Drive images to the backend proxy URL so old lh3 URLs stop
+  // hitting Google directly and future uploads reuse the same local path.
+  for (const key of Object.keys(copy)) {
+    const value = copy[key]
+    if (typeof value === 'string') {
+      copy[key] = resolveDriveImageUrl(value)
+    } else if (Array.isArray(value)) {
+      copy[key] = value.map((item) => (
+        typeof item === 'string' ? resolveDriveImageUrl(item) : addCompatFields(item)
+      ))
+    } else if (value && typeof value === 'object') {
+      copy[key] = addCompatFields(value)
+    }
+  }
   return copy
 }
 
@@ -259,6 +295,8 @@ API.interceptors.response.use(
   (response) => {
     if (response.data && response.data.success !== undefined) {
       response.data = addCompatFields(response.data.data)
+    } else if (response.data && (Array.isArray(response.data) || typeof response.data === 'object')) {
+      response.data = addCompatFields(response.data)
     }
     return response
   },

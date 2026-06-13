@@ -141,6 +141,21 @@ async function uploadBuffer({ buffer, mimeType, filename, folderName }) {
   return { id: fileId };
 }
 
+async function downloadFile(id) {
+  requireDrive();
+  const response = await drive.files.get(
+    { fileId: id, alt: 'media' },
+    { responseType: 'stream' }
+  );
+
+  const headers = response.headers || {};
+  return {
+    stream: response.data,
+    contentType: headers['content-type'] || 'application/octet-stream',
+    contentLength: headers['content-length'] ? Number(headers['content-length']) : null,
+  };
+}
+
 async function deleteFile(id) {
   requireDrive();
   try {
@@ -189,6 +204,7 @@ module.exports = {
   MAIN_FOLDER_ID,
   ensureSubfolder,
   uploadBuffer,
+  downloadFile,
   deleteFile,
   health,
 };

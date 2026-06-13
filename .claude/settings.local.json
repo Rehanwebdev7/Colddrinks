@@ -39,7 +39,9 @@
       "Bash(curl -s http://localhost:8000/)",
       "Bash(python3 -c \"import json,sys; p=json.load\\(sys.stdin\\); [print\\(x.get\\('name','?'\\), '|', x.get\\('image','no-img'\\)[:60]\\) for x in p[:5]]\")",
       "Bash(git reset *)",
-      "Bash(lsof -ti:8000,3001)"
+      "Bash(lsof -ti:8000,3001)",
+      "Bash(tee backend.log)",
+      "Bash(tee frontend.log)"
     ]
   }
 }

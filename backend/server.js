@@ -8,6 +8,7 @@ const http = require('http');
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
+const { pipeline } = require('stream/promises');
 const nodemailer = require('nodemailer');
 const driveHelper = require('./helpers/drive');
 const {
@@ -414,7 +415,7 @@ async function applyInventoryDelta({ productId, variantId = null, deltaBoxes, mo
     recomputeAggregates(product);   // keeps aggregates consistent for future variant flip
   }
 
-  await writeDB('products.json', products);
+  await writeDBBestEffort('products.json', products, 'inventory movement');
 
   if (movement) {
     // Build movement via single source of truth — preserves productName composition rules
@@ -779,16 +780,28 @@ async function writeSettings(data) {
 // SHA-256 hashes (64 hex chars) so existing users keep logging in. Login
 // handler auto-migrates by re-hashing with bcrypt on successful legacy verify.
 
-const bcrypt = require('bcryptjs');
+let bcrypt = null;
+try {
+  bcrypt = require('bcryptjs');
+} catch (err) {
+  console.warn('bcryptjs not available; falling back to SHA-256 password hashing.');
+}
 const BCRYPT_ROUNDS = 10;
 
 async function hashPassword(password) {
+  if (!bcrypt) {
+    return crypto.createHash('sha256').update(password).digest('hex');
+  }
   return await bcrypt.hash(password, BCRYPT_ROUNDS);
 }
 
 async function verifyPassword(password, hash) {
   if (!hash) return false;
   if (typeof hash === 'string' && hash.startsWith('$2')) {
+    if (!bcrypt) {
+      console.warn('Stored bcrypt password cannot be verified without bcryptjs; login will fail until the dependency is restored.');
+      return false;
+    }
     return await bcrypt.compare(password, hash);
   }
   // Legacy SHA-256 fallback — caller responsible for re-hashing on success
@@ -1609,7 +1622,7 @@ async function handleProducts(req, res) {
     products = products.filter(p => p.hasLowStock === true);
   }
 
-  return success(res, products);
+  return success(res, products.map(normalizeProductDriveImages));
 }
 
 async function handleProductById(req, res, productId) {
@@ -1618,7 +1631,7 @@ async function handleProductById(req, res, productId) {
   if (!product) return error(res, 'Product not found', 404);
 
   if (req.method === 'GET') {
-    return success(res, product);
+    return success(res, normalizeProductDriveImages(product));
   }
 
   // PUT - update product
@@ -1663,10 +1676,11 @@ async function handleProductById(req, res, productId) {
       }
     }
 
+    normalizeProductDriveImages(merged);
     products[index] = merged;
     recomputeAggregates(products[index]);
 
-    await writeDB('products.json', products);
+    await writeDBBestEffort('products.json', products, 'product update');
 
     // Drive cleanup: any old image URL not in the new payload is now orphaned.
     const oldImageUrls = [...(oldProduct.images || []), oldProduct.image,
@@ -1676,7 +1690,7 @@ async function handleProductById(req, res, productId) {
     const removedUrls = diffRemovedImageUrls(oldImageUrls, newImageUrls);
     await deleteDriveFilesFromUrls(removedUrls);
 
-    return success(res, products[index], 'Product updated successfully');
+    return success(res, normalizeProductDriveImages(products[index]), 'Product updated successfully');
   }
 
   // DELETE
@@ -1686,7 +1700,7 @@ async function handleProductById(req, res, productId) {
 
     const index = products.findIndex(p => p.id === productId);
     const removed = products.splice(index, 1)[0];
-    await writeDB('products.json', products);
+    await writeDBBestEffort('products.json', products, 'product delete');
 
     // Drive cleanup: every image attached to this product is now orphaned.
     await deleteDriveFilesFromUrls([...(removed.images || []), removed.image]);
@@ -1721,8 +1735,8 @@ async function handleProductRestock(req, res, productId) {
     recomputeAggregates(product);
   }
 
-  await writeDB('products.json', products);
-  return success(res, product, 'Product restocked');
+  await writeDBBestEffort('products.json', products, 'product restock');
+  return success(res, normalizeProductDriveImages(product), 'Product restocked');
 }
 
 // Server-controlled fields — admin cannot override these via POST/PUT body
@@ -1896,9 +1910,10 @@ async function handleProductsAdd(req, res) {
 
   recomputeAggregates(newProduct);
 
+  normalizeProductDriveImages(newProduct);
   products.push(newProduct);
-  await writeDB('products.json', products);
-  return success(res, newProduct, 'Product added successfully', 201);
+  await writeDBBestEffort('products.json', products, 'product add');
+  return success(res, normalizeProductDriveImages(newProduct), 'Product added successfully', 201);
 }
 
 async function handleProductsUpdate(req, res) {
@@ -1939,7 +1954,7 @@ async function handleProductsUpdate(req, res) {
 
   products[index] = merged;
   recomputeAggregates(products[index]);
-  await writeDB('products.json', products);
+  await writeDBBestEffort('products.json', products, 'product update');
 
   const oldImageUrls = [...(oldProduct.images || []), oldProduct.image,
     ...(oldProduct.variants || []).flatMap(v => [...(v.images || []), v.image])].filter(Boolean);
@@ -1966,7 +1981,7 @@ async function handleProductsDelete(req, res) {
   if (index === -1) return error(res, 'Product not found', 404);
 
   const removed = products.splice(index, 1)[0];
-  await writeDB('products.json', products);
+  await writeDBBestEffort('products.json', products, 'product delete');
 
   // Drive cleanup — includes variant image overrides
   const allImageUrls = [
@@ -2010,7 +2025,7 @@ async function handleProductSuggestions(req, res, productId) {
     .sort((a, b) => Math.abs(a.minPrice - currentMinPrice) - Math.abs(b.minPrice - currentMinPrice))
     .slice(0, 6);
 
-  return success(res, { product, related });
+  return success(res, { product: normalizeProductDriveImages(product), related: related.map(normalizeProductDriveImages) });
 }
 
 /**
@@ -2038,7 +2053,7 @@ async function handleAdminLowStock(req, res) {
           productId: product.id,
           productName: product.name,
           brand: product.brand || null,
-          image: product.image,
+          image: normalizeDriveImageUrl(product.image),
           category: product.category,
           lowVariants: lowVariants.map(v => ({
             variantId: v.variantId,
@@ -2060,7 +2075,7 @@ async function handleAdminLowStock(req, res) {
           productId: product.id,
           productName: product.name,
           brand: product.brand || null,
-          image: product.image,
+          image: normalizeDriveImageUrl(product.image),
           category: product.category,
           lowVariants: [{
             variantId: null,
@@ -3706,9 +3721,9 @@ async function handleSliders(req, res) {
   // Only return active sliders for non-admin
   const user = getAuthUser(req);
   if (user && user.role === 'admin') {
-    return success(res, sliders);
+    return success(res, sliders.map(normalizeSliderDriveImage));
   }
-  return success(res, sliders.filter(s => s.active !== false));
+  return success(res, sliders.filter(s => s.active !== false).map(normalizeSliderDriveImage));
 }
 
 async function handleSlidersAdd(req, res) {
@@ -3736,9 +3751,10 @@ async function handleSlidersAdd(req, res) {
     createdAt: new Date().toISOString()
   };
 
+  normalizeSliderDriveImage(newSlider);
   sliders.push(newSlider);
-  await writeDB('sliders.json', sliders);
-  return success(res, newSlider, 'Slider added successfully', 201);
+  await writeDBBestEffort('sliders.json', sliders, 'slider add');
+  return success(res, normalizeSliderDriveImage(newSlider), 'Slider added successfully', 201);
 }
 
 async function handleSliderUpdate(req, res, sliderId) {
@@ -3752,13 +3768,13 @@ async function handleSliderUpdate(req, res, sliderId) {
 
   const oldSlider = sliders[index];
   const { id, ...updates } = body;
-  sliders[index] = { ...oldSlider, ...updates };
-  await writeDB('sliders.json', sliders);
+  sliders[index] = normalizeSliderDriveImage({ ...oldSlider, ...updates });
+  await writeDBBestEffort('sliders.json', sliders, 'slider update');
 
   const removedUrls = diffRemovedImageUrls(oldSlider.image, sliders[index].image);
   await deleteDriveFilesFromUrls(removedUrls);
 
-  return success(res, sliders[index], 'Slider updated');
+  return success(res, normalizeSliderDriveImage(sliders[index]), 'Slider updated');
 }
 
 async function handleSliderDelete(req, res, sliderId) {
@@ -3770,7 +3786,7 @@ async function handleSliderDelete(req, res, sliderId) {
   if (index === -1) return error(res, 'Slider not found', 404);
 
   const removed = sliders.splice(index, 1)[0];
-  await writeDB('sliders.json', sliders);
+  await writeDBBestEffort('sliders.json', sliders, 'slider delete');
 
   await deleteDriveFilesFromUrls(removed.image);
 
@@ -4073,7 +4089,7 @@ async function handleSupplierPurchaseAdd(req, res, supplierId) {
       if (u.allowHalfBox !== undefined) target.allowHalfBox = Boolean(u.allowHalfBox);
     }
     recomputeAggregates(product);
-    await writeDB('products.json', products);
+    await writeDBBestEffort('products.json', products, 'supplier purchase');
   }
 
   return success(res, entry, 'Purchase added', 201);
@@ -4334,8 +4350,71 @@ const MAX_DRIVE_B64_LEN = 14 * 1024 * 1024; // ≈ 10 MB binary after base64 dec
 // Returns null for any URL we don't recognize (external URLs, blank, etc.).
 function extractDriveFileId(url) {
   if (!url || typeof url !== 'string') return null;
-  const m = url.match(/lh3\.googleusercontent\.com\/d\/([A-Za-z0-9_\-]+)/);
-  return m ? m[1] : null;
+  const trimmed = url.trim();
+
+  const proxyMatch = trimmed.match(/\/api\/drive\/files\/([A-Za-z0-9_\-]+)/i);
+  if (proxyMatch) return proxyMatch[1];
+
+  const publicMatch = trimmed.match(/lh3\.googleusercontent\.com\/d\/([A-Za-z0-9_\-]+)/i);
+  if (publicMatch) return publicMatch[1];
+
+  if (/^[A-Za-z0-9_\-]{20,}$/.test(trimmed) && !trimmed.includes('/') && !trimmed.includes(':')) {
+    return trimmed;
+  }
+
+  return null;
+}
+
+function normalizeDriveImageUrl(url) {
+  const fileId = extractDriveFileId(url);
+  return fileId ? `/api/drive/files/${encodeURIComponent(fileId)}` : url;
+}
+
+function normalizeProductDriveImages(product) {
+  if (!product || typeof product !== 'object') return product;
+  if (Array.isArray(product.images)) {
+    product.images = product.images.map(normalizeDriveImageUrl).filter(Boolean);
+  }
+  if ('image' in product) {
+    product.image = normalizeDriveImageUrl(product.image);
+  }
+  if (Array.isArray(product.variants)) {
+    product.variants = product.variants.map((variant) => {
+      if (!variant || typeof variant !== 'object') return variant;
+      const next = { ...variant };
+      if (Array.isArray(next.images)) {
+        next.images = next.images.map(normalizeDriveImageUrl).filter(Boolean);
+      }
+      if ('image' in next) {
+        next.image = normalizeDriveImageUrl(next.image);
+      }
+      return next;
+    });
+  }
+  return product;
+}
+
+function normalizeSliderDriveImage(slider) {
+  if (!slider || typeof slider !== 'object') return slider;
+  if ('image' in slider) slider.image = normalizeDriveImageUrl(slider.image);
+  return slider;
+}
+
+function imageIdList(value) {
+  const list = Array.isArray(value) ? value : (value ? [value] : []);
+  return list.map(extractDriveFileId).filter(Boolean);
+}
+
+async function writeDBBestEffort(file, data, label = file) {
+  try {
+    await writeDB(file, data);
+    return true;
+  } catch (err) {
+    console.warn(`[${label}] Firestore sync failed, using local fallback:`, err && err.message);
+    cache[file] = data;
+    writeJSONFile(file, data);
+    return false;
+  }
 }
 
 // Best-effort cleanup. Logs and swallows individual failures so a Drive
@@ -4356,10 +4435,9 @@ async function deleteDriveFilesFromUrls(urls) {
 // Returns URLs that appear in oldImages but not in newImages (i.e. were
 // removed/replaced and need Drive cleanup). Accepts arrays or single strings.
 function diffRemovedImageUrls(oldImages, newImages) {
-  const toArr = (v) => (Array.isArray(v) ? v : (v ? [v] : [])).filter(Boolean);
-  const oldArr = toArr(oldImages);
-  const newSet = new Set(toArr(newImages));
-  return oldArr.filter((u) => !newSet.has(u));
+  const oldSet = new Set(imageIdList(oldImages));
+  const newSet = new Set(imageIdList(newImages));
+  return Array.from(oldSet).filter((id) => !newSet.has(id));
 }
 
 async function handleDriveHealth(req, res) {
@@ -4371,6 +4449,33 @@ async function handleDriveHealth(req, res) {
   } catch (err) {
     console.error('Drive health error:', err.message);
     return error(res, err.message || 'Drive health check failed', 500);
+  }
+}
+
+async function handleDriveFile(req, res, fileId) {
+  const safeFileId = decodeURIComponent(String(fileId || '')).trim();
+  if (!safeFileId) return error(res, 'fileId is required', 400);
+
+  try {
+    const result = await driveHelper.downloadFile(safeFileId);
+    res.statusCode = 200;
+    res.setHeader('Content-Type', result.contentType || 'application/octet-stream');
+    res.setHeader('Cache-Control', 'public, max-age=86400, stale-while-revalidate=604800');
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+    if (Number.isFinite(result.contentLength) && result.contentLength > 0) {
+      res.setHeader('Content-Length', String(result.contentLength));
+    }
+    if (req.method === 'HEAD') {
+      return res.end();
+    }
+    await pipeline(result.stream, res);
+  } catch (err) {
+    const raw = String(err?.message || '').toLowerCase();
+    if (raw.includes('not found') || err?.code === 404) {
+      return error(res, 'Drive file not found', 404);
+    }
+    console.error('Drive file proxy error:', err.message);
+    return error(res, err.message || 'Drive file fetch failed', 500);
   }
 }
 
@@ -4604,6 +4709,8 @@ const server = http.createServer(async (req, res) => {
 
     // ─── DRIVE routes (service-account uploads) ───
     if (pathname === '/api/drive/health' && method === 'GET') return await handleDriveHealth(req, res);
+    const driveFileMatch = pathname.match(/^\/api\/drive\/files\/([^/]+)$/);
+    if (driveFileMatch && (method === 'GET' || method === 'HEAD')) return await handleDriveFile(req, res, driveFileMatch[1]);
     if (pathname === '/api/drive/upload' && method === 'POST') return await handleDriveUpload(req, res);
     const driveDelMatch = pathname.match(/^\/api\/drive\/files\/([A-Za-z0-9_\-]+)$/);
     if (driveDelMatch && method === 'DELETE') return await handleDriveDelete(req, res, driveDelMatch[1]);
