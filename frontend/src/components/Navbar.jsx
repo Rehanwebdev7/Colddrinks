@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from 'react'
 import { createPortal } from 'react-dom'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { FaShoppingCart, FaSearch, FaBars, FaTimes, FaBell, FaRupeeSign, FaHome } from 'react-icons/fa'
-import { FiSun, FiMoon, FiArrowLeft } from 'react-icons/fi'
+import { FiArrowLeft } from 'react-icons/fi'
 import { useAuth } from '../context/AuthContext'
 import { useCart } from '../context/CartContext'
 import { useSettings } from '../context/SettingsContext'
@@ -31,11 +31,6 @@ const Navbar = () => {
   const [requesting, setRequesting] = useState(false)
   const clearDropRef = useRef(null)
 
-  // Dark mode state
-  const [darkMode, setDarkMode] = useState(() => {
-    return localStorage.getItem('customerDarkMode') === 'true'
-  })
-
   // Search autocomplete
   const [suggestions, setSuggestions] = useState([])
   const [showSuggestions, setShowSuggestions] = useState(false)
@@ -49,16 +44,6 @@ const Navbar = () => {
   useEffect(() => {
     setShowBrandLogo(Boolean(settings?.logo))
   }, [settings?.logo])
-
-  // Dark mode toggle
-  useEffect(() => {
-    if (darkMode) {
-      document.body.classList.add('dark-mode')
-    } else {
-      document.body.classList.remove('dark-mode')
-    }
-    localStorage.setItem('customerDarkMode', darkMode)
-  }, [darkMode])
 
   // Body scroll lock when drawer is open (CSS class, not inline style)
   useEffect(() => {
@@ -366,17 +351,6 @@ const Navbar = () => {
             >
               <FaHome />
             </Link>
-          )}
-
-          {/* Dark Mode Toggle - only on Home page */}
-          {(location.pathname === '/' || location.pathname === '/products') && (
-            <button
-              className="dark-mode-toggle"
-              onClick={() => setDarkMode(!darkMode)}
-              title={darkMode ? 'Light mode' : 'Dark mode'}
-            >
-              {darkMode ? <FiSun /> : <FiMoon />}
-            </button>
           )}
 
           {/* Notifications Bell — opens drawer with notifications view */}

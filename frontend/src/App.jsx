@@ -405,15 +405,6 @@ const App = () => {
               />
               <ScrollToTop />
               <div className="app-shell">
-                <div className="bg-fizz" aria-hidden="true">
-                  <span style={{ top: '9%', left: '5%', '--d': '19s', '--mx': '34px', '--my': '-46px', animationDelay: '0s' }}>🥤</span>
-                  <span style={{ top: '15%', left: '83%', '--d': '23s', '--mx': '-40px', '--my': '38px', animationDelay: '-4s' }}>🧊</span>
-                  <span style={{ top: '34%', left: '47%', '--d': '27s', '--mx': '26px', '--my': '-30px', animationDelay: '-9s' }}>🫧</span>
-                  <span style={{ top: '46%', left: '9%', '--d': '21s', '--mx': '38px', '--my': '32px', animationDelay: '-6s' }}>🍾</span>
-                  <span style={{ top: '56%', left: '87%', '--d': '25s', '--mx': '-32px', '--my': '-40px', animationDelay: '-12s' }}>🍹</span>
-                  <span style={{ top: '79%', left: '13%', '--d': '24s', '--mx': '30px', '--my': '-36px', animationDelay: '-3s' }}>🧊</span>
-                  <span style={{ top: '84%', left: '78%', '--d': '20s', '--mx': '-36px', '--my': '30px', animationDelay: '-15s' }}>🥤</span>
-                </div>
                 <div className="app-content">
                   <AppRoutes />
                 </div>

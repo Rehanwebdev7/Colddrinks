@@ -1,17 +1,28 @@
 import { createContext, useContext, useState, useEffect } from 'react'
+import { useLocation } from 'react-router-dom'
 
 const ThemeContext = createContext(null)
 
 export const ThemeProvider = ({ children }) => {
+  const { pathname } = useLocation()
   const [darkMode, setDarkMode] = useState(() => {
     const stored = localStorage.getItem('adminTheme')
     return stored !== null ? stored === 'dark' : true
   })
 
   useEffect(() => {
-    localStorage.setItem('adminTheme', darkMode ? 'dark' : 'light')
-    document.documentElement.setAttribute('data-theme', darkMode ? 'dark' : 'light')
-  }, [darkMode])
+    const isAdminRoute = pathname.startsWith('/admin')
+
+    if (isAdminRoute) {
+      localStorage.setItem('adminTheme', darkMode ? 'dark' : 'light')
+      document.body.classList.toggle('dark-mode', darkMode)
+      document.documentElement.setAttribute('data-theme', darkMode ? 'dark' : 'light')
+      return
+    }
+
+    document.body.classList.add('dark-mode')
+    document.documentElement.setAttribute('data-theme', 'dark')
+  }, [darkMode, pathname])
 
   const toggleTheme = () => setDarkMode(prev => !prev)
 

@@ -281,3 +281,199 @@
     scroll-behavior: auto !important;
   }
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   ADMIN MOBILE APP LAYOUT
+   ═══════════════════════════════════════════════════════════════════════════ */
+.admin-root {
+  min-height: 100dvh;
+  overflow-x: hidden;
+}
+
+.admin-content {
+  -webkit-overflow-scrolling: touch;
+}
+
+.admin-root .admin-content > * {
+  min-width: 0;
+}
+
+.admin-root .admin-stats-grid > * {
+  min-width: 0;
+}
+
+.admin-root .admin-topbar button {
+  -webkit-tap-highlight-color: transparent;
+}
+
+.admin-notification-count {
+  position: absolute;
+  top: -2px;
+  right: -4px;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  background: #ef4444;
+  color: #fff;
+  font-size: 9px;
+  font-weight: 800;
+  line-height: 1;
+  box-shadow: 0 3px 10px rgba(239, 68, 68, 0.3);
+}
+
+@media (max-width: 768px) {
+  .admin-root {
+    font-size: 14px;
+  }
+
+  .admin-content {
+    width: 100%;
+    padding-bottom: calc(24px + env(safe-area-inset-bottom, 0px)) !important;
+  }
+
+  .admin-content > * {
+    width: 100%;
+  }
+
+  .admin-root .admin-stats-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 10px !important;
+  }
+
+  .admin-root .admin-charts-row {
+    grid-template-columns: 1fr !important;
+    gap: 12px !important;
+  }
+
+  .admin-root .dash-section-card,
+  .admin-root .admin-card,
+  .admin-root [class*="tableCard"] {
+    border-radius: 14px !important;
+  }
+
+  .admin-root .admin-actions {
+    flex-wrap: wrap;
+  }
+
+  .admin-root .admin-actions button {
+    min-width: 34px;
+    min-height: 34px;
+  }
+
+  .admin-root input,
+  .admin-root select,
+  .admin-root textarea,
+  .admin-root button {
+    min-height: 42px;
+  }
+
+  .admin-root .admin-mobile-table-wrap {
+    overflow: visible !important;
+  }
+
+  .admin-root table.admin-mobile-table,
+  .admin-root table.admin-mobile-table thead,
+  .admin-root table.admin-mobile-table tbody,
+  .admin-root table.admin-mobile-table tr,
+  .admin-root table.admin-mobile-table td {
+    display: block !important;
+  }
+
+  .admin-root table.admin-mobile-table {
+    width: 100% !important;
+    min-width: 0 !important;
+    border-spacing: 0 !important;
+  }
+
+  .admin-root table.admin-mobile-table thead {
+    display: none !important;
+  }
+
+  .admin-root table.admin-mobile-table tbody {
+    display: grid !important;
+    gap: 10px;
+  }
+
+  .admin-root table.admin-mobile-table tbody tr {
+    display: grid !important;
+    gap: 0;
+    padding: 8px 10px;
+    border: 1px solid var(--admin-border-strong);
+    border-radius: 14px;
+    background: rgba(255, 255, 255, 0.035);
+    box-shadow: var(--admin-shadow-sm);
+  }
+
+  .admin-root table.admin-mobile-table tbody td {
+    display: flex !important;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    width: 100% !important;
+    min-height: 34px;
+    padding: 7px 2px !important;
+    border-bottom: 1px solid var(--admin-border-strong);
+    white-space: normal !important;
+    text-align: right;
+  }
+
+  .admin-root table.admin-mobile-table tbody td:last-child {
+    border-bottom: 0;
+  }
+
+  .admin-root table.admin-mobile-table tbody td::before {
+    content: attr(data-label);
+    flex: 0 0 88px;
+    color: var(--admin-accent);
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 0.06em;
+    text-align: left;
+    text-transform: uppercase;
+  }
+
+  .admin-root table.admin-mobile-table tbody td.admin-actions-col {
+    order: -1;
+    justify-content: flex-end;
+    min-height: 42px;
+    padding-top: 2px !important;
+  }
+
+  .admin-root table.admin-mobile-table tbody td.admin-actions-col::before {
+    content: none;
+  }
+
+  .admin-root table.admin-mobile-table tbody td[colspan] {
+    display: block !important;
+    text-align: center;
+  }
+
+  .admin-root table.admin-mobile-table tbody td[colspan]::before {
+    content: none;
+  }
+
+  .admin-root .admin-mobile-table-wrap + * {
+    max-width: 100%;
+  }
+
+  .admin-root [role="dialog"] {
+    max-width: calc(100vw - 24px) !important;
+    max-height: calc(100dvh - 24px) !important;
+    overflow-y: auto !important;
+    border-radius: 18px !important;
+  }
+}
+
+@media (max-width: 380px) {
+  .admin-root .admin-stats-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  .admin-root .admin-content h1 {
+    font-size: 19px !important;
+  }
+}

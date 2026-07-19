@@ -156,6 +156,10 @@ const DB_DIR = path.join(__dirname, 'database');
 const TAX_RATE = 0.18;
 const MIN_WEB_ORDER_AMOUNT = 1000;
 const JSON_FALLBACK_DISABLED = process.env.JSON_FALLBACK_DISABLED === '1';
+const CORS_ORIGINS = new Set(
+  (process.env.CORS_ORIGINS || process.env.ALLOWED_ORIGINS || 'http://localhost:3001,http://localhost:5173')
+    .split(',').map(origin => origin.trim()).filter(Boolean)
+);
 
 // ─── Error helper with statusCode property ─────────────────────────────────
 // Allows handlers to throw with a specific HTTP status; global handler reads
@@ -229,6 +233,11 @@ const COLL_MAP = {
 
 const cache = {};
 let firestoreReady = false;
+// Local development should remain usable when stale/invalid Firebase
+// credentials are present. Production sets JSON_FALLBACK_DISABLED=1 and keeps
+// Firestore as the strict source of truth.
+let firestoreWriteDisabled = false;
+let firestoreFallbackWarned = false;
 let mailTransporterPromise = null;
 
 function getDocId(item, file) {
@@ -659,6 +668,7 @@ function withTimeout(promise, ms, label) {
 async function initFirestore() {
   console.log('\n🔥 Connecting to Firestore (noor-coldrinks)...');
   let migratedCount = 0;
+  let initHadErrors = false;
 
   // Check if force re-migration is needed (old data had transformed field names)
   let needsRemigration = false;
@@ -671,7 +681,10 @@ async function initFirestore() {
         needsRemigration = true;
       }
     }
-  } catch {}
+  } catch (err) {
+    initHadErrors = true;
+    console.warn(`  ✗ orders probe: ${err.message}`);
+  }
 
   if (needsRemigration) {
     console.log('  ⚠ Detected old migrated data with wrong field names. Force re-migrating from JSON...');
@@ -699,6 +712,7 @@ async function initFirestore() {
           console.log(`  - ${collName}: empty`);
         }
       } catch (err) {
+        initHadErrors = true;
         console.warn(`  ✗ ${collName}: ${err.message}`);
         cache[file] = readJSONFile(file);
       }
@@ -733,6 +747,7 @@ async function initFirestore() {
           }
         }
       } catch (err) {
+        initHadErrors = true;
         console.warn(`  ✗ ${collName}: ${err.message}`);
         cache[file] = readJSONFile(file);
       }
@@ -758,15 +773,16 @@ async function initFirestore() {
       }
     }
   } catch (err) {
+    initHadErrors = true;
     console.warn(`  ✗ settings: ${err.message}`);
     cache['settings.json'] = readJSONSettings();
   }
 
-  firestoreReady = true;
+  firestoreReady = !initHadErrors;
   if (migratedCount > 0) {
     console.log(`\n  📦 Auto-migrated ${migratedCount} docs from JSON to Firestore`);
   }
-  console.log('🔥 Firestore ready!\n');
+  console.log(firestoreReady ? '🔥 Firestore ready!\n' : '⚠ Firestore is not ready; protected writes will be blocked.\n');
 }
 
 // ─── Database Helpers (Firestore-backed) ────────────────────────────────────
@@ -781,8 +797,21 @@ function readDB(file) {
 // async chain receives the throw; global handler maps to a 5xx response.
 async function writeDB(file, data) {
   const prev = cache[file] || [];
-  if (COLL_MAP[file] && serviceAccount) {
-    await syncToFirestore(file, data, prev);
+  if (COLL_MAP[file] && serviceAccount && !firestoreWriteDisabled) {
+    try {
+      await syncToFirestore(file, data, prev);
+    } catch (err) {
+      const authFailure = err?.code === 16 || /UNAUTHENTICATED|invalid authentication credentials/i.test(err?.message || '');
+      if (authFailure && !JSON_FALLBACK_DISABLED) {
+        firestoreWriteDisabled = true;
+        if (!firestoreFallbackWarned) {
+          firestoreFallbackWarned = true;
+          console.warn('[Firestore] Credentials invalid; continuing with local JSON fallback for development.');
+        }
+      } else {
+        throw err;
+      }
+    }
   }
   cache[file] = data;
   writeJSONFile(file, data);
@@ -865,7 +894,9 @@ function verifyJWT(token) {
     const [header, body, signature] = parts;
     const expectedSig = crypto.createHmac('sha256', JWT_SECRET).update(`${header}.${body}`).digest('base64')
       .replace(/=/g, '').replace(/\+/g, '-').replace(/\//g, '_');
-    if (signature !== expectedSig) return null;
+    const sigA = Buffer.from(signature);
+    const sigB = Buffer.from(expectedSig);
+    if (sigA.length !== sigB.length || !crypto.timingSafeEqual(sigA, sigB)) return null;
     const payload = JSON.parse(base64UrlDecode(body));
     if (payload.exp && payload.exp < Math.floor(Date.now() / 1000)) return null;
     return payload;
@@ -879,12 +910,21 @@ function verifyJWT(token) {
 function parseBody(req) {
   return new Promise((resolve, reject) => {
     let body = '';
-    req.on('data', chunk => { body += chunk; });
+    const maxBytes = 1024 * 1024;
+    const declaredLength = Number(req.headers['content-length'] || 0);
+    if (declaredLength > maxBytes) return reject(makeError('Request body too large', 413));
+    req.on('data', chunk => {
+      body += chunk;
+      if (Buffer.byteLength(body, 'utf8') > maxBytes) {
+        reject(makeError('Request body too large', 413));
+        req.destroy();
+      }
+    });
     req.on('end', () => {
       try {
         resolve(body ? JSON.parse(body) : {});
       } catch (e) {
-        resolve({});
+        reject(makeError('Invalid JSON body', 400));
       }
     });
     req.on('error', reject);
@@ -1206,11 +1246,17 @@ async function handleCheckPhone(req, res) {
 }
 
 async function handleAuthRegister(req, res) {
+  if (!checkRateLimit(`register-ip:${getClientIp(req)}`, 10, 60_000)) {
+    return error(res, 'Too many registration attempts. Please try again later.', 429);
+  }
   const body = await parseBody(req);
   const { phone, password } = body;
 
   if (!phone || !password) {
     return error(res, 'Phone and password are required');
+  }
+  if (String(password).length < 6) {
+    return error(res, 'Password must be at least 6 characters');
   }
 
   const normalizePhone = (p) => {
@@ -1649,7 +1695,7 @@ async function handleProducts(req, res) {
     products = products.filter(p => p.hasLowStock === true);
   }
 
-  return success(res, products.map(normalizeProductDriveImages));
+  return success(res, products.map(product => normalizeProductDriveImages(recomputeAggregates(product))));
 }
 
 async function handleProductById(req, res, productId) {
@@ -1658,7 +1704,7 @@ async function handleProductById(req, res, productId) {
   if (!product) return error(res, 'Product not found', 404);
 
   if (req.method === 'GET') {
-    return success(res, normalizeProductDriveImages(product));
+    return success(res, normalizeProductDriveImages(recomputeAggregates(product)));
   }
 
   // PUT - update product
@@ -1702,6 +1748,9 @@ async function handleProductById(req, res, productId) {
         return error(res, `Variants have ${remainingStock} units of stock. Set confirmModeFlipDestroy=true to discard.`, 400);
       }
     }
+
+    const productError = validateProductPayload(merged);
+    if (productError) return error(res, productError, 400);
 
     normalizeProductDriveImages(merged);
     products[index] = merged;
@@ -1772,6 +1821,18 @@ const PRODUCT_SERVER_FIELDS = new Set([
   'minPrice', 'maxPrice', 'totalStock', 'hasLowStock', 'outOfStock',
   '_variantCounter'
 ]);
+
+function validateProductPayload(product) {
+  if (!String(product?.name || '').trim()) return 'Product name is required';
+  if (!String(product?.category || '').trim()) return 'Product category is required';
+  const variants = Array.isArray(product?.variants) ? product.variants : [];
+  if (variants.length > 0) {
+    if (variants.some(v => Number(v.pricePerBox) <= 0)) return 'Every variant pricePerBox must be greater than 0';
+  } else if (Number(product?.pricePerBox) <= 0) {
+    return 'Price per box must be greater than 0';
+  }
+  return null;
+}
 
 /**
  * R3 Layer 1 — backfill variantId on existing order/cart items + bills when a product
@@ -1894,6 +1955,8 @@ async function handleProductsAdd(req, res) {
 
   const body = stripServerFields(await parseBody(req));
   const products = readDB('products.json');
+  const payloadError = validateProductPayload(body);
+  if (payloadError) return error(res, payloadError, 400);
 
   const maxId = products.reduce((max, p) => {
     const num = parseInt(p.id.replace('PRD-', ''));
@@ -1934,6 +1997,9 @@ async function handleProductsAdd(req, res) {
     if (vErr) return error(res, vErr, 400);
     newProduct.variants = variants;
   }
+
+  const productError = validateProductPayload(newProduct);
+  if (productError) return error(res, productError, 400);
 
   recomputeAggregates(newProduct);
 
@@ -1978,6 +2044,9 @@ async function handleProductsUpdate(req, res) {
       }
     }
   }
+
+  const productError = validateProductPayload(merged);
+  if (productError) return error(res, productError, 400);
 
   products[index] = merged;
   recomputeAggregates(products[index]);
@@ -3028,7 +3097,18 @@ async function handleBillsGenerate(req, res, orderIdFromUrl) {
   return success(res, newBill, 'Bill generated successfully', 201);
 }
 
+function escapeHtml(value) {
+  return String(value ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
 async function handleBillsDownload(req, res) {
+  const admin = requireAdmin(req, res);
+  if (!admin) return;
   const query = getQueryParams(req);
   const billId = query.id || query.billNumber;
 
@@ -3043,8 +3123,8 @@ async function handleBillsDownload(req, res) {
     const rateLabel = item.purchaseMode === 'piece' ? '/pc' : item.purchaseMode === 'half_box' ? '/half' : '/box'
     return `
     <tr>
-      <td style="padding:8px;border-bottom:1px solid #eee">${item.name}</td>
-      <td style="padding:8px;border-bottom:1px solid #eee;text-align:center">${item.quantity} ${mode}</td>
+      <td style="padding:8px;border-bottom:1px solid #eee">${escapeHtml(item.name)}</td>
+      <td style="padding:8px;border-bottom:1px solid #eee;text-align:center">${escapeHtml(item.quantity)} ${escapeHtml(mode)}</td>
       <td style="padding:8px;border-bottom:1px solid #eee;text-align:right">Rs. ${item.price.toFixed(2)} ${rateLabel}</td>
       <td style="padding:8px;border-bottom:1px solid #eee;text-align:right">Rs. ${item.amount.toFixed(2)}</td>
     </tr>`
@@ -3061,16 +3141,16 @@ async function handleBillsDownload(req, res) {
 <head><meta charset="utf-8"><title>Invoice ${bill.billNumber}</title></head>
 <body style="font-family:Arial,sans-serif;max-width:800px;margin:0 auto;padding:20px">
   <div style="text-align:center;border-bottom:2px solid #333;padding-bottom:20px;margin-bottom:20px">
-    <h1 style="color:#E23744;margin:0">${shopName}</h1>
-    <p style="color:#666;margin:5px 0">${shopAddress}</p>
-    <p style="color:#666;margin:5px 0">Phone: ${shopPhone} | Email: ${shopEmail}</p>
+    <h1 style="color:#E23744;margin:0">${escapeHtml(shopName)}</h1>
+    <p style="color:#666;margin:5px 0">${escapeHtml(shopAddress)}</p>
+    <p style="color:#666;margin:5px 0">Phone: ${escapeHtml(shopPhone)} | Email: ${escapeHtml(shopEmail)}</p>
   </div>
   <div style="display:flex;justify-content:space-between;margin-bottom:20px">
-    <div><strong>Bill To:</strong><br>${bill.customerName}</div>
+    <div><strong>Bill To:</strong><br>${escapeHtml(bill.customerName)}</div>
     <div style="text-align:right">
-      <strong>Invoice #:</strong> ${bill.billNumber}<br>
+      <strong>Invoice #:</strong> ${escapeHtml(bill.billNumber)}<br>
       <strong>Date:</strong> ${(() => { const d = new Date(bill.billDate || bill.createdAt || bill.orderDate); return isNaN(d.getTime()) ? 'N/A' : d.toLocaleDateString('en-IN'); })()}<br>
-      <strong>Order:</strong> ${bill.orderId}
+      <strong>Order:</strong> ${escapeHtml(bill.orderId)}
     </div>
   </div>
   <table style="width:100%;border-collapse:collapse;margin-bottom:20px">
@@ -3089,7 +3169,7 @@ async function handleBillsDownload(req, res) {
     ${bill.gst > 0 ? `<p><strong>GST:</strong> Rs. ${bill.gst.toFixed(2)}</p>` : ''}
     <hr style="width:200px;margin-left:auto">
     <p style="font-size:1.2em"><strong>Total:</strong> Rs. ${bill.total.toFixed(2)}</p>
-    <p style="color:${bill.paymentStatus === 'Paid' ? 'green' : 'red'}">Payment Status: ${bill.paymentStatus}</p>
+    <p style="color:${bill.paymentStatus === 'Paid' ? 'green' : 'red'}">Payment Status: ${escapeHtml(bill.paymentStatus)}</p>
   </div>
   <div style="margin-top:40px;border-top:1px solid #eee;padding-top:20px;text-align:center;color:#999;font-size:12px">
     <p>Thank you for your business! | This is a computer-generated invoice.</p>
@@ -4694,7 +4774,11 @@ async function handleImageHealth(req, res) {
 
 const server = http.createServer(async (req, res) => {
   // CORS headers
-  res.setHeader('Access-Control-Allow-Origin', '*');
+  const requestOrigin = req.headers.origin;
+  if (requestOrigin && CORS_ORIGINS.has(requestOrigin)) {
+    res.setHeader('Access-Control-Allow-Origin', requestOrigin);
+    res.setHeader('Vary', 'Origin');
+  }
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
 

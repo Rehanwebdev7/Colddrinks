@@ -415,24 +415,26 @@ const ProductCard = ({ product }) => {
           </>
         ) : (
           <>
-            <div className="purchase-selector" onClick={(e) => e.stopPropagation()}>
-              <div className="purchase-mode-tabs">
-                {allowedModes.map((mode) => (
-                  <button
-                    key={mode}
-                    type="button"
-                    className={`purchase-mode-tab${purchaseMode === mode ? ' active' : ''}`}
-                    onClick={(e) => {
-                      e.preventDefault()
-                      e.stopPropagation()
-                      setPurchaseMode(mode)
-                    }}
-                  >
-                    {getModeShortLabel(mode)}
-                  </button>
-                ))}
+            {allowedModes.length > 1 && (
+              <div className="purchase-selector" onClick={(e) => e.stopPropagation()}>
+                <div className="purchase-mode-tabs">
+                  {allowedModes.map((mode) => (
+                    <button
+                      key={mode}
+                      type="button"
+                      className={`purchase-mode-tab${purchaseMode === mode ? ' active' : ''}`}
+                      onClick={(e) => {
+                        e.preventDefault()
+                        e.stopPropagation()
+                        setPurchaseMode(mode)
+                      }}
+                    >
+                      {getModeShortLabel(mode)}
+                    </button>
+                  ))}
+                </div>
               </div>
-            </div>
+            )}
             {cartQuantity > 0 ? (
               <div className={`cart-qty-action${justAdded ? ' cart-qty-action-pulse' : ''}`}>
                 <button type="button" className="cart-qty-action-btn" onClick={handleDecrease} aria-label="Decrease quantity">

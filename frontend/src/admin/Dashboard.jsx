@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import API from '../config/api'
 import AdminLayout from '../components/AdminLayout'
@@ -29,6 +29,7 @@ const ORDER_STATUS_COLORS = {
 
 const Dashboard = () => {
   const { user } = useAuth()
+  const navigate = useNavigate()
   const { darkMode } = useTheme()
   const c = getColors(darkMode)
   const styles = getStyles(c)
@@ -143,84 +144,108 @@ const Dashboard = () => {
       value: stats.totalOrders,
       icon: <FaShoppingCart />,
       color: '#e23744',
-      bg: 'rgba(226, 55, 68, 0.1)'
+      bg: 'rgba(226, 55, 68, 0.1)',
+      to: '/admin/orders',
+      hint: 'Open orders'
     },
     {
       label: 'Total Revenue',
       value: formatCurrency(stats.totalRevenue),
       icon: <FaRupeeSign />,
       color: '#22c55e',
-      bg: 'rgba(34, 197, 94, 0.1)'
+      bg: 'rgba(34, 197, 94, 0.1)',
+      to: '/admin/transactions',
+      hint: 'View transactions'
     },
     {
       label: 'Pending Payments',
       value: stats.pendingPayments,
       icon: <FaClock />,
       color: '#f59e0b',
-      bg: 'rgba(245, 158, 11, 0.1)'
+      bg: 'rgba(245, 158, 11, 0.1)',
+      to: '/admin/outstanding',
+      hint: 'Review pending payments'
     },
     {
       label: 'Low Stock',
       value: stats.lowStockCount,
       icon: <FaExclamationTriangle />,
       color: '#ef4444',
-      bg: 'rgba(239, 68, 68, 0.1)'
+      bg: 'rgba(239, 68, 68, 0.1)',
+      to: '/admin/inventory/low-stock',
+      hint: 'Manage low stock'
     },
     {
       label: "Today's Orders",
       value: stats.todayOrders,
       icon: <FaCalendarDay />,
       color: '#0ea5e9',
-      bg: 'rgba(14, 165, 233, 0.1)'
+      bg: 'rgba(14, 165, 233, 0.1)',
+      to: '/admin/orders',
+      hint: "Open today's orders"
     },
     {
       label: "Today's Revenue",
       value: formatCurrency(stats.todayRevenue),
       icon: <FaMoneyBillWave />,
       color: '#8b5cf6',
-      bg: 'rgba(139, 92, 246, 0.1)'
+      bg: 'rgba(139, 92, 246, 0.1)',
+      to: '/admin/transactions',
+      hint: "View today's revenue"
     },
     {
       label: 'Total Profit',
       value: formatCurrency(stats.totalProfit),
       icon: <FaChartLine />,
       color: '#10b981',
-      bg: 'rgba(16, 185, 129, 0.1)'
+      bg: 'rgba(16, 185, 129, 0.1)',
+      to: '/admin/transactions',
+      hint: 'View profit transactions'
     },
     {
       label: "Today's Profit",
       value: formatCurrency(stats.todayProfit),
       icon: <FaChartLine />,
       color: '#059669',
-      bg: 'rgba(5, 150, 105, 0.1)'
+      bg: 'rgba(5, 150, 105, 0.1)',
+      to: '/admin/transactions',
+      hint: "View today's profit"
     },
     {
       label: 'Supplier Pending',
       value: formatCurrency(stats.supplierPending || 0),
       icon: <FaTruck />,
       color: '#f97316',
-      bg: 'rgba(249, 115, 22, 0.1)'
+      bg: 'rgba(249, 115, 22, 0.1)',
+      to: '/admin/suppliers',
+      hint: 'Manage supplier dues'
     },
     {
       label: 'Offline Sales (Total)',
       value: formatCurrency(stats.offlineTotal || 0),
       icon: <FaBoxOpen />,
       color: '#fc8019',
-      bg: 'rgba(252, 128, 25, 0.1)'
+      bg: 'rgba(252, 128, 25, 0.1)',
+      to: '/admin/offline-sales-history',
+      hint: 'View offline sales'
     },
     {
       label: 'Offline Pending (Udhar)',
       value: formatCurrency(stats.offlinePending || 0),
       icon: <FaMoneyBillWave />,
       color: '#ef4444',
-      bg: 'rgba(239, 68, 68, 0.1)'
+      bg: 'rgba(239, 68, 68, 0.1)',
+      to: '/admin/outstanding',
+      hint: 'Review udhaar'
     },
     {
       label: "Today's Offline",
       value: formatCurrency(stats.offlineToday || 0),
       icon: <FaCalendarDay />,
       color: '#06b6d4',
-      bg: 'rgba(6, 182, 212, 0.1)'
+      bg: 'rgba(6, 182, 212, 0.1)',
+      to: '/admin/offline-sales-history',
+      hint: "View today's offline sales"
     }
   ]
 
@@ -250,10 +275,12 @@ const Dashboard = () => {
         {/* Stats Cards */}
         <div className="admin-stats-grid" style={styles.statsGrid}>
           {kpiCards.map((card, index) => (
-            <div
+            <Link
               key={index}
-              className="dash-stat-card dash-fade"
-              style={{ ...styles.statCard, animationDelay: `${index * 50}ms` }}
+              to={card.to}
+              className="dash-stat-card dash-action-card dash-fade"
+              aria-label={`${card.label}: ${card.hint}`}
+              style={{ ...styles.statCard, animationDelay: `${index * 50}ms`, textDecoration: 'none' }}
             >
               <div style={styles.statTop}>
                 <div style={{ ...styles.statIcon, background: card.bg, color: card.color }}>
@@ -263,14 +290,14 @@ const Dashboard = () => {
               <div style={styles.statValue}>{card.value}</div>
               <div style={styles.statLabel}>{card.label}</div>
               <div style={{ ...styles.statAccent, background: card.color }} />
-            </div>
+            </Link>
           ))}
         </div>
 
         {/* Charts Section */}
         <div className="admin-charts-row" style={styles.chartsRow}>
           {/* Weekly Orders Bar Chart */}
-          <div className="dash-chart-card dash-fade" style={{ ...styles.chartCard, animationDelay: '100ms' }}>
+          <Link to="/admin/orders" className="dash-chart-card dash-action-card dash-fade" style={{ ...styles.chartCard, animationDelay: '100ms', textDecoration: 'none' }} aria-label="Open weekly orders">
             <h3 style={styles.chartTitle}>Weekly Orders</h3>
             <ResponsiveContainer width="100%" height={300}>
               <BarChart data={chartData.weeklyOrders}>
@@ -284,10 +311,10 @@ const Dashboard = () => {
                 <Bar dataKey="orders" fill="#e23744" radius={[6, 6, 0, 0]} barSize={36} />
               </BarChart>
             </ResponsiveContainer>
-          </div>
+          </Link>
 
           {/* Revenue by Category Pie Chart */}
-          <div className="dash-chart-card dash-fade" style={{ ...styles.chartCard, animationDelay: '160ms' }}>
+          <Link to="/admin/transactions" className="dash-chart-card dash-action-card dash-fade" style={{ ...styles.chartCard, animationDelay: '160ms', textDecoration: 'none' }} aria-label="Open revenue transactions">
             <h3 style={styles.chartTitle}>Revenue by Category</h3>
             <ResponsiveContainer width="100%" height={300}>
               <PieChart>
@@ -313,7 +340,7 @@ const Dashboard = () => {
                 <Legend />
               </PieChart>
             </ResponsiveContainer>
-          </div>
+          </Link>
         </div>
 
         {/* Order Status Distribution */}
@@ -321,7 +348,7 @@ const Dashboard = () => {
           <h3 style={styles.chartTitle}>Order Status Distribution</h3>
           <div style={styles.statusGrid}>
             {(chartData.orderStatusDistribution || []).map((item, index) => (
-              <div key={index} style={styles.statusItem}>
+              <Link key={index} to="/admin/orders" className="dash-status-link" style={styles.statusItem} aria-label={`Open ${item.status} orders`}>
                 <div style={{
                   ...styles.statusDot,
                   background: ORDER_STATUS_COLORS[item.status] || c.textSecondary
@@ -338,7 +365,7 @@ const Dashboard = () => {
                     100
                   )}%`
                 }} />
-              </div>
+              </Link>
             ))}
           </div>
         </div>
@@ -349,8 +376,8 @@ const Dashboard = () => {
             <h3 style={styles.sectionTitle}>Recent Orders</h3>
             <Link to="/admin/orders" className="dash-view-all" style={styles.viewAllLink}>View All Orders</Link>
           </div>
-          <div style={styles.tableWrapper}>
-            <table style={styles.table}>
+          <div className="admin-mobile-table-wrap" style={styles.tableWrapper}>
+            <table className="admin-mobile-table" style={styles.table}>
               <thead>
                 <tr>
                   <th className="admin-actions-col" style={styles.th}>Actions</th>
@@ -367,14 +394,14 @@ const Dashboard = () => {
                   </tr>
                 ) : (
                   recentOrders.map((order) => (
-                    <tr key={order.id} className="dash-row" style={styles.tr}>
-                      <td className="admin-actions-col" style={styles.td}>
+                    <tr key={order.id} className="dash-row dash-click-row" style={styles.tr} onClick={() => navigate('/admin/orders')} tabIndex={0} onKeyDown={(event) => { if (event.key === 'Enter' || event.key === ' ') navigate('/admin/orders') }}>
+                      <td className="admin-actions-col" data-label="Actions" style={styles.td}>
                         <div className="admin-actions" style={styles.actionBtns}>
                           {getNextActions(order.orderStatus).map((action) => (
                             <button
                               key={action.value}
                               style={{ ...styles.actionBtn, background: action.color }}
-                              onClick={() => handleQuickAction(order.id, action.value)}
+                              onClick={(event) => { event.stopPropagation(); handleQuickAction(order.id, action.value) }}
                               title={action.label}
                             >
                               {action.icon}
@@ -386,12 +413,12 @@ const Dashboard = () => {
                           )}
                         </div>
                       </td>
-                      <td style={styles.td}>
+                      <td data-label="Order #" style={styles.td}>
                         <span style={styles.orderNumber}>#{order.orderNumber}</span>
                       </td>
-                      <td style={styles.td}>{order.customerName || 'N/A'}</td>
-                      <td style={{ ...styles.td, fontWeight: '600' }}>{formatCurrency(order.total)}</td>
-                      <td style={styles.td}>
+                      <td data-label="Customer" style={styles.td}>{order.customerName || 'N/A'}</td>
+                      <td data-label="Total" style={{ ...styles.td, fontWeight: '600' }}>{formatCurrency(order.total)}</td>
+                      <td data-label="Status" style={styles.td}>
                         <span style={{
                           ...styles.statusBadge,
                           background: (ORDER_STATUS_COLORS[order.orderStatus] || c.textSecondary) + '20',
@@ -417,8 +444,8 @@ const Dashboard = () => {
             </h3>
             <Link to="/admin/products" className="dash-view-all" style={styles.viewAllLink}>Manage Products</Link>
           </div>
-          <div style={styles.tableWrapper}>
-            <table style={styles.table}>
+          <div className="admin-mobile-table-wrap" style={styles.tableWrapper}>
+            <table className="admin-mobile-table" style={styles.table}>
               <thead>
                 <tr>
                   <th className="admin-actions-col" style={styles.th}>Action</th>
@@ -434,23 +461,23 @@ const Dashboard = () => {
                   </tr>
                 ) : (
                   lowStockProducts.map((product) => (
-                    <tr key={product.id} className="dash-row" style={styles.tr}>
-                      <td className="admin-actions-col" style={styles.td}>
+                    <tr key={product.id} className="dash-row dash-click-row" style={styles.tr} onClick={() => navigate('/admin/products')} tabIndex={0} onKeyDown={(event) => { if (event.key === 'Enter' || event.key === ' ') navigate('/admin/products') }}>
+                      <td className="admin-actions-col" data-label="Action" style={styles.td}>
                         <button
                           className="dash-restock-btn"
                           style={styles.restockBtn}
-                          onClick={() => handleRestock(product.id)}
+                          onClick={(event) => { event.stopPropagation(); handleRestock(product.id) }}
                         >
                           Restock
                         </button>
                       </td>
-                      <td style={styles.td}>
+                      <td data-label="Product" style={styles.td}>
                         <div style={styles.productCell}>
                           <FaBoxOpen style={{ color: c.textSecondary, flexShrink: 0 }} />
                           <span>{product.name}</span>
                         </div>
                       </td>
-                      <td style={styles.td}>
+                      <td data-label="Current Stock" style={styles.td}>
                         <span style={{
                           ...styles.stockBadge,
                           background: product.stock === 0 ? 'rgba(239,68,68,0.15)' : 'rgba(245,158,11,0.15)',
@@ -459,7 +486,7 @@ const Dashboard = () => {
                           {product.stock} units
                         </span>
                       </td>
-                      <td style={styles.td}>{formatCurrency(product.price)}</td>
+                      <td data-label="Price" style={styles.td}>{formatCurrency(product.price)}</td>
                     </tr>
                   ))
                 )}
@@ -480,6 +507,27 @@ const Dashboard = () => {
         .dash-stat-card {
           transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
           will-change: transform;
+        }
+        .dash-action-card {
+          display: block;
+          color: inherit;
+          cursor: pointer;
+        }
+        .dash-action-card:focus-visible,
+        .dash-status-link:focus-visible,
+        .dash-click-row:focus-visible {
+          outline: 3px solid rgba(14, 165, 233, 0.7);
+          outline-offset: 3px;
+        }
+        .dash-status-link {
+          display: block;
+          color: inherit;
+          text-decoration: none;
+          cursor: pointer;
+          border-radius: 10px;
+        }
+        .dash-click-row {
+          cursor: pointer;
         }
         .dash-stat-card:hover {
           transform: translateY(-3px);

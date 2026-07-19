@@ -13,6 +13,20 @@ import { useSettings } from '../context/SettingsContext'
 import { getColors } from './themeColors'
 import { getCartItemSummary, getCartItemUnitPriceLabel } from '../utils/purchase'
 
+const sanitizeInvoiceHTML = (html) => {
+  const doc = new DOMParser().parseFromString(String(html || ''), 'text/html')
+  doc.querySelectorAll('script, iframe, object, embed, form, input, button').forEach(node => node.remove())
+  doc.querySelectorAll('*').forEach(node => {
+    Array.from(node.attributes).forEach(attr => {
+      if (attr.name.toLowerCase().startsWith('on')) node.removeAttribute(attr.name)
+      if (['href', 'src', 'action'].includes(attr.name.toLowerCase()) && /^javascript:/i.test(attr.value)) {
+        node.removeAttribute(attr.name)
+      }
+    })
+  })
+  return doc.body.innerHTML
+}
+
 const STATUS_FLOW = {
   Placed: { next: 'confirmed', reject: 'cancelled', label: 'Confirm', rejectLabel: 'Reject', icon: FaCheck, rejectIcon: FaTimes },
   confirmed: { next: 'processing', bill: true, label: 'Start Processing', billLabel: 'Generate Bill', icon: FaCog, billIcon: FaFileInvoice },
@@ -437,7 +451,7 @@ const Orders = () => {
         container.appendChild(s)
       }
       const content = document.createElement('div')
-      content.innerHTML = bodyMatch ? bodyMatch[1] : fullHTML
+      content.innerHTML = sanitizeInvoiceHTML(bodyMatch ? bodyMatch[1] : fullHTML)
       content.style.cssText = "font-family:'Segoe UI',Arial,sans-serif;color:#1a1a2e;padding:40px;max-width:800px;"
       container.appendChild(content)
       document.body.appendChild(container)
@@ -716,8 +730,8 @@ const Orders = () => {
           </div>
         ) : (
           <div style={s.tableCard}>
-            <div style={s.tableScroll}>
-              <table style={s.table}>
+            <div className="admin-mobile-table-wrap" style={s.tableScroll}>
+              <table className="admin-mobile-table" style={s.table}>
                 <thead>
                   <tr>
                     <th className="admin-actions-col" style={s.th}>Actions</th>
@@ -738,7 +752,7 @@ const Orders = () => {
                       onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(14, 165, 233, 0.04)'}
                       onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
                     >
-                      <td className="admin-actions-col" style={{ ...s.td, width: 'auto' }}>
+                      <td className="admin-actions-col" data-label="Actions" style={{ ...s.td, width: 'auto' }}>
                         <div className="admin-actions" style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'nowrap' }}>
                           <button
                             onClick={(e) => { e.stopPropagation(); openDetail(order) }}
@@ -750,10 +764,10 @@ const Orders = () => {
                           {renderActionButtons(order, true)}
                         </div>
                       </td>
-                      <td style={{ ...s.td, fontWeight: '700', color: '#38bdf8' }}>
+                      <td data-label="Order #" style={{ ...s.td, fontWeight: '700', color: '#38bdf8' }}>
                         #{order.orderNumber}
                       </td>
-                      <td style={s.td}>
+                      <td data-label="Customer" style={s.td}>
                         <div>
                           <div style={{ color: c.text, fontWeight: '500', fontSize: '14px' }}>
                             {order.customerName || 'Unknown'}
@@ -765,7 +779,7 @@ const Orders = () => {
                           )}
                         </div>
                       </td>
-                      <td style={s.td}>
+                      <td data-label="Items" style={s.td}>
                         {(() => {
                           const items = Array.isArray(order.items) ? order.items : []
                           if (items.length === 0) {
@@ -806,16 +820,16 @@ const Orders = () => {
                           )
                         })()}
                       </td>
-                      <td style={{ ...s.td, fontWeight: '700', color: c.text, fontSize: '14px' }}>
+                      <td data-label="Total" style={{ ...s.td, fontWeight: '700', color: c.text, fontSize: '14px' }}>
                         {formatCurrency(order.total)}
                       </td>
-                      <td style={s.td}>
+                      <td data-label="Status" style={s.td}>
                         <StatusBadge status={order.customerDeliveryConfirmed ? 'delivered' : (order.deliveryConfirmationRequestedAt && (order.orderStatus || '').toLowerCase() === 'shipped' ? 'awaiting_confirmation' : order.orderStatus)} />
                       </td>
-                      <td style={s.td}>
+                      <td data-label="Payment" style={s.td}>
                         <PaymentBadge status={order.paymentStatus} />
                       </td>
-                      <td style={{ ...s.td, color: c.textSecondary, fontSize: '13px', whiteSpace: 'nowrap' }}>
+                      <td data-label="Date" style={{ ...s.td, color: c.textSecondary, fontSize: '13px', whiteSpace: 'nowrap' }}>
                         {formatDateTime(order.orderDate)}
                       </td>
                     </tr>

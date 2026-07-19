@@ -215,8 +215,8 @@ const Customers = () => {
 
         {/* Customers Table */}
         <div style={styles.tableCard}>
-          <div style={styles.tableWrapper}>
-            <table style={styles.table}>
+          <div className="admin-mobile-table-wrap" style={styles.tableWrapper}>
+            <table className="admin-mobile-table" style={styles.table}>
               <thead>
                 <tr>
                   <th className="admin-actions-col" style={styles.th}>Actions</th>
@@ -238,7 +238,7 @@ const Customers = () => {
                     const isBlocked = customer.isBlocked || customer.status === 'blocked'
                     return (
                       <tr key={customer._id} style={styles.tr}>
-                        <td className="admin-actions-col" style={styles.td}>
+                        <td className="admin-actions-col" data-label="Actions" style={styles.td}>
                           <div className="admin-actions" style={styles.actionButtons}>
                             <button style={styles.viewBtn} onClick={() => viewDetails(customer)} title="View Details">
                               <FaEye />
@@ -255,7 +255,7 @@ const Customers = () => {
                             </button>
                           </div>
                         </td>
-                        <td style={{ ...styles.td, fontWeight: '500', color: c.text }}>
+                        <td data-label="Name" style={{ ...styles.td, fontWeight: '500', color: c.text }}>
                           <div style={styles.nameCell}>
                             <div style={styles.avatar}>
                               {getCustomerInitial(customer)}
@@ -263,11 +263,11 @@ const Customers = () => {
                             {getCustomerDisplayName(customer)}
                           </div>
                         </td>
-                        <td style={styles.td}>{customer.phone || 'N/A'}</td>
-                        <td style={styles.td}>{customer.email || 'N/A'}</td>
-                        <td style={styles.td}>{customer.ordersCount || customer.totalOrders || 0}</td>
-                        <td style={styles.td}>{formatCurrency(customer.totalSpent || 0)}</td>
-                        <td style={styles.td}>
+                        <td data-label="Phone" style={styles.td}>{customer.phone || 'N/A'}</td>
+                        <td data-label="Email" style={styles.td}>{customer.email || 'N/A'}</td>
+                        <td data-label="Orders" style={styles.td}>{customer.ordersCount || customer.totalOrders || 0}</td>
+                        <td data-label="Total Spent" style={styles.td}>{formatCurrency(customer.totalSpent || 0)}</td>
+                        <td data-label="Status" style={styles.td}>
                           <span style={{
                             ...styles.statusBadge,
                             background: isBlocked ? 'rgba(239, 68, 68, 0.1)' : 'rgba(34, 197, 94, 0.1)',

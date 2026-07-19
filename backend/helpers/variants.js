@@ -91,9 +91,18 @@ function recomputeAggregates(product) {
   const prices = activeVariants.map(v => Number(v.pricePerBox) || 0).filter(p => p > 0);
   product.minPrice = prices.length > 0 ? Math.min(...prices) : 0;
   product.maxPrice = prices.length > 0 ? Math.max(...prices) : 0;
+  // Keep legacy consumers (admin cards, carts, older orders) aligned with the
+  // variant aggregates. The canonical variant values remain unchanged.
+  product.pricePerBox = product.minPrice;
 
   const totalStock = activeVariants.reduce((sum, v) => sum + (Number(v.stockQuantity) || 0), 0);
   product.totalStock = Math.round(totalStock * 100) / 100;
+  // Keep legacy admin/list consumers in sync with variant stock. Variant data
+  // remains the source of truth; this is only a denormalized compatibility field.
+  product.stockQuantity = product.totalStock;
+  if (!Number(product.boxQuantity) && activeVariants[0]) {
+    product.boxQuantity = Number(activeVariants[0].boxQuantity) || 24;
+  }
 
   product.hasLowStock = activeVariants.some(v => (Number(v.stockQuantity) || 0) <= (Number(v.lowStockAlert) || 0));
   product.outOfStock = activeVariants.length === 0 || activeVariants.every(v => (Number(v.stockQuantity) || 0) <= 0);
@@ -133,7 +142,7 @@ function validateVariant(v, { existingVariants = [], allowedUnits = ['ml', 'L'] 
   if (!v.volumeUnit || !allowedUnits.includes(v.volumeUnit)) {
     return { ok: false, error: `Variant volumeUnit must be one of: ${allowedUnits.join(', ')}` };
   }
-  if (Number(v.pricePerBox) < 0) return { ok: false, error: 'Variant pricePerBox must be >= 0' };
+  if (Number(v.pricePerBox) <= 0) return { ok: false, error: 'Variant pricePerBox must be > 0' };
   if (Number(v.stockQuantity) < 0) return { ok: false, error: 'Variant stockQuantity must be >= 0' };
   if (Number(v.lowStockAlert) < 0) return { ok: false, error: 'Variant lowStockAlert must be >= 0' };
   if (Number(v.boxQuantity) <= 0) return { ok: false, error: 'Variant boxQuantity must be > 0' };

@@ -67,8 +67,9 @@ const getSellingModeLabel = (product) => {
 }
 
 const getStockDisplay = (product) => {
-  const stock = Number(product.stockQuantity || 0)
-  const perBox = Number(product.boxQuantity || 24) || 24
+  const stock = Number(product.hasVariants ? (product.totalStock ?? product.stockQuantity) : product.stockQuantity) || 0
+  const firstVariant = Array.isArray(product.variants) ? product.variants.find(v => v?.isActive !== false) : null
+  const perBox = Number((product.hasVariants ? firstVariant?.boxQuantity : product.boxQuantity) || 24) || 24
 
   if (product.allowPiecePurchase) {
     const pieces = Math.round(stock * perBox)
@@ -94,8 +95,9 @@ const getStockDisplay = (product) => {
 }
 
 const getLowStockHint = (product) => {
-  const threshold = Number(product.lowStockAlert || 10)
-  const perBox = Number(product.boxQuantity || 24) || 24
+  const firstVariant = Array.isArray(product.variants) ? product.variants.find(v => v?.isActive !== false) : null
+  const threshold = Number((product.hasVariants ? firstVariant?.lowStockAlert : product.lowStockAlert) || 10)
+  const perBox = Number((product.hasVariants ? firstVariant?.boxQuantity : product.boxQuantity) || 24) || 24
 
   if (product.allowPiecePurchase) {
     return `Alert at ${Math.round(threshold * perBox)} pieces`
@@ -468,8 +470,13 @@ const Products = () => {
   }
 
   const handleSave = async () => {
-    if (!formData.name || !formData.category || !formData.pricePerBox) {
-      toast.error('Please fill in required fields (Name, Category, Price per Box)')
+    const variants = formData.variants || []
+    const hasValidVariantPrices = formData.hasVariants && variants.length > 0 && variants.every(v => Number(v.pricePerBox) > 0)
+    const hasValidSinglePrice = !formData.hasVariants && Number(formData.pricePerBox) > 0
+    if (!formData.name?.trim() || !formData.category?.trim() || (!hasValidVariantPrices && !hasValidSinglePrice)) {
+      toast.error(formData.hasVariants
+        ? 'Please fill Name, Category and a valid price for every variant'
+        : 'Please fill Name, Category and Price per Box')
       return
     }
 
@@ -666,16 +673,20 @@ const Products = () => {
   }
 
   const getStockColor = (product) => {
-    const qty = product.stockQuantity || 0
-    const threshold = product.lowStockAlert || 10
+    const qty = effectiveStock(product)
+    const threshold = product.hasVariants
+      ? Number(product.variants?.find(v => v?.isActive !== false)?.lowStockAlert || 10)
+      : Number(product.lowStockAlert || 10)
     if (qty === 0) return '#ef4444'
     if (qty <= threshold) return '#f59e0b'
     return '#22c55e'
   }
 
   const getStockLabel = (product) => {
-    const qty = product.stockQuantity || 0
-    const threshold = product.lowStockAlert || 10
+    const qty = effectiveStock(product)
+    const threshold = product.hasVariants
+      ? Number(product.variants?.find(v => v?.isActive !== false)?.lowStockAlert || 10)
+      : Number(product.lowStockAlert || 10)
     if (qty === 0) return 'Out of Stock'
     if (qty <= threshold) return 'Low Stock'
     return 'In Stock'
@@ -750,8 +761,8 @@ const Products = () => {
 
         {/* Products Table */}
         <div style={styles.tableCard}>
-          <div style={styles.tableWrapper}>
-            <table style={styles.table}>
+          <div className="admin-mobile-table-wrap" style={styles.tableWrapper}>
+            <table className="admin-mobile-table" style={styles.table}>
               <thead>
                 <tr>
                   <th className="admin-actions-col" style={styles.th}>Actions</th>
@@ -773,7 +784,7 @@ const Products = () => {
                 ) : (
                   paginatedProducts.map((product) => (
                     <tr key={product.id} style={styles.tr}>
-                      <td className="admin-actions-col" style={styles.td}>
+                      <td className="admin-actions-col" data-label="Actions" style={styles.td}>
                         <div className="admin-actions" style={styles.actionButtons}>
                           <button style={styles.editBtn} onClick={() => openEditModal(product)} title="Edit">
                             <FaEdit />
@@ -797,7 +808,7 @@ const Products = () => {
                           </button>
                         </div>
                       </td>
-                      <td style={styles.td}>
+                      <td data-label="Product" style={styles.td}>
                         <div style={styles.productInfo}>
                           <img
                             src={product.images?.[0] || product.image || '/images/placeholder-drink.svg'}
@@ -817,17 +828,17 @@ const Products = () => {
                           </div>
                         </div>
                       </td>
-                      <td style={styles.td}>
+                      <td data-label="Category" style={styles.td}>
                         <span style={styles.categoryBadge}>{product.category}</span>
                         <div style={styles.modeHint}>{getSellingModeLabel(product)}</div>
                       </td>
-                      <td style={styles.td}>
+                      <td data-label="Price / Box" style={styles.td}>
                         <div style={styles.priceMain}>{formatCurrency(product.pricePerBox)}</div>
                         {product.mrp > 0 && product.mrp !== product.pricePerBox && (
                           <div style={styles.priceMrp}>MRP {formatCurrency(product.mrp)}</div>
                         )}
                       </td>
-                      <td style={styles.td}>
+                      <td data-label="Stock" style={styles.td}>
                         {(() => {
                           const stockDisplay = getStockDisplay(product)
                           return (
@@ -863,7 +874,7 @@ const Products = () => {
                           )
                         })()}
                       </td>
-                      <td style={styles.td}>
+                      <td data-label="Status" style={styles.td}>
                         {(() => {
                           const isActive = (product.status || 'active') === 'active'
                           return (
@@ -1549,7 +1560,7 @@ const Products = () => {
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: 8 }}>
                       <div>
                         <label style={{ fontSize: 11, color: c.textSecondary, display: 'block', marginBottom: 2 }}>Flavor</label>
-                        <input type="text" value={v.flavor} placeholder="Original / Cherry"
+                        <input type="text" value={v.flavor} placeholder="e.g. Black, Orange"
                           onChange={(e) => handleVariantChange(idx, 'flavor', e.target.value)}
                           style={{ ...styles.input, padding: '6px 10px', fontSize: 13 }} />
                       </div>

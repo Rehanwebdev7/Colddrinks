@@ -2,6 +2,11 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { FiChevronLeft, FiChevronRight } from 'react-icons/fi'
 
+const FALLBACK_HERO_IMAGE = '/images/paper-boat-aam-panna.svg'
+
+const isLegacyDriveImage = (value) =>
+  typeof value === 'string' && value.includes('/api/drive/files/')
+
 const HeroSlider = ({ slides }) => {
   const navigate = useNavigate()
   const [current, setCurrent] = useState(0)
@@ -79,10 +84,17 @@ const HeroSlider = ({ slides }) => {
             style={{ cursor: slide.link ? 'pointer' : 'default' }}
           >
             <img
-              src={slide.image}
+              // Old Drive banners now resolve to the backend placeholder because
+              // Drive is disabled. Show a real local drink visual instead.
+              src={isLegacyDriveImage(slide.image) ? FALLBACK_HERO_IMAGE : (slide.image || FALLBACK_HERO_IMAGE)}
               alt={slide.title || `Slide ${index + 1}`}
               className="hero-slide-image"
               referrerPolicy="no-referrer"
+              onError={(event) => {
+                if (!event.currentTarget.src.endsWith(FALLBACK_HERO_IMAGE)) {
+                  event.currentTarget.src = FALLBACK_HERO_IMAGE
+                }
+              }}
             />
             {(slide.title || slide.subtitle) && (
               <div className="hero-slide-content">

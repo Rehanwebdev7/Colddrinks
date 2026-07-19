@@ -13,6 +13,20 @@ import {
 } from 'react-icons/fa'
 import { getCartItemSummary, getCartItemUnitPriceLabel } from '../utils/purchase'
 
+const sanitizeInvoiceHTML = (html) => {
+  const doc = new DOMParser().parseFromString(String(html || ''), 'text/html')
+  doc.querySelectorAll('script, iframe, object, embed, form, input, button').forEach(node => node.remove())
+  doc.querySelectorAll('*').forEach(node => {
+    Array.from(node.attributes).forEach(attr => {
+      if (attr.name.toLowerCase().startsWith('on')) node.removeAttribute(attr.name)
+      if (['href', 'src', 'action'].includes(attr.name.toLowerCase()) && /^javascript:/i.test(attr.value)) {
+        node.removeAttribute(attr.name)
+      }
+    })
+  })
+  return doc.body.innerHTML
+}
+
 const Bills = () => {
   const { user } = useAuth()
   const { darkMode } = useTheme()
@@ -184,7 +198,7 @@ const Bills = () => {
         container.appendChild(s)
       }
       const content = document.createElement('div')
-      content.innerHTML = bodyMatch ? bodyMatch[1] : fullHTML
+      content.innerHTML = sanitizeInvoiceHTML(bodyMatch ? bodyMatch[1] : fullHTML)
       content.style.cssText = "font-family:'Segoe UI',Arial,sans-serif;color:#1a1a2e;padding:40px;max-width:800px;"
       container.appendChild(content)
       document.body.appendChild(container)

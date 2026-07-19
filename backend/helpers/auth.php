@@ -2,7 +2,11 @@
 // JWT Authentication Helper
 // Simple JWT implementation without external dependencies
 
-define('JWT_SECRET', 'cold_drinks_shop_secret_key_2024');
+$jwtSecret = getenv('JWT_SECRET');
+if (!$jwtSecret || strlen($jwtSecret) < 32) {
+    throw new RuntimeException('JWT_SECRET environment variable is missing or too short.');
+}
+define('JWT_SECRET', $jwtSecret);
 define('JWT_EXPIRY', 86400 * 7); // 7 days
 
 function base64UrlEncode($data) {

@@ -5,7 +5,7 @@ import Footer from '../components/Footer'
 import ProductCard from '../components/ProductCard'
 import HeroSlider from '../components/HeroSlider'
 import BackToTop from '../components/BackToTop'
-import { FiSearch } from 'react-icons/fi'
+import { FiSearch, FiSliders } from 'react-icons/fi'
 import { MdLocalDrink } from 'react-icons/md'
 import { Link } from 'react-router-dom'
 
@@ -44,6 +44,7 @@ const Home = () => {
   const [sliders, setSliders] = useState([])
   const [categories, setCategories] = useState(defaultCategories)
   const [recentlyViewed, setRecentlyViewed] = useState([])
+  const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false)
 
   useEffect(() => {
     fetchProducts()
@@ -301,7 +302,19 @@ const Home = () => {
 
         {/* Smart Filter Bar — flavor + size (variants-aware, mobile-friendly) */}
         {(flavorOptions.length > 0 || volumeOptions.length > 0) && !isMobileSearchMode && (
-          <div className="smart-filter-bar">
+          <div className={`smart-filter-shell${mobileFiltersOpen ? ' is-open' : ''}`}>
+            <button
+              type="button"
+              className="mobile-filter-toggle"
+              onClick={() => setMobileFiltersOpen((open) => !open)}
+              aria-expanded={mobileFiltersOpen}
+            >
+              <span><FiSliders /> Filters</span>
+              <span className="mobile-filter-summary">
+                {[activeFlavor !== 'all' && activeFlavor, activeVolume !== 'all' && `${activeVolume}ml`].filter(Boolean).join(' · ') || 'Browse options'}
+              </span>
+            </button>
+            <div className="smart-filter-bar">
             {flavorOptions.length > 0 && (
               <div className="smart-filter-row">
                 <span className="smart-filter-label">Flavor</span>
@@ -361,6 +374,7 @@ const Home = () => {
                 )}
               </div>
             )}
+            </div>
           </div>
         )}
 

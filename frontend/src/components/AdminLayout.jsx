@@ -1,9 +1,10 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { FaBars, FaBell, FaSignOutAlt, FaUserCircle, FaSun, FaMoon, FaChevronLeft, FaChevronRight } from 'react-icons/fa'
+import { FaBars, FaBell, FaSignOutAlt, FaUserCircle, FaSun, FaMoon, FaChevronLeft, FaChevronRight, FaHome } from 'react-icons/fa'
 import AdminSidebar from './AdminSidebar'
 import { useAuth } from '../context/AuthContext'
 import { useAdminTheme } from '../admin/useAdminTheme'
+import API from '../config/api'
 import '../admin/admin.css'
 
 const MOBILE_BP = 768
@@ -14,6 +15,7 @@ const AdminLayout = ({ children }) => {
     return localStorage.getItem('adminSidebarCollapsed') === 'true'
   })
   const [isMobile, setIsMobile] = useState(() => window.innerWidth <= MOBILE_BP)
+  const [unreadNotifications, setUnreadNotifications] = useState(0)
   const { user, logout } = useAuth()
   const navigate = useNavigate()
   const { darkMode, toggleTheme, ...c } = useAdminTheme()
@@ -37,6 +39,21 @@ const AdminLayout = ({ children }) => {
     document.body.style.overflow = (isMobile && sidebarOpen) ? 'hidden' : ''
     return () => { document.body.style.overflow = '' }
   }, [isMobile, sidebarOpen])
+
+  useEffect(() => {
+    let active = true
+    const loadUnreadNotifications = async () => {
+      try {
+        const response = await API.get('/notifications')
+        const items = Array.isArray(response.data) ? response.data : (response.data?.data || [])
+        if (active) setUnreadNotifications(items.filter((item) => !item.isRead && !item.read).length)
+      } catch {
+        if (active) setUnreadNotifications(0)
+      }
+    }
+    loadUnreadNotifications()
+    return () => { active = false }
+  }, [])
 
   // Global wheel-scroll guard for ALL number inputs across admin pages.
   // Fixes the bug where scrolling over a focused <input type="number">
@@ -138,6 +155,20 @@ const AdminLayout = ({ children }) => {
             gap: isMobile ? '6px' : '16px', marginLeft: 'auto',
           }}>
             <button
+              aria-label="Go to dashboard"
+              style={{
+                position: 'relative', background: 'transparent', border: 'none',
+                color: c.textSecondary, fontSize: isMobile ? '16px' : '18px',
+                cursor: 'pointer', padding: isMobile ? '6px' : '8px',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+              }}
+              onClick={() => navigate('/admin')}
+              title="Dashboard"
+            >
+              <FaHome />
+            </button>
+
+            <button
               style={{
                 position: 'relative', background: 'transparent',
                 border: 'none',
@@ -164,15 +195,16 @@ const AdminLayout = ({ children }) => {
                 transition: 'color 0.15s',
               }}
               onClick={() => navigate('/admin/notifications')}
+              aria-label={unreadNotifications > 0 ? `${unreadNotifications} unread notifications` : 'Notifications'}
               onMouseEnter={(e) => { e.currentTarget.style.color = c.accent }}
               onMouseLeave={(e) => { e.currentTarget.style.color = c.textSecondary }}
             >
               <FaBell />
-              <span style={{
-                position: 'absolute', top: '2px', right: '2px',
-                width: '7px', height: '7px', borderRadius: '50%',
-                background: '#ef4444',
-              }} />
+              {unreadNotifications > 0 && (
+                <span className="admin-notification-count">
+                  {unreadNotifications > 99 ? '99+' : unreadNotifications}
+                </span>
+              )}
             </button>
 
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
