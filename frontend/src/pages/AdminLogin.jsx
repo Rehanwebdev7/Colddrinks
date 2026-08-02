@@ -1,51 +1,89 @@
-import { useState } from 'react'
+import { useLayoutEffect, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+import { gsap } from 'gsap'
 import { useAuth } from '../context/AuthContext'
+import { useSettings } from '../context/SettingsContext'
+import { getBrandLogo } from '../utils/brandAssets'
 import toast from 'react-hot-toast'
-import { FiLock, FiEye, FiEyeOff, FiShield, FiPhone } from 'react-icons/fi'
+import { FiLock, FiEye, FiEyeOff, FiShield, FiPhone, FiMail, FiArrowRight } from 'react-icons/fi'
 import { ImSpinner8 } from 'react-icons/im'
 
 const AdminLogin = () => {
   const navigate = useNavigate()
   const { login, user, isAuthenticated } = useAuth()
-
-  const [formData, setFormData] = useState({
-    identifier: '',
-    password: ''
-  })
+  const { settings } = useSettings()
+  const pageRef = useRef(null)
+  const [formData, setFormData] = useState(() => ({
+    identifier: localStorage.getItem('admin_remembered_identifier') || '',
+    password: '',
+  }))
+  const [rememberMe, setRememberMe] = useState(Boolean(localStorage.getItem('admin_remembered_identifier')))
   const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
+
+  useLayoutEffect(() => {
+    if (!pageRef.current) return undefined
+    const root = pageRef.current
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    const ctx = gsap.context(() => {
+      const reveal = () => {
+        gsap.set(['.cinematic-login-character', '.cinematic-login-bag', '.cinematic-login-card'], { clearProps: 'all' })
+        gsap.set('.cinematic-login-card', { autoAlpha: 1 })
+        gsap.set('.cinematic-login-field', { autoAlpha: 1, y: 0 })
+      }
+
+      if (reduceMotion) {
+        reveal()
+        return
+      }
+
+      const tl = gsap.timeline({ defaults: { ease: 'power3.out' }, onComplete: reveal })
+      tl.set('.cinematic-login-card', { autoAlpha: 0, y: 100, scale: 0.94 })
+        .set('.cinematic-login-character', { x: -240, autoAlpha: 0 })
+        .set('.cinematic-login-bag', { autoAlpha: 0, y: 20, scale: 0.7 })
+        .set('.cinematic-login-lid', { rotation: 0, transformOrigin: 'left bottom' })
+        .set('.cinematic-login-light', { autoAlpha: 0, scale: 0.3 })
+        .set('.cinematic-login-field', { autoAlpha: 0, y: 24 })
+        .to('.cinematic-login-character', { duration: 2.2, x: 0, autoAlpha: 1, ease: 'power2.out' })
+        .to('.cinematic-login-character', { duration: 0.25, y: -5, yoyo: true, repeat: 1, ease: 'sine.inOut' }, '-=0.05')
+        .to('.cinematic-login-bag', { duration: 0.45, autoAlpha: 1, y: 0, scale: 1, ease: 'back.out(1.6)' }, '+=0.08')
+        .to('.cinematic-login-bag', { duration: 0.18, y: -10, yoyo: true, repeat: 1, ease: 'power2.out' })
+        .to('.cinematic-login-lid', { duration: 0.65, rotation: -105, ease: 'power2.inOut' })
+        .to('.cinematic-login-light', { duration: 0.55, autoAlpha: 0.95, scale: 1, ease: 'power2.out' }, '-=0.35')
+        .to('.cinematic-login-card', { duration: 0.85, autoAlpha: 1, y: 0, scale: 1, ease: 'back.out(1.15)' }, '-=0.12')
+        .to('.cinematic-login-field', { duration: 0.42, autoAlpha: 1, y: 0, stagger: 0.12, ease: 'power3.out' }, '-=0.28')
+        .to('.cinematic-login-character-art', { duration: 0.55, rotation: -2, transformOrigin: '75% 45%', ease: 'power2.out' }, '-=0.15')
+
+      gsap.to('.cinematic-login-character-art', { y: -3, duration: 1.8, repeat: -1, yoyo: true, ease: 'sine.inOut', delay: 5.7 })
+      gsap.to('.cinematic-login-glow', { opacity: 0.55, scale: 1.1, duration: 2.4, repeat: -1, yoyo: true, ease: 'sine.inOut', delay: 4.8 })
+    }, root)
+    return () => ctx.revert()
+  }, [])
 
   if (isAuthenticated && user?.role === 'admin') {
     navigate('/admin', { replace: true })
     return null
   }
 
-  const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value })
-  }
+  const handleChange = (e) => setFormData({ ...formData, [e.target.name]: e.target.value })
 
   const handleSubmit = async (e) => {
     e.preventDefault()
-
     if (!formData.identifier.trim() || !formData.password.trim()) {
       toast.error('Please fill in all fields')
       return
     }
-
     try {
       setLoading(true)
+      if (rememberMe) localStorage.setItem('admin_remembered_identifier', formData.identifier.trim())
+      else localStorage.removeItem('admin_remembered_identifier')
       const result = await login(formData.identifier, formData.password, true)
-      if (result.success) {
-        if (result.user?.role === 'admin') {
-          window.location.href = '/admin'
-          return
-        }
-
+      if (result.success && result.user?.role === 'admin') {
+        window.location.href = '/admin'
+      } else if (result.success) {
         toast.error('You are not authorized as admin')
         localStorage.removeItem('token')
         localStorage.removeItem('user')
-        window.location.href = '/admin/login'
       }
     } catch (err) {
       console.error('Admin login error:', err)
@@ -55,252 +93,41 @@ const AdminLogin = () => {
   }
 
   return (
-    <div style={styles.page}>
-      <div style={styles.container}>
-        <div style={styles.brand}>
-          <div style={styles.shieldIcon}>
-            <FiShield />
+    <main className="cinematic-login-page" ref={pageRef}>
+      <div className="cinematic-login-stars" aria-hidden="true" />
+      <div className="cinematic-login-shell">
+        <section className="cinematic-login-stage" aria-hidden="true">
+          <div className="cinematic-login-orbit cinematic-login-orbit-one" />
+          <div className="cinematic-login-orbit cinematic-login-orbit-two" />
+          <div className="cinematic-login-glow" />
+          <div className="cinematic-login-character">
+            <div className="cinematic-login-character-shadow" />
+            <img className="cinematic-login-character-art" src="/login/businessman-3d.png" alt="" />
           </div>
-          <h1 style={styles.brandName}>Royal Admin</h1>
-          <p style={styles.brandSub}>Admin Control Panel</p>
-        </div>
+          <div className="cinematic-login-bag">
+            <div className="cinematic-login-light" />
+            <div className="cinematic-login-lid"><span /></div>
+            <div className="cinematic-login-bag-body"><span className="cinematic-login-bag-lock" /></div>
+          </div>
+          <p className="cinematic-login-caption">Secure access to your command center</p>
+        </section>
 
-        <div style={styles.card}>
-          <h2 style={styles.title}>Admin Login</h2>
-          <p style={styles.subtitle}>Enter admin credentials to continue</p>
-
-          <form onSubmit={handleSubmit} style={styles.form}>
-            <div style={styles.formGroup}>
-              <label style={styles.label}>Email or Mobile Number</label>
-              <div style={styles.inputWrapper}>
-                <FiPhone style={styles.inputIcon} />
-                <input
-                  type="text"
-                  name="identifier"
-                  placeholder="Email or mobile number"
-                  value={formData.identifier}
-                  onChange={handleChange}
-                  style={styles.input}
-                  autoComplete="tel email"
-                />
-              </div>
-            </div>
-
-            <div style={styles.formGroup}>
-              <label style={styles.label}>Password</label>
-              <div style={styles.inputWrapper}>
-                <FiLock style={styles.inputIcon} />
-                <input
-                  type={showPassword ? 'text' : 'password'}
-                  name="password"
-                  placeholder="Admin password"
-                  value={formData.password}
-                  onChange={handleChange}
-                  style={styles.input}
-                  autoComplete="current-password"
-                />
-                <button
-                  type="button"
-                  style={styles.eyeBtn}
-                  onClick={() => setShowPassword(!showPassword)}
-                >
-                  {showPassword ? <FiEyeOff /> : <FiEye />}
-                </button>
-              </div>
-            </div>
-
-            <div style={{ textAlign: 'right', marginTop: '-8px' }}>
-              <Link to="/forgot-password?mode=admin" style={styles.forgotLink}>
-                Forgot Password?
-              </Link>
-            </div>
-
-            <button
-              type="submit"
-              style={{
-                ...styles.submitBtn,
-                opacity: loading ? 0.7 : 1,
-                cursor: loading ? 'not-allowed' : 'pointer'
-              }}
-              disabled={loading}
-            >
-              {loading ? (
-                <>
-                  <ImSpinner8 style={styles.spinnerIcon} /> Logging in...
-                </>
-              ) : (
-                'Login to Admin Panel'
-              )}
-            </button>
+        <section className="cinematic-login-card" aria-label="Admin login">
+          <div className="cinematic-login-card-head cinematic-login-field">
+            <div className="cinematic-login-logo-wrap"><img src={getBrandLogo(settings)} alt="" /></div>
+            <div><span className="cinematic-login-eyebrow"><FiShield /> Private workspace</span><h1>Welcome back</h1><p>Sign in to your admin control panel.</p></div>
+          </div>
+          <form onSubmit={handleSubmit} className="cinematic-login-form">
+            <label className="cinematic-login-field"><span>Email or mobile number</span><div className="cinematic-login-input"><FiMail /><input type="text" name="identifier" placeholder="admin@example.com" value={formData.identifier} onChange={handleChange} autoComplete="username" /></div></label>
+            <label className="cinematic-login-field"><span>Password</span><div className="cinematic-login-input"><FiLock /><input type={showPassword ? 'text' : 'password'} name="password" placeholder="Enter your password" value={formData.password} onChange={handleChange} autoComplete="current-password" /><button type="button" onClick={() => setShowPassword(!showPassword)} aria-label={showPassword ? 'Hide password' : 'Show password'}>{showPassword ? <FiEyeOff /> : <FiEye />}</button></div></label>
+            <div className="cinematic-login-options cinematic-login-field"><label><input type="checkbox" checked={rememberMe} onChange={(e) => setRememberMe(e.target.checked)} /> <span>Remember me</span></label><Link to="/forgot-password?mode=admin">Forgot password?</Link></div>
+            <button className="cinematic-login-submit cinematic-login-field" type="submit" disabled={loading}>{loading ? <><ImSpinner8 className="cinematic-login-spinner" /> Signing in…</> : <>Enter dashboard <FiArrowRight /></>}</button>
           </form>
-        </div>
-
-        <p style={styles.backLink}>
-          <a href="/" style={styles.link}>Back to Website</a>
-        </p>
+          <a href="/" className="cinematic-login-back">← Back to website</a>
+        </section>
       </div>
-
-      <style>{`
-        @keyframes adminSpin {
-          to { transform: rotate(360deg); }
-        }
-      `}</style>
-    </div>
+    </main>
   )
-}
-
-const styles = {
-  page: {
-    minHeight: '100vh',
-    background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%)',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: '20px',
-    fontFamily: "'Inter', 'Poppins', sans-serif",
-  },
-  container: {
-    width: '100%',
-    maxWidth: '420px',
-  },
-  brand: {
-    textAlign: 'center',
-    marginBottom: '32px',
-  },
-  shieldIcon: {
-    width: '64px',
-    height: '64px',
-    borderRadius: '16px',
-    background: 'linear-gradient(135deg, #0ea5e9, #3b82f6)',
-    display: 'inline-flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    fontSize: '28px',
-    color: '#fff',
-    marginBottom: '16px',
-    boxShadow: '0 8px 24px rgba(14, 165, 233, 0.3)',
-  },
-  brandName: {
-    fontSize: '28px',
-    fontWeight: '700',
-    color: '#f1f5f9',
-    margin: '0 0 4px 0',
-  },
-  brandSub: {
-    fontSize: '14px',
-    color: '#64748b',
-    margin: 0,
-  },
-  card: {
-    background: '#1e293b',
-    borderRadius: '16px',
-    border: '1px solid #334155',
-    padding: '32px',
-    boxShadow: '0 8px 32px rgba(0, 0, 0, 0.3)',
-  },
-  title: {
-    fontSize: '22px',
-    fontWeight: '700',
-    color: '#f1f5f9',
-    margin: '0 0 6px 0',
-  },
-  subtitle: {
-    fontSize: '14px',
-    color: '#64748b',
-    margin: '0 0 24px 0',
-  },
-  form: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '18px',
-  },
-  formGroup: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '6px',
-  },
-  label: {
-    fontSize: '13px',
-    fontWeight: '600',
-    color: '#94a3b8',
-  },
-  inputWrapper: {
-    position: 'relative',
-    display: 'flex',
-    alignItems: 'center',
-  },
-  inputIcon: {
-    position: 'absolute',
-    left: '14px',
-    color: '#475569',
-    fontSize: '16px',
-    pointerEvents: 'none',
-  },
-  input: {
-    width: '100%',
-    padding: '12px 14px 12px 42px',
-    border: '1px solid #334155',
-    borderRadius: '10px',
-    background: '#0f172a',
-    color: '#f1f5f9',
-    fontSize: '14px',
-    outline: 'none',
-    boxSizing: 'border-box',
-    transition: 'border-color 0.2s',
-  },
-  eyeBtn: {
-    position: 'absolute',
-    right: '12px',
-    background: 'none',
-    border: 'none',
-    color: '#64748b',
-    fontSize: '16px',
-    cursor: 'pointer',
-    padding: '4px',
-    display: 'flex',
-    alignItems: 'center',
-  },
-  submitBtn: {
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: '8px',
-    width: '100%',
-    padding: '14px',
-    background: 'linear-gradient(135deg, #0ea5e9, #3b82f6)',
-    border: 'none',
-    borderRadius: '10px',
-    color: '#fff',
-    fontSize: '15px',
-    fontWeight: '600',
-    cursor: 'pointer',
-    marginTop: '8px',
-    boxShadow: '0 4px 16px rgba(14, 165, 233, 0.3)',
-    transition: 'all 0.2s',
-  },
-  spinnerIcon: {
-    animation: 'adminSpin 0.8s linear infinite',
-    fontSize: '16px',
-  },
-  forgotLink: {
-    color: '#0ea5e9',
-    fontSize: '13px',
-    cursor: 'pointer',
-    padding: 0,
-    fontWeight: '500',
-    transition: 'color 0.2s',
-    textDecoration: 'none',
-  },
-  backLink: {
-    textAlign: 'center',
-    marginTop: '20px',
-    fontSize: '13px',
-  },
-  link: {
-    color: '#64748b',
-    textDecoration: 'none',
-    transition: 'color 0.2s',
-  },
 }
 
 export default AdminLogin
