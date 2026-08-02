@@ -156,9 +156,19 @@ const DB_DIR = path.join(__dirname, 'database');
 const TAX_RATE = 0.18;
 const MIN_WEB_ORDER_AMOUNT = 1000;
 const JSON_FALLBACK_DISABLED = process.env.JSON_FALLBACK_DISABLED === '1';
+const defaultCorsOrigins = [
+  'http://localhost:3000',
+  'http://localhost:3001',
+  'http://localhost:5173',
+  'https://colddrinks.vercel.app',
+];
 const CORS_ORIGINS = new Set(
-  (process.env.CORS_ORIGINS || process.env.ALLOWED_ORIGINS || 'http://localhost:3001,http://localhost:5173')
-    .split(',').map(origin => origin.trim()).filter(Boolean)
+  [
+    ...defaultCorsOrigins,
+    ...(process.env.CORS_ORIGINS || process.env.ALLOWED_ORIGINS || '')
+      .split(',').map(origin => origin.trim()).filter(Boolean),
+    process.env.FRONTEND_URL,
+  ].filter(Boolean)
 );
 
 // ─── Error helper with statusCode property ─────────────────────────────────
