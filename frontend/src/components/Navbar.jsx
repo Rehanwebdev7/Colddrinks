@@ -10,6 +10,7 @@ import { useAuthModal } from '../context/AuthModalContext'
 import API from '../config/api'
 import toast from 'react-hot-toast'
 import SideDrawer from './SideDrawer'
+import { getBrandIcon, getBrandLogo } from '../utils/brandAssets'
 
 const Navbar = () => {
   const { user, isAuthenticated, logout } = useAuth()
@@ -36,13 +37,13 @@ const Navbar = () => {
   const [showSuggestions, setShowSuggestions] = useState(false)
   const [allProducts, setAllProducts] = useState([])
   const searchRef = useRef(null)
-  const [showBrandLogo, setShowBrandLogo] = useState(Boolean(settings?.logo))
+  const [showBrandLogo, setShowBrandLogo] = useState(Boolean(getBrandLogo(settings)))
 
   const cartCount = items?.reduce((total, item) => total + item.quantity, 0) || 0
   const brandName = settings?.siteName || 'Royal'
 
   useEffect(() => {
-    setShowBrandLogo(Boolean(settings?.logo))
+    setShowBrandLogo(Boolean(getBrandLogo(settings)))
   }, [settings?.logo])
 
   // Body scroll lock when drawer is open (CSS class, not inline style)
@@ -231,12 +232,12 @@ const Navbar = () => {
             <FiArrowLeft />
           </button>
         )}
-        <Link to="/" className={`navbar-brand${settings?.logo && showBrandLogo ? ' has-logo' : ''}`}>
-          {settings?.logo && showBrandLogo ? (
+        <Link to="/" className={`navbar-brand${showBrandLogo ? ' has-logo' : ''}`}>
+          {showBrandLogo ? (
             <>
               <img
                 className="navbar-brand-logo-full"
-                src={settings.logo}
+                src={getBrandLogo(settings)}
                 alt={brandName}
                 referrerPolicy="no-referrer"
                 onError={() => setShowBrandLogo(false)}
@@ -245,7 +246,7 @@ const Navbar = () => {
               />
               <img
                 className="navbar-brand-logo-icon"
-                src={settings.favicon || settings.logo}
+                src={getBrandIcon(settings)}
                 alt={brandName}
                 referrerPolicy="no-referrer"
                 onClick={(e) => { e.preventDefault(); e.stopPropagation(); setShowLogoModal(true) }}
@@ -515,7 +516,7 @@ const Navbar = () => {
       )}
       {/* Logo Lightbox Modal — portal to body to avoid being clipped by
           ancestor overflow/transform contexts */}
-      {showLogoModal && settings?.logo && createPortal(
+      {showLogoModal && showBrandLogo && createPortal(
         <div
           onClick={() => setShowLogoModal(false)}
           style={{
@@ -528,7 +529,7 @@ const Navbar = () => {
           }}
         >
           <img
-            src={settings.logo}
+            src={getBrandLogo(settings)}
             alt={brandName}
             referrerPolicy="no-referrer"
             style={{

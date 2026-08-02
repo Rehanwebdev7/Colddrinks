@@ -2,6 +2,7 @@ import { getToken, onMessage } from 'firebase/messaging'
 import { messagingPromise } from '../config/firebaseConfig'
 import API from '../config/api'
 import toast from 'react-hot-toast'
+import { LOCAL_BRAND_LOGO } from '../utils/brandAssets'
 
 const VAPID_KEY = 'BB8JTrgtokgWn6CaQ2xEnok-ZUati24zDdUn86B32j75tgNcov50fGmgfGV9mu4V2e-DPQLtqOT_rPzkifvWUnE'
 const FCM_TOKEN_KEY = 'fcm_token'
@@ -270,7 +271,7 @@ async function startForegroundListener() {
         try {
           const n = new Notification(title, {
             body,
-            icon: '/images/logo.png',
+            icon: LOCAL_BRAND_LOGO,
             tag: type || 'general',
             renotify: true
           })

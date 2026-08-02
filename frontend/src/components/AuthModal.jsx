@@ -8,6 +8,7 @@ import API from '../config/api'
 import { MdLocalDrink } from 'react-icons/md'
 import { FiPhone, FiLock, FiEye, FiEyeOff, FiArrowLeft, FiCheck, FiUser, FiX, FiMail } from 'react-icons/fi'
 import { ImSpinner8 } from 'react-icons/im'
+import { getBrandLogo } from '../utils/brandAssets'
 
 const maskPhone = (p) => (p && p.length >= 6 ? p.slice(0, 2) + 'XXXX' + p.slice(-4) : p)
 
@@ -62,7 +63,7 @@ const AuthModal = () => {
   if (!isOpen) return null
 
   const brandName = settings?.siteName || 'Royal'
-  const brandLogo = settings?.logo || settings?.favicon || ''
+  const brandLogo = getBrandLogo(settings)
 
   const handlePhoneSubmit = async (e) => {
     e.preventDefault()

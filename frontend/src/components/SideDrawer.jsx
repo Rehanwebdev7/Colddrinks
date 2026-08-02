@@ -14,6 +14,7 @@ import { useSettings } from '../context/SettingsContext'
 import { ImSpinner8 } from 'react-icons/im'
 import ImageCropModal from './ImageCropModal'
 import { getCartItemSummary, getCartItemUnitPriceLabel } from '../utils/purchase'
+import { getBrandLogo } from '../utils/brandAssets'
 
 const SideDrawer = ({ isOpen, onClose, initialView = 'menu', user, onLogout, unreadNotifs, outstanding }) => {
   const navigate = useNavigate()
@@ -979,9 +980,9 @@ const SideDrawer = ({ isOpen, onClose, initialView = 'menu', user, onLogout, unr
     return (
       <div style={{ padding: '0 4px' }}>
         <div style={{ textAlign: 'center', padding: '12px 0 16px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px' }}>
-          {settings?.logo ? (
+          {getBrandLogo(settings) ? (
             <img
-              src={settings.logo}
+              src={getBrandLogo(settings)}
               alt={siteName}
               referrerPolicy="no-referrer"
               style={{ maxWidth: '160px', maxHeight: '64px', objectFit: 'contain' }}

@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { FaFacebook, FaInstagram, FaTwitter, FaYoutube, FaPhone, FaEnvelope, FaMapMarkerAlt } from 'react-icons/fa'
 import { useSettings } from '../context/SettingsContext'
 import './Footer.css'
+import { getBrandLogo } from '../utils/brandAssets'
 
 const SOCIAL_PLATFORMS = [
   { key: 'facebook', Icon: FaFacebook },
@@ -20,10 +21,10 @@ const Footer = () => {
     const url = String(social[key] || '').trim()
     return url && socialEnabled[key] !== false
   })
-  const [showBrandLogo, setShowBrandLogo] = useState(Boolean(settings?.logo))
+  const [showBrandLogo, setShowBrandLogo] = useState(Boolean(getBrandLogo(settings)))
 
   useEffect(() => {
-    setShowBrandLogo(Boolean(settings?.logo))
+    setShowBrandLogo(Boolean(getBrandLogo(settings)))
   }, [settings?.logo])
 
   return (
@@ -33,10 +34,10 @@ const Footer = () => {
 
           {/* Brand + About */}
           <div className="footer__col">
-            <div className={`footer__brand-logo${settings?.logo && showBrandLogo ? ' has-logo' : ''}`}>
-              {settings?.logo && showBrandLogo ? (
+            <div className={`footer__brand-logo${showBrandLogo ? ' has-logo' : ''}`}>
+              {showBrandLogo ? (
                 <img
-                  src={settings.logo}
+                  src={getBrandLogo(settings)}
                   alt={settings?.siteName || 'Royal'}
                   className="footer__brand-img"
                   referrerPolicy="no-referrer"

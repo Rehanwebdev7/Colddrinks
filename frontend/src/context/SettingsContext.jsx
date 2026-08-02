@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useEffect } from 'react'
 import API from '../config/api'
+import { LOCAL_BRAND_LOGO } from '../utils/brandAssets'
 
 const SettingsContext = createContext(null)
 
@@ -48,8 +49,8 @@ const defaultSettings = {
   policies: { privacy: '', terms: '' },
   social: { facebook: '', instagram: '', twitter: '', youtube: '' },
   socialEnabled: { facebook: true, instagram: true, twitter: true, youtube: true },
-  logo: '',
-  favicon: '',
+  logo: LOCAL_BRAND_LOGO,
+  favicon: LOCAL_BRAND_LOGO,
   paymentQr: '',
   upiId: '7028732945@ybl',
   upiPayeeName: 'NOOR COLDINKS'
@@ -143,6 +144,9 @@ export const SettingsProvider = ({ children }) => {
       // Bypass HTTP cache so freshly-saved settings always reach the customer
       const response = await API.get('/settings', { params: { _t: Date.now() } })
       const data = { ...defaultSettings, ...(response.data || {}) }
+      // Keep the bundled public logo available when the server has no asset.
+      data.logo = LOCAL_BRAND_LOGO
+      data.favicon = LOCAL_BRAND_LOGO
       data.siteName = normalizeBrandName(data.siteName || defaultSettings.siteName)
       setSettings(data)
       applySettings(data)

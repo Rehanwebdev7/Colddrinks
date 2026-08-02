@@ -31,6 +31,7 @@ import {
 import { useAuth } from '../context/AuthContext'
 import { useSettings } from '../context/SettingsContext'
 import { useAdminTheme } from '../admin/useAdminTheme'
+import { getBrandIcon, getBrandLogo } from '../utils/brandAssets'
 
 const menuItems = [
   { type: 'group', label: 'Operations' },
@@ -67,7 +68,7 @@ const AdminSidebar = ({ isOpen, onClose, collapsed, onToggleCollapse, isMobile }
   const { logout } = useAuth()
   const { settings } = useSettings()
   const navigate = useNavigate()
-  const [showBrandLogo, setShowBrandLogo] = useState(Boolean(settings?.logo))
+  const [showBrandLogo, setShowBrandLogo] = useState(true)
   const navRef = useRef(null)
 
   // Restore cached scroll position synchronously before paint so user
@@ -89,7 +90,7 @@ const AdminSidebar = ({ isOpen, onClose, collapsed, onToggleCollapse, isMobile }
   }, [])
 
   useEffect(() => {
-    setShowBrandLogo(Boolean(settings?.logo))
+    setShowBrandLogo(true)
   }, [settings?.logo])
 
   const handleLogout = () => {
@@ -108,9 +109,7 @@ const AdminSidebar = ({ isOpen, onClose, collapsed, onToggleCollapse, isMobile }
   // Logo container — transparent, no chrome. Image sits naturally on the sidebar bg.
   // When collapsed prefer favicon (small mark); when expanded prefer full logo.
   const logoImg = (boxW = '100%', boxH = '44px', preferFavicon = false) => {
-    const src = preferFavicon && settings?.favicon
-      ? settings.favicon
-      : (settings?.logo && showBrandLogo ? settings.logo : (settings?.favicon || '/vite.svg'))
+    const src = preferFavicon ? getBrandIcon(settings) : getBrandLogo(settings)
     return (
       <div style={{
         width: boxW, height: boxH,
