@@ -12,7 +12,10 @@ function resolveApiBaseUrl() {
     return '/api'
   }
 
-  return `${window.location.origin}/api`
+  // Vercel serves the SPA, while the Node API is deployed separately on Render.
+  // Without this fallback production requests incorrectly went to
+  // https://colddrinks.vercel.app/api and every catalog/settings request failed.
+  return 'https://colddrinks-backend.onrender.com/api'
 }
 
 const API_BASE_URL = resolveApiBaseUrl()
