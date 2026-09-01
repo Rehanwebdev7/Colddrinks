@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect } from 'react'
+import { createContext, useContext, useState, useEffect, useRef } from 'react'
 import API from '../config/api'
 import { LOCAL_BRAND_LOGO } from '../utils/brandAssets'
 
@@ -139,7 +139,15 @@ export const SettingsProvider = ({ children }) => {
     }
   }
 
-  const fetchSettings = async () => {
+  // How long a fetched copy of the settings is considered fresh enough that
+  // returning to the tab shouldn't trigger another download.
+  const REFRESH_INTERVAL_MS = 5 * 60 * 1000
+  const lastFetchedAtRef = useRef(0)
+
+  // `broadcast` is opt-in and only an explicit admin save passes it. Writing
+  // the timestamp after *every* fetch made two open tabs answer each other's
+  // storage events forever: fetch → write → other tab fetches → writes → …
+  const fetchSettings = async ({ broadcast = false } = {}) => {
     try {
       // Bypass HTTP cache so freshly-saved settings always reach the customer
       const response = await API.get('/settings', { params: { _t: Date.now() } })
@@ -148,16 +156,19 @@ export const SettingsProvider = ({ children }) => {
       data.logo = LOCAL_BRAND_LOGO
       data.favicon = LOCAL_BRAND_LOGO
       data.siteName = normalizeBrandName(data.siteName || defaultSettings.siteName)
+      lastFetchedAtRef.current = Date.now()
       setSettings(data)
       applySettings(data)
-      // Broadcast for any other tabs of the same browser
-      try { localStorage.setItem('settings:lastUpdated', String(Date.now())) } catch {}
+      if (broadcast) {
+        // Broadcast for any other tabs of the same browser
+        try { localStorage.setItem('settings:lastUpdated', String(Date.now())) } catch {}
+      }
     } catch {
       // Use defaults
     }
   }
 
-  const refreshSettings = () => fetchSettings()
+  const refreshSettings = () => fetchSettings({ broadcast: true })
 
   useEffect(() => {
     fetchSettings()
@@ -174,14 +185,18 @@ export const SettingsProvider = ({ children }) => {
     const onStorage = (e) => {
       if (e.key === 'settings:lastUpdated') fetchSettings()
     }
-    const onFocus = () => fetchSettings()
-    const onVisibility = () => { if (document.visibilityState === 'visible') fetchSettings() }
+    // Coming back to the tab re-checks the settings, but only once the copy
+    // we already have has gone stale. `focus` used to be wired up alongside
+    // this and fired for the same gesture, doubling every download.
+    const onVisibility = () => {
+      if (document.visibilityState !== 'visible') return
+      if (Date.now() - lastFetchedAtRef.current < REFRESH_INTERVAL_MS) return
+      fetchSettings()
+    }
     window.addEventListener('storage', onStorage)
-    window.addEventListener('focus', onFocus)
     document.addEventListener('visibilitychange', onVisibility)
     return () => {
       window.removeEventListener('storage', onStorage)
-      window.removeEventListener('focus', onFocus)
       document.removeEventListener('visibilitychange', onVisibility)
     }
   }, [])
