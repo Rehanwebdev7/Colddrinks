@@ -953,7 +953,25 @@ const GZIP_MIN_BYTES = 1024;
 function sendJSON(res, statusCode, data) {
   const body = Buffer.from(JSON.stringify(data));
   const headers = { 'Content-Type': 'application/json', 'Vary': 'Accept-Encoding' };
-  const acceptsGzip = /\bgzip\b/i.test(String(res.req?.headers['accept-encoding'] || ''));
+  const req = res.req;
+
+  // Revalidation only makes sense for a cacheable read; writes and errors go
+  // out exactly as before.
+  if (statusCode === 200 && (req?.method === 'GET' || req?.method === 'HEAD')) {
+    // Weak, because the same bytes also ship gzipped under this tag.
+    const etag = `W/"${crypto.createHash('sha1').update(body).digest('base64')}"`;
+    // no-cache means "reuse only after asking", so an admin's change still
+    // reaches customers on their very next request. private keeps per-user
+    // replies out of any shared cache in between.
+    headers['ETag'] = etag;
+    headers['Cache-Control'] = 'no-cache, private';
+    if (req.headers['if-none-match'] === etag) {
+      res.writeHead(304, { 'ETag': etag, 'Cache-Control': headers['Cache-Control'], 'Vary': headers['Vary'] });
+      return res.end();
+    }
+  }
+
+  const acceptsGzip = /\bgzip\b/i.test(String(req?.headers['accept-encoding'] || ''));
 
   if (!acceptsGzip || body.length < GZIP_MIN_BYTES) {
     res.writeHead(statusCode, headers);

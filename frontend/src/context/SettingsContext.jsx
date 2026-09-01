@@ -149,8 +149,10 @@ export const SettingsProvider = ({ children }) => {
   // storage events forever: fetch → write → other tab fetches → writes → …
   const fetchSettings = async ({ broadcast = false } = {}) => {
     try {
-      // Bypass HTTP cache so freshly-saved settings always reach the customer
-      const response = await API.get('/settings', { params: { _t: Date.now() } })
+      // No cache-buster: the API answers with ETag + Cache-Control: no-cache,
+      // so the browser revalidates every time and a freshly-saved change still
+      // arrives immediately — but an unchanged one costs a 304, not 87 KB.
+      const response = await API.get('/settings')
       const data = { ...defaultSettings, ...(response.data || {}) }
       // Keep the bundled public logo available when the server has no asset.
       data.logo = LOCAL_BRAND_LOGO
