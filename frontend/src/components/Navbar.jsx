@@ -90,10 +90,17 @@ const Navbar = () => {
     if (isAuthenticated && user?.role !== 'admin') {
       const fetchNotifCount = async () => {
         try {
-          const response = await API.get('/notifications')
-          const data = Array.isArray(response.data) ? response.data : response.data?.data || []
-          setUnreadNotifs(data.filter(n => !n.isRead).length)
-        } catch {}
+          const res = await API.get('/notifications/unread-count')
+          setUnreadNotifs(res.data?.unread || 0)
+        } catch {
+          // The API deploys separately from this bundle and may not serve the
+          // count route yet, so fall back to tallying the full list.
+          try {
+            const response = await API.get('/notifications')
+            const data = Array.isArray(response.data) ? response.data : response.data?.data || []
+            setUnreadNotifs(data.filter(n => !n.isRead).length)
+          } catch {}
+        }
       }
       const fetchOutstanding = async () => {
         try {
@@ -101,10 +108,23 @@ const Navbar = () => {
           setOutstanding(res.data?.outstanding || 0)
         } catch {}
       }
-      fetchNotifCount()
-      fetchOutstanding()
-      const interval = setInterval(() => { fetchNotifCount(); fetchOutstanding() }, 30000)
-      return () => clearInterval(interval)
+      // A hidden tab shows no badge, so polling one only costs bandwidth.
+      // Returning to the tab polls immediately to catch up on what it missed.
+      let lastPollAt = 0
+      const poll = () => {
+        if (document.visibilityState !== 'visible') return
+        if (Date.now() - lastPollAt < 30000) return
+        lastPollAt = Date.now()
+        fetchNotifCount()
+        fetchOutstanding()
+      }
+      poll()
+      const interval = setInterval(poll, 120000)
+      document.addEventListener('visibilitychange', poll)
+      return () => {
+        clearInterval(interval)
+        document.removeEventListener('visibilitychange', poll)
+      }
     }
   }, [isAuthenticated, user])
 

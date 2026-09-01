@@ -3301,6 +3301,21 @@ async function handleNotificationsList(req, res) {
   return success(res, notifications);
 }
 
+// The navbar badge polls on a timer and only needs the tally, so serve that
+// on its own instead of making it download and count the whole list.
+async function handleNotificationsUnreadCount(req, res) {
+  const user = requireAuth(req, res);
+  if (!user) return;
+
+  let notifications = readDB('notifications.json');
+
+  if (user.role !== 'admin') {
+    notifications = notifications.filter(n => n.targetUserId === user.id);
+  }
+
+  return success(res, { unread: notifications.filter(n => !n.isRead).length });
+}
+
 async function handleNotificationsSend(req, res) {
   const admin = requireAdmin(req, res);
   if (!admin) return;
@@ -4891,6 +4906,7 @@ const server = http.createServer(async (req, res) => {
 
     // ─── NOTIFICATIONS routes ───
     if ((pathname === '/api/notifications' || pathname === '/api/notifications/list') && method === 'GET') return await handleNotificationsList(req, res);
+    if (pathname === '/api/notifications/unread-count' && method === 'GET') return await handleNotificationsUnreadCount(req, res);
     if (pathname === '/api/notifications/send' && method === 'POST') return await handleNotificationsSend(req, res);
     if (pathname === '/api/notifications/markread' && method === 'POST') return await handleNotificationsMarkRead(req, res, null);
     if (pathname === '/api/notifications/read-all' && method === 'PUT') return await handleNotificationsReadAll(req, res);
