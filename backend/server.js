@@ -8,6 +8,7 @@ const http = require('http');
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
+const zlib = require('zlib');
 const { pipeline } = require('stream/promises');
 const nodemailer = require('nodemailer');
 
@@ -941,9 +942,33 @@ function parseBody(req) {
   });
 }
 
+// Below roughly a packet's worth of payload, compressing costs more in CPU and
+// response headers than it saves on the wire.
+const GZIP_MIN_BYTES = 1024;
+
+// Every JSON response leaves through here, so this is the one place worth
+// compressing. Binary and HTML replies write to the socket directly and are
+// untouched. Only Content-Type is set alongside, so nothing here has to keep a
+// Content-Length in step with the compressed length.
 function sendJSON(res, statusCode, data) {
-  res.writeHead(statusCode, { 'Content-Type': 'application/json' });
-  res.end(JSON.stringify(data));
+  const body = Buffer.from(JSON.stringify(data));
+  const headers = { 'Content-Type': 'application/json', 'Vary': 'Accept-Encoding' };
+  const acceptsGzip = /\bgzip\b/i.test(String(res.req?.headers['accept-encoding'] || ''));
+
+  if (!acceptsGzip || body.length < GZIP_MIN_BYTES) {
+    res.writeHead(statusCode, headers);
+    return res.end(body);
+  }
+
+  zlib.gzip(body, (err, gzipped) => {
+    if (err) {
+      // Never fail a response over compression — send the plain body instead.
+      res.writeHead(statusCode, headers);
+      return res.end(body);
+    }
+    res.writeHead(statusCode, { ...headers, 'Content-Encoding': 'gzip' });
+    res.end(gzipped);
+  });
 }
 
 function success(res, data, message = 'Success', statusCode = 200) {
