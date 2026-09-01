@@ -181,7 +181,7 @@ export const SettingsProvider = ({ children }) => {
     applySettings(settings)
   }, [settings])
 
-  // Cross-tab + focus sync — keeps customer site theme in lockstep with admin
+  // Cross-tab sync — keeps the customer site's theme in lockstep with admin
   // changes even when they're in different tabs of the same browser.
   useEffect(() => {
     const onStorage = (e) => {
