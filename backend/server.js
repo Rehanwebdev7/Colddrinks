@@ -92,15 +92,20 @@ function parseBase64JsonEnv(name) {
   }
 }
 
+// Which of the three sources answered, so /api/health can say so without
+// ever echoing the credential itself.
+let serviceAccountSource = 'none';
+
 function loadServiceAccount() {
   const inlineJson = parseJsonEnv('FIREBASE_SERVICE_ACCOUNT_JSON');
-  if (inlineJson) return inlineJson;
+  if (inlineJson) { serviceAccountSource = 'FIREBASE_SERVICE_ACCOUNT_JSON'; return inlineJson; }
 
   const base64Json = parseBase64JsonEnv('FIREBASE_SERVICE_ACCOUNT_B64');
-  if (base64Json) return base64Json;
+  if (base64Json) { serviceAccountSource = 'FIREBASE_SERVICE_ACCOUNT_B64'; return base64Json; }
 
   const localPath = path.join(__dirname, 'service-account.json');
   if (fs.existsSync(localPath)) {
+    serviceAccountSource = 'service-account.json file';
     return require(localPath);
   }
 
@@ -244,6 +249,9 @@ const COLL_MAP = {
 
 const cache = {};
 let firestoreReady = false;
+// Set when the boot race rejects (almost always the init timeout), so /api/health
+// can tell a slow start apart from a credential that Google refuses.
+let firestoreBootError = null;
 // Local development should remain usable when stale/invalid Firebase
 // credentials are present. Production sets JSON_FALLBACK_DISABLED=1 and keeps
 // Firestore as the strict source of truth.
@@ -5054,6 +5062,21 @@ const server = http.createServer(async (req, res) => {
     if (couponIdMatch && method === 'DELETE') return await handleCouponsDelete(req, res, couponIdMatch[1]);
 
     // ─── API root ───
+    // Whether Firestore actually came up is invisible from the outside: admin
+    // routes 401 before they 503, and the JSON fallback serves the same data.
+    // This says so plainly, and never echoes the credential itself.
+    if (pathname === '/api/health') {
+      return success(res, {
+        firestoreReady,
+        serviceAccountSource,
+        serviceAccountEmail: serviceAccount?.client_email || null,
+        projectId,
+        bootError: firestoreBootError,
+        dataSource: firestoreReady ? 'firestore' : 'json-fallback',
+        initTimeoutMs: FIRESTORE_INIT_TIMEOUT_MS
+      });
+    }
+
     if (pathname === '/api' || pathname === '/' || pathname === '') {
       return success(res, { name: 'Cold Drinks Shop API', version: '2.0.0' }, 'Cold Drinks Shop API is running');
     }
@@ -5093,6 +5116,7 @@ firestoreInit.then(() => {
     console.log(serviceAccount ? `Database: Firestore (noor-coldrinks) | Cache: in-memory` : `Database: JSON files (Firestore unavailable)`);
   });
 }).catch(err => {
+  firestoreBootError = err.message;
   console.error('Firestore init failed:', err.message);
   console.log('Starting with JSON fallback...');
   server.listen(PORT, () => {
