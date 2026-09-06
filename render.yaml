@@ -20,6 +20,13 @@ services:
         value: noor-coldrinks
       - key: FIREBASE_SERVICE_ACCOUNT_JSON
         sync: false
+      # Preferred over the raw JSON above: a dashboard textarea turns the
+      # backslash-n escapes inside private_key into real newlines, which
+      # corrupts the key and makes every Firestore call fail with
+      # 16 UNAUTHENTICATED.
+      # Generate: node -e "console.log(require('fs').readFileSync('service-account.json').toString('base64'))"
+      - key: FIREBASE_SERVICE_ACCOUNT_B64
+        sync: false
       # JWT_SECRET — 48-byte hex (96 chars). Set in Render dashboard.
       # Generate: node -e "console.log(require('crypto').randomBytes(48).toString('hex'))"
       - key: JWT_SECRET

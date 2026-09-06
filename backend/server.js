@@ -5078,7 +5078,14 @@ const server = http.createServer(async (req, res) => {
 
 preloadJSONFallbackCache();
 
-const firestoreInit = serviceAccount ? withTimeout(initFirestore(), 5000, 'Firestore init') : Promise.resolve();
+// Init walks every collection, so a cold free-tier instance needs far longer
+// than a warm laptop. Timing out here leaves firestoreReady false, which makes
+// every admin route answer 503 even though the credentials are fine.
+const FIRESTORE_INIT_TIMEOUT_MS = Number(process.env.FIRESTORE_INIT_TIMEOUT_MS) || 30000;
+
+const firestoreInit = serviceAccount
+  ? withTimeout(initFirestore(), FIRESTORE_INIT_TIMEOUT_MS, 'Firestore init')
+  : Promise.resolve();
 
 firestoreInit.then(() => {
   server.listen(PORT, () => {
